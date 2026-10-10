@@ -10,7 +10,7 @@ import { AuthService } from '../auth.service';
   imports: [CommonModule, FormsModule],
   template: `
     <div dir="rtl" style="display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #004d40;">
-      <div style="background-color: white; padding: 40px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); width: 350px; text-align: center;">
+      <div style="background-color: white; padding: 40px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); width: 100%; max-width: 350px; box-sizing: border-box; margin: 15px; text-align: center;">
         <h2 style="color: #004d40; margin-bottom: 20px;">تسجيل الدخول</h2>
         <div style="background-color: #e0f2f1; color: #00695c; padding: 10px; border-radius: 5px; margin-bottom: 20px; font-size: 14px;">
           للدخول المبدئي:<br>اسم المستخدم: <strong>admin</strong><br>كلمة المرور: <strong>admin</strong>

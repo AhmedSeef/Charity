@@ -1,21 +1,28 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
+import { Observable, of } from 'rxjs';
 import { tap } from 'rxjs/operators';
-import { Observable } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  constructor(private http: HttpClient, private router: Router) {}
+  constructor(private router: Router) {}
 
   login(user: string, pass: string): Observable<any> {
-    return this.http.get(`http://localhost:3000/users?username=${user}&password=${pass}`).pipe(
-      tap((users: any) => {
-        if (users && users.length > 0) {
-          localStorage.setItem('currentUser', JSON.stringify(users[0]));
-          // Hard reload or simple navigate
+    const localDb = localStorage.getItem('charity_db');
+    let users = [];
+    if (localDb) {
+      const db = JSON.parse(localDb);
+      users = db.users || [];
+    }
+
+    const matchedUser = users.find((u: any) => u.username === user && u.password === pass);
+    
+    return of(matchedUser ? [matchedUser] : []).pipe(
+      tap((result: any) => {
+        if (result && result.length > 0) {
+          localStorage.setItem('currentUser', JSON.stringify(result[0]));
         }
       })
     );

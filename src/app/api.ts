@@ -1,32 +1,350 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
 })
 export class Api {
-  private baseUrl = 'http://localhost:3000';
+  private db: any;
 
-  constructor(private http: HttpClient) {}
+  constructor() {
+    const localDb = localStorage.getItem('charity_db');
+    if (localDb) {
+      this.db = JSON.parse(localDb);
+    } else {
+      // Default initial data for GitHub Pages Demo
+      this.db = {
+  "beneficiaries": [
+    {
+      "id": "b1",
+      "nationalId": "28501011234567",
+      "name": "أحمد محمود سالم",
+      "category": "أرامل وأيتام",
+      "address": "الجيزة، العمرانية",
+      "status": "مستحق فعال",
+      "phone": "غير مسجل",
+      "maritalStatus": "غير محدد",
+      "familyCount": 0,
+      "housing": "غير مسجل",
+      "healthIssues": "لا يوجد",
+      "researchNotes": ""
+    },
+    {
+      "id": "b2",
+      "nationalId": "27005057654321",
+      "name": "سعاد إبراهيم محمد",
+      "category": "مرضى ومسنين",
+      "address": "القاهرة، المطرية",
+      "status": "مستحق فعال",
+      "phone": "غير مسجل",
+      "maritalStatus": "غير محدد",
+      "familyCount": 0,
+      "housing": "غير مسجل",
+      "healthIssues": "لا يوجد",
+      "researchNotes": ""
+    },
+    {
+      "id": "b3",
+      "nationalId": "29012345678901",
+      "name": "محمود حسن علي",
+      "category": "غارمين",
+      "address": "المعادي، القاهرة",
+      "status": "مستحق فعال",
+      "phone": "غير مسجل",
+      "maritalStatus": "غير محدد",
+      "familyCount": 0,
+      "housing": "غير مسجل",
+      "healthIssues": "لا يوجد",
+      "researchNotes": ""
+    },
+    {
+      "id": "b4",
+      "nationalId": "28009091112223",
+      "name": "فاطمة عبد الرحمن",
+      "category": "حالات طوارئ",
+      "address": "الإسكندرية، العصافرة",
+      "status": "مستحق مؤقت",
+      "phone": "غير مسجل",
+      "maritalStatus": "غير محدد",
+      "familyCount": 0,
+      "housing": "غير مسجل",
+      "healthIssues": "لا يوجد",
+      "researchNotes": ""
+    },
+    {
+      "id": "b5",
+      "nationalId": "26504043334445",
+      "name": "عماد الدين صبحي",
+      "category": "مرضى ومسنين",
+      "address": "القليوبية، بنها",
+      "status": "مستحق فعال",
+      "phone": "غير مسجل",
+      "maritalStatus": "غير محدد",
+      "familyCount": 0,
+      "housing": "غير مسجل",
+      "healthIssues": "لا يوجد",
+      "researchNotes": ""
+    },
+    {
+      "id": "b6",
+      "nationalId": "29505051234567",
+      "name": "عائلة محمود المنسي",
+      "category": "حالات طوارئ",
+      "address": "الإسكندرية",
+      "status": "مستحق",
+      "phone": "غير مسجل",
+      "maritalStatus": "غير محدد",
+      "familyCount": 0,
+      "housing": "غير مسجل",
+      "healthIssues": "لا يوجد",
+      "researchNotes": ""
+    },
+    {
+      "id": "b7",
+      "nationalId": "28811223344556",
+      "name": "هبة كمال الدين",
+      "category": "أرامل وأيتام",
+      "address": "القاهرة، السيدة زينب",
+      "status": "مستحق فعال",
+      "phone": "غير مسجل",
+      "maritalStatus": "غير محدد",
+      "familyCount": 0,
+      "housing": "غير مسجل",
+      "healthIssues": "لا يوجد",
+      "researchNotes": ""
+    }
+  ],
+  "donations": [
+    {
+      "id": "d1",
+      "donorName": "فاعل خير",
+      "amount": 5000,
+      "type": "زكاة مال",
+      "date": "2026-09-15"
+    },
+    {
+      "id": "d2",
+      "donorName": "محمد علي",
+      "amount": 1000,
+      "type": "صدقة جارية",
+      "date": "2026-10-05"
+    },
+    {
+      "id": "d3",
+      "donorName": "شركة الأمل للتجارة",
+      "amount": 15000,
+      "type": "زكاة مال",
+      "date": "2026-10-08"
+    },
+    {
+      "id": "d4",
+      "donorName": "سارة أحمد",
+      "amount": 300,
+      "type": "كفارة يمين",
+      "date": "2026-10-09"
+    },
+    {
+      "id": "d5",
+      "donorName": "فاعل خير",
+      "amount": 2500,
+      "type": "كفالة يتيم",
+      "date": "2026-10-10"
+    },
+    {
+      "id": "d6",
+      "donorName": "الحاج إبراهيم الدسوقي",
+      "amount": 10000,
+      "type": "صدقة جارية",
+      "date": "2026-10-10"
+    }
+  ],
+  "inventory": [
+    {
+      "id": "i1",
+      "itemName": "أرز مصري",
+      "quantity": 450,
+      "unit": "كيلو",
+      "type": "أغذية جافة"
+    },
+    {
+      "id": "i2",
+      "itemName": "سكر أبيض",
+      "quantity": 300,
+      "unit": "كيلو",
+      "type": "أغذية جافة"
+    },
+    {
+      "id": "i3",
+      "itemName": "لحوم مفرومة",
+      "quantity": 120,
+      "unit": "كيلو",
+      "type": "لحوم ومجمدات"
+    },
+    {
+      "id": "i4",
+      "itemName": "أدوية سكر (ميكستارد)",
+      "quantity": 45,
+      "unit": "علبة",
+      "type": "طبي"
+    },
+    {
+      "id": "i5",
+      "itemName": "أكفان شرعية",
+      "quantity": 10,
+      "unit": "قطعة",
+      "type": "متنوع"
+    },
+    {
+      "id": "i6",
+      "itemName": "كرسي متحرك",
+      "quantity": 5,
+      "unit": "قطعة",
+      "type": "طبي"
+    },
+    {
+      "id": "i7",
+      "itemName": "زيت طعام",
+      "quantity": 95,
+      "unit": "زجاجة",
+      "type": "أغذية جافة"
+    },
+    {
+      "id": "i8",
+      "itemName": "بطاطين شتوية",
+      "quantity": 150,
+      "unit": "قطعة",
+      "type": "متنوع"
+    },
+    {
+      "id": "i9",
+      "itemName": "شنط رمضان/إطعام",
+      "quantity": 50,
+      "unit": "كرتونة",
+      "type": "أغذية جافة"
+    }
+  ],
+  "distributions": [
+    {
+      "id": "dist1",
+      "beneficiaryId": "b1",
+      "inventoryId": "i1",
+      "quantity": 5,
+      "date": "2026-10-01",
+      "notes": "شنطة إطعام شهرية"
+    },
+    {
+      "id": "dist2",
+      "beneficiaryId": "b1",
+      "inventoryId": "i7",
+      "quantity": 2,
+      "date": "2026-10-01",
+      "notes": "شنطة إطعام شهرية"
+    },
+    {
+      "id": "dist3",
+      "beneficiaryId": "b2",
+      "inventoryId": "i4",
+      "quantity": 1,
+      "date": "2026-10-03",
+      "notes": "روشتة علاج مزمن"
+    },
+    {
+      "id": "dist4",
+      "beneficiaryId": "b4",
+      "inventoryId": "i8",
+      "quantity": 3,
+      "date": "2026-10-08",
+      "notes": "مساعدة شتاء طارئة"
+    },
+    {
+      "id": "dist5",
+      "beneficiaryId": "b5",
+      "inventoryId": "i6",
+      "quantity": 1,
+      "date": "2026-10-09",
+      "notes": "استلام عهدة (كرسي متحرك)"
+    },
+    {
+      "id": "dist6",
+      "beneficiaryId": "b3",
+      "inventoryId": "i3",
+      "quantity": 2,
+      "date": "2026-10-10",
+      "notes": "توزيع لحوم أسبوعي"
+    },
+    {
+      "id": "dist7",
+      "beneficiaryId": "b7",
+      "inventoryId": "i9",
+      "quantity": 1,
+      "date": "2026-10-10",
+      "notes": "كفالة أرملة"
+    },
+    {
+      "id": "dist8",
+      "beneficiaryId": "b6",
+      "inventoryId": "i7",
+      "quantity": 3,
+      "date": "2026-10-10",
+      "notes": "تم التسليم يدويا"
+    }
+  ],
+  "settings": [
+    {
+      "id": "1",
+      "charityName": "جمعية أبواب الخير الشهيرة",
+      "logo": "",
+      "details": "جمعية خيرية مشهرة برقم 1234، تهدف لخدمة الأسر المحتاجة وتوزيع التبرعات.",
+      "phone": "01012345678"
+    }
+  ],
+  "$schema": "./node_modules/json-server/schema.json",
+  "users": [
+    {
+      "id": "1",
+      "username": "admin",
+      "password": "admin",
+      "role": "Administrator"
+    }
+  ],
+  "staff": [
+    {
+      "id": "s1",
+      "nationalId": "29000000000000",
+      "name": "أحمد المتطوع",
+      "phone": "01000000000",
+      "type": "متطوع",
+      "role": "باحث اجتماعي",
+      "salary": null,
+      "joinDate": "2026-01-01"
+    }
+  ]
+};
+      this.save();
+    }
+  }
 
-  getBeneficiaries(): Observable<any> { return this.http.get(`${this.baseUrl}/beneficiaries`); }
-  addBeneficiary(data: any): Observable<any> { return this.http.post(`${this.baseUrl}/beneficiaries`, data); }
-  updateBeneficiary(data: any): Observable<any> { return this.http.put(`${this.baseUrl}/beneficiaries/${data.id}`, data); }
+  private save() {
+    localStorage.setItem('charity_db', JSON.stringify(this.db));
+  }
 
-  getDonations(): Observable<any> { return this.http.get(`${this.baseUrl}/donations`); }
-  addDonation(data: any): Observable<any> { return this.http.post(`${this.baseUrl}/donations`, data); }
+  getBeneficiaries(): Observable<any> { return of(this.db.beneficiaries || []); }
+  addBeneficiary(data: any): Observable<any> { data.id = Date.now().toString(); this.db.beneficiaries.push(data); this.save(); return of(data); }
+  updateBeneficiary(data: any): Observable<any> { const idx = this.db.beneficiaries.findIndex((x:any)=>x.id===data.id); if(idx>-1) this.db.beneficiaries[idx]=data; this.save(); return of(data); }
 
-  getInventory(): Observable<any> { return this.http.get(`${this.baseUrl}/inventory`); }
-  addInventory(data: any): Observable<any> { return this.http.post(`${this.baseUrl}/inventory`, data); }
+  getDonations(): Observable<any> { return of(this.db.donations || []); }
+  addDonation(data: any): Observable<any> { data.id = Date.now().toString(); this.db.donations.push(data); this.save(); return of(data); }
 
-  getDistributions(): Observable<any> { return this.http.get(`${this.baseUrl}/distributions`); }
-  addDistribution(data: any): Observable<any> { return this.http.post(`${this.baseUrl}/distributions`, data); }
+  getInventory(): Observable<any> { return of(this.db.inventory || []); }
+  addInventory(data: any): Observable<any> { data.id = Date.now().toString(); this.db.inventory.push(data); this.save(); return of(data); }
 
-  getSettings(): Observable<any> { return this.http.get(`${this.baseUrl}/settings/1`); }
-  updateSettings(data: any): Observable<any> { return this.http.put(`${this.baseUrl}/settings/1`, data); }
+  getDistributions(): Observable<any> { return of(this.db.distributions || []); }
+  addDistribution(data: any): Observable<any> { data.id = Date.now().toString(); this.db.distributions.push(data); this.save(); return of(data); }
 
-  getStaff(): Observable<any> { return this.http.get(`${this.baseUrl}/staff`); }
-  addStaff(data: any): Observable<any> { return this.http.post(`${this.baseUrl}/staff`, data); }
-  updateStaff(data: any): Observable<any> { return this.http.put(`${this.baseUrl}/staff/${data.id}`, data); }
+  getSettings(): Observable<any> { return of(this.db.settings ? this.db.settings[0] : {}); }
+  updateSettings(data: any): Observable<any> { this.db.settings = [data]; this.save(); return of(data); }
+
+  getStaff(): Observable<any> { return of(this.db.staff || []); }
+  addStaff(data: any): Observable<any> { data.id = Date.now().toString(); this.db.staff.push(data); this.save(); return of(data); }
+  updateStaff(data: any): Observable<any> { const idx = this.db.staff.findIndex((x:any)=>x.id===data.id); if(idx>-1) this.db.staff[idx]=data; this.save(); return of(data); }
 }
