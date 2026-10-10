@@ -7,7 +7,7 @@
       
       <!-- القسم الأول: البيانات الأساسية -->
       <h4 style="color: #00695c; margin-bottom: 10px;">البيانات الأساسية</h4>
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-bottom: 20px;">
         <input type="text" [(ngModel)]="newBen.nationalId" name="nationalId" placeholder="الرقم القومي (14 رقم)" required style="padding: 10px; border-radius: 5px; border: 1px solid #ccc;">
         <input type="text" [(ngModel)]="newBen.name" name="name" placeholder="الاسم الرباعي" required style="padding: 10px; border-radius: 5px; border: 1px solid #ccc;">
         <input type="text" [(ngModel)]="newBen.phone" name="phone" placeholder="رقم الهاتف" required style="padding: 10px; border-radius: 5px; border: 1px solid #ccc;">
@@ -18,7 +18,7 @@
 
       <!-- القسم الثاني: الجانب الأسري والسكن -->
       <h4 style="color: #00695c; margin-bottom: 10px;">الجانب الأسري ومعيشة السكن</h4>
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-bottom: 20px;">
         <select [(ngModel)]="newBen.maritalStatus" name="maritalStatus" style="padding: 10px; border-radius: 5px; border: 1px solid #ccc;">
           <option *ngFor="let m of maritalStatuses" [value]="m">{{ m }}</option>
         </select>
@@ -39,7 +39,7 @@
         <textarea [(ngModel)]="newBen.researchNotes" name="researchNotes" placeholder="ملاحظات الباحث الاجتماعي (الديون، الاحتياجات الطارئة، حالة السقف...)" rows="3" style="padding: 10px; border-radius: 5px; border: 1px solid #ccc; resize: vertical;"></textarea>
       </div>
 
-      <div style="display: flex; gap: 10px; margin-top: 15px;">
+      <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px;">
         <button type="submit" style="padding: 12px 25px; background-color: #004d40; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; flex: 1;">
           {{ newBen.id ? '🔄 تحديث بيانات الحالة' : '💾 حفظ وفتح ملف الحالة' }}
         </button>
