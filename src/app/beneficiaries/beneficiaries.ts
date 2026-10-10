@@ -12,6 +12,12 @@ import { Api } from '../api';
 })
 export class BeneficiariesComponent implements OnInit {
   beneficiaries: any[] = [];
+  distributions: any[] = [];
+  inventory: any[] = [];
+  
+  historyModalOpen = false;
+  selectedHistory: any[] = [];
+  selectedBenName = '';
   
   newBen: any = { 
     nationalId: '', 
@@ -39,6 +45,8 @@ export class BeneficiariesComponent implements OnInit {
 
   loadData() {
     this.api.getBeneficiaries().subscribe((data: any) => { this.beneficiaries = data; this.cdr.detectChanges(); });
+    this.api.getDistributions().subscribe((data: any) => { this.distributions = data; this.cdr.detectChanges(); });
+    this.api.getInventory().subscribe((data: any) => { this.inventory = data; this.cdr.detectChanges(); });
   }
 
   selectBeneficiary(b: any) {
@@ -70,5 +78,26 @@ export class BeneficiariesComponent implements OnInit {
         this.resetForm();
       });
     }
+  }
+
+  openHistory(b: any, event: Event) {
+    event.stopPropagation();
+    this.selectedBenName = b.name;
+    this.selectedHistory = this.distributions
+      .filter(dist => String(dist.beneficiaryId) === String(b.id))
+      .map(dist => {
+        const item = this.inventory.find(i => String(i.id) === String(dist.inventoryId));
+        return {
+          ...dist,
+          itemName: item ? `${item.itemName} (${item.unit})` : 'غير معروف'
+        };
+      });
+    this.historyModalOpen = true;
+    this.cdr.detectChanges();
+  }
+
+  closeHistory() {
+    this.historyModalOpen = false;
+    this.cdr.detectChanges();
   }
 }
