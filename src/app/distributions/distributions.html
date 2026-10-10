@@ -1,0 +1,44 @@
+<div dir="rtl" style="text-align: right;">
+  <h2>حركات الصرف وتوزيع المساعدات</h2>
+
+  <div style="background-color: #f9f9f9; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #ddd;">
+    <h3>تسجيل حركة صرف جديدة</h3>
+    <form (ngSubmit)="onSubmit()" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+      
+      <select [(ngModel)]="newDist.beneficiaryId" name="beneficiaryId" required style="padding: 8px; width: 200px;">
+        <option value="" disabled selected>-- اختر المستفيد --</option>
+        <option *ngFor="let b of beneficiaries" [value]="b.id">{{ b.name }} ({{ b.nationalId }})</option>
+      </select>
+
+      <select [(ngModel)]="newDist.inventoryId" name="inventoryId" required style="padding: 8px; width: 200px;">
+        <option value="" disabled selected>-- اختر الصنف --</option>
+        <option *ngFor="let i of inventory" [value]="i.id">{{ i.itemName }} (المتاح: {{ i.quantity }} {{ i.unit }})</option>
+      </select>
+
+      <input type="number" [(ngModel)]="newDist.quantity" name="quantity" placeholder="الكمية" required style="padding: 8px; width: 100px;">
+      
+      <input type="date" [(ngModel)]="newDist.date" name="date" required style="padding: 8px;">
+
+      <input type="text" [(ngModel)]="newDist.notes" name="notes" placeholder="ملاحظات (اختياري)" style="padding: 8px; width: 200px;">
+
+      <button type="submit" style="padding: 8px 15px; background-color: #d84315; color: white; border: none; cursor: pointer;">صرف وإضافة الحركة</button>
+    </form>
+  </div>
+
+  <table border="1" cellpadding="10" cellspacing="0" style="width: 100%; border-collapse: collapse;">
+    <tr style="background-color: #fbe9e7; color: #bf360c;">
+      <th>المستفيد</th>
+      <th>الصنف المصروف</th>
+      <th>الكمية</th>
+      <th>تاريخ الصرف</th>
+      <th>ملاحظات</th>
+    </tr>
+    <tr *ngFor="let d of distributions">
+      <td><strong>{{ getBenName(d.beneficiaryId) }}</strong></td>
+      <td>{{ getItemName(d.inventoryId) }}</td>
+      <td>{{ d.quantity }}</td>
+      <td>{{ d.date }}</td>
+      <td>{{ d.notes }}</td>
+    </tr>
+  </table>
+</div>

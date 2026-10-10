@@ -1,0 +1,36 @@
+<div dir="rtl" style="text-align: right;">
+  <h2>إدارة التبرعات</h2>
+
+  <div style="background-color: #f9f9f9; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #ddd;">
+    <h3>استلام تبرع جديد (نقدي أو عيني)</h3>
+    <form (ngSubmit)="onSubmit()" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+      
+      <input type="text" [(ngModel)]="newDonation.donorName" name="donorName" placeholder="اسم المتبرع (أو فاعل خير)" required style="padding: 8px; width: 200px;">
+      
+      <input type="number" [(ngModel)]="newDonation.amount" name="amount" placeholder="المبلغ أو القيمة التقديرية" required style="padding: 8px; width: 180px;">
+      
+      <select [(ngModel)]="newDonation.type" name="type" required style="padding: 8px;">
+        <option *ngFor="let t of types" [value]="t">{{ t }}</option>
+      </select>
+
+      <input type="date" [(ngModel)]="newDonation.date" name="date" required style="padding: 8px;">
+
+      <button type="submit" style="padding: 8px 15px; background-color: #004d40; color: white; border: none; cursor: pointer;">إضافة التبرع</button>
+    </form>
+  </div>
+
+  <table border="1" cellpadding="10" cellspacing="0" style="width: 100%; border-collapse: collapse; text-align: right;">
+    <tr style="background-color: #e0f2f1; color: #004d40;">
+      <th>اسم المتبرع</th>
+      <th>المبلغ / القيمة التقديرية</th>
+      <th>نوع التبرع</th>
+      <th>التاريخ</th>
+    </tr>
+    <tr *ngFor="let d of donations">
+      <td><strong>{{ d.donorName }}</strong></td>
+      <td>{{ d.amount }}</td>
+      <td>{{ d.type }}</td>
+      <td>{{ d.date }}</td>
+    </tr>
+  </table>
+</div>

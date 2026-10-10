@@ -1,0 +1,42 @@
+<div dir="rtl" style="text-align: right; max-width: 800px; margin: auto;">
+  <h2>إعدادات وبيانات الجمعية</h2>
+
+  <div style="background-color: #f9f9f9; padding: 25px; border-radius: 8px; border: 1px solid #ddd;">
+    
+    <div *ngIf="saveMessage" style="background-color: #d4edda; color: #155724; padding: 10px; border-radius: 5px; margin-bottom: 20px; text-align: center;">
+      {{ saveMessage }}
+    </div>
+
+    <form (ngSubmit)="onSubmit()" style="display: flex; flex-direction: column; gap: 15px;">
+      
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 20px;">
+        <img *ngIf="settings.logo" [src]="settings.logo" alt="شعار الجمعية" style="max-width: 150px; max-height: 150px; border-radius: 8px; border: 1px solid #ccc;">
+        <div *ngIf="!settings.logo" style="width: 150px; height: 150px; background-color: #eee; border: 1px dashed #999; display: flex; align-items: center; justify-content: center; border-radius: 8px;">لا يوجد شعار</div>
+        <label style="font-weight: bold; cursor: pointer; background-color: #eee; padding: 5px 10px; border-radius: 5px; border: 1px solid #ccc;">
+          تغيير الشعار
+          <input type="file" (change)="onFileSelected($event)" accept="image/*" style="display: none;">
+        </label>
+      </div>
+
+      <div>
+        <label style="font-weight: bold; display: block; margin-bottom: 5px;">اسم الجمعية:</label>
+        <input type="text" [(ngModel)]="settings.charityName" name="charityName" required style="padding: 10px; width: 100%; border: 1px solid #ccc; border-radius: 5px;">
+      </div>
+
+      <div>
+        <label style="font-weight: bold; display: block; margin-bottom: 5px;">تفاصيل ومشهرة الجمعية:</label>
+        <textarea [(ngModel)]="settings.details" name="details" rows="3" style="padding: 10px; width: 100%; border: 1px solid #ccc; border-radius: 5px;"></textarea>
+      </div>
+
+      <div>
+        <label style="font-weight: bold; display: block; margin-bottom: 5px;">رقم التواصل / الهاتف:</label>
+        <input type="text" [(ngModel)]="settings.phone" name="phone" style="padding: 10px; width: 100%; border: 1px solid #ccc; border-radius: 5px;">
+      </div>
+
+      <button type="submit" style="padding: 12px 20px; background-color: #004d40; color: white; border: none; cursor: pointer; border-radius: 5px; font-size: 16px; margin-top: 10px;">
+        حفظ بيانات الجمعية
+      </button>
+
+    </form>
+  </div>
+</div>

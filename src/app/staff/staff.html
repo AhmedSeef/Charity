@@ -1,0 +1,65 @@
+<div dir="rtl" style="text-align: right;">
+  <h2>فريق العمل والمتطوعين (الموارد البشرية)</h2>
+
+  <div style="background-color: #f9f9f9; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #ddd;">
+    <h3 style="margin-top: 0; color: #004d40; border-bottom: 2px solid #004d40; padding-bottom: 10px;">إضافة / تعديل بيانات فرد</h3>
+    <form (ngSubmit)="onSubmit()">
+      
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px;">
+        <input type="text" [(ngModel)]="newStaff.nationalId" name="nationalId" placeholder="الرقم القومي" required style="padding: 10px; border-radius: 5px; border: 1px solid #ccc;">
+        <input type="text" [(ngModel)]="newStaff.name" name="name" placeholder="الاسم الرباعي" required style="padding: 10px; border-radius: 5px; border: 1px solid #ccc;">
+        <input type="text" [(ngModel)]="newStaff.phone" name="phone" placeholder="رقم الهاتف" required style="padding: 10px; border-radius: 5px; border: 1px solid #ccc;">
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+        <select [(ngModel)]="newStaff.type" name="type" style="padding: 10px; border-radius: 5px; border: 1px solid #ccc;">
+          <option *ngFor="let t of types" [value]="t">{{ t }}</option>
+        </select>
+        <select [(ngModel)]="newStaff.role" name="role" style="padding: 10px; border-radius: 5px; border: 1px solid #ccc;">
+          <option *ngFor="let r of roles" [value]="r">{{ r }}</option>
+        </select>
+        
+        <div style="display: flex; align-items: center; gap: 10px; background-color: #fff; border: 1px solid #ccc; border-radius: 5px; padding: 0 10px;" *ngIf="newStaff.type === 'موظف براتب'">
+          <label style="color: #666; font-size: 14px;">الراتب الأساسي:</label>
+          <input type="number" [(ngModel)]="newStaff.salary" name="salary" placeholder="0" style="border: none; padding: 10px; outline: none; flex: 1;">
+        </div>
+
+        <input type="date" [(ngModel)]="newStaff.joinDate" name="joinDate" required style="padding: 10px; border-radius: 5px; border: 1px solid #ccc;">
+      </div>
+
+      <div style="display: flex; gap: 10px; margin-top: 15px;">
+        <button type="submit" style="padding: 12px 25px; background-color: #004d40; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; flex: 1;">
+          {{ newStaff.id ? '🔄 تحديث بيانات الموظف/المتطوع' : '💾 حفظ وإضافة' }}
+        </button>
+        <button type="button" *ngIf="newStaff.id" (click)="resetForm()" style="padding: 12px 25px; background-color: #757575; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold;">
+          إلغاء التعديل
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <table border="1" cellpadding="10" cellspacing="0" style="width: 100%; border-collapse: collapse; font-size: 14px; background-color: white;">
+    <tr style="background-color: #e0f2f1; color: #004d40;">
+      <th>الاسم والرقم القومي</th>
+      <th>بيانات الاتصال</th>
+      <th>الدور / المهنة</th>
+      <th>النوع والراتب</th>
+      <th>تاريخ الانضمام</th>
+    </tr>
+    <tr *ngFor="let s of staffList" (click)="selectStaff(s)" class="clickable-row" [ngStyle]="{'background-color': newStaff.id === s.id ? '#b2dfdb' : 'transparent'}">
+      <td>
+        <strong>{{ s.name }}</strong><br>
+        <span style="color: #666; font-size: 12px;">{{ s.nationalId }}</span>
+      </td>
+      <td>📞 {{ s.phone }}</td>
+      <td>{{ s.role }}</td>
+      <td>
+        <span [ngStyle]="{'background-color': s.type === 'متطوع' ? '#e3f2fd' : '#fce4ec', 'color': s.type === 'متطوع' ? '#1565c0' : '#c2185b', 'padding': '2px 8px', 'border-radius': '10px'}">
+          {{ s.type }}
+        </span>
+        <div *ngIf="s.type === 'موظف براتب'" style="margin-top: 5px; font-weight: bold; color: #004d40;">{{ s.salary }} ج.م</div>
+      </td>
+      <td>{{ s.joinDate }}</td>
+    </tr>
+  </table>
+</div>
