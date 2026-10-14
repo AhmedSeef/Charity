@@ -1,121 +1,420 @@
 <div dir="rtl" style="text-align: right;">
-  <h2>إدارة ملفات المستفيدين (نظام CRM)</h2>
 
-  <div style="background-color: #f9f9f9; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #ddd;">
-    <h3 style="margin-top: 0; color: #004d40; border-bottom: 2px solid #004d40; padding-bottom: 10px;">فتح ملف حالة جديد (بحث اجتماعي)</h3>
-    <form (ngSubmit)="onSubmit()">
-      
-      <!-- القسم الأول: البيانات الأساسية -->
-      <h4 style="color: #00695c; margin-bottom: 10px;">البيانات الأساسية</h4>
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-bottom: 20px;">
-        <input type="text" [(ngModel)]="newBen.nationalId" name="nationalId" placeholder="الرقم القومي (14 رقم)" required style="padding: 10px; border-radius: 5px; border: 1px solid #ccc;">
-        <input type="text" [(ngModel)]="newBen.name" name="name" placeholder="الاسم الرباعي" required style="padding: 10px; border-radius: 5px; border: 1px solid #ccc;">
-        <input type="text" [(ngModel)]="newBen.phone" name="phone" placeholder="رقم الهاتف" required style="padding: 10px; border-radius: 5px; border: 1px solid #ccc;">
-        <select [(ngModel)]="newBen.category" name="category" style="padding: 10px; border-radius: 5px; border: 1px solid #ccc;">
-          <option *ngFor="let c of categories" [value]="c">{{ c }}</option>
-        </select>
-      </div>
-
-      <!-- القسم الثاني: الجانب الأسري والسكن -->
-      <h4 style="color: #00695c; margin-bottom: 10px;">الجانب الأسري ومعيشة السكن</h4>
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-bottom: 20px;">
-        <select [(ngModel)]="newBen.maritalStatus" name="maritalStatus" style="padding: 10px; border-radius: 5px; border: 1px solid #ccc;">
-          <option *ngFor="let m of maritalStatuses" [value]="m">{{ m }}</option>
-        </select>
-        <div style="display: flex; align-items: center; gap: 10px; background-color: #fff; border: 1px solid #ccc; border-radius: 5px; padding: 0 10px;">
-          <label style="color: #666; font-size: 14px;">أفراد الأسرة:</label>
-          <input type="number" [(ngModel)]="newBen.familyCount" name="familyCount" min="1" style="border: none; padding: 10px; outline: none; width: 60px;">
-        </div>
-        <select [(ngModel)]="newBen.housing" name="housing" style="padding: 10px; border-radius: 5px; border: 1px solid #ccc;">
-          <option *ngFor="let h of housingTypes" [value]="h">{{ h }}</option>
-        </select>
-        <input type="text" [(ngModel)]="newBen.address" name="address" placeholder="العنوان التفصيلي" required style="padding: 10px; border-radius: 5px; border: 1px solid #ccc; grid-column: span 2;">
-      </div>
-
-      <!-- القسم الثالث: الجانب الصحي والملاحظات -->
-      <h4 style="color: #00695c; margin-bottom: 10px;">الجانب الصحي وبحث الحالة</h4>
-      <div style="display: grid; grid-template-columns: 1fr; gap: 15px; margin-bottom: 20px;">
-        <input type="text" [(ngModel)]="newBen.healthIssues" name="healthIssues" placeholder="الأمراض المزمنة أو الإعاقات (إن وجدت)" style="padding: 10px; border-radius: 5px; border: 1px solid #ccc;">
-        <textarea [(ngModel)]="newBen.researchNotes" name="researchNotes" placeholder="ملاحظات الباحث الاجتماعي (الديون، الاحتياجات الطارئة، حالة السقف...)" rows="3" style="padding: 10px; border-radius: 5px; border: 1px solid #ccc; resize: vertical;"></textarea>
-      </div>
-
-      <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px;">
-        <button type="submit" style="padding: 12px 25px; background-color: #004d40; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; flex: 1;">
-          {{ newBen.id ? '🔄 تحديث بيانات الحالة' : '💾 حفظ وفتح ملف الحالة' }}
-        </button>
-        <button type="button" *ngIf="newBen.id" (click)="resetForm()" style="padding: 12px 25px; background-color: #757575; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold;">
-          إلغاء التعديل
-        </button>
-      </div>
-    </form>
+  <!-- تنبيهات النجاح والخطأ العامة -->
+  <div *ngIf="successMessage" style="background-color: #e8f5e9; border: 2px solid #43a047; color: #1b5e20; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-weight: bold; font-size: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+    {{ successMessage }}
   </div>
 
-  <div style="overflow-x: auto; width: 100%; border-radius: 8px;"><table border="1" cellpadding="10" cellspacing="0" style="width: 100%; border-collapse: collapse; font-size: 14px; background-color: white;">
-    <tr style="background-color: #e0f2f1; color: #004d40;">
-      <th>الرقم القومي / الهاتف</th>
-      <th>الاسم والفئة</th>
-      <th>الأسرة والسكن</th>
-      <th>الحالة الصحية</th>
-      <th>ملخص بحث الحالة</th><th>سجل الصرف</th>
-    </tr>
-    <tr *ngFor="let b of paginatedBeneficiaries" 
-        (click)="selectBeneficiary(b)" 
-        class="clickable-row" 
-        [ngStyle]="{'background-color': newBen.id === b.id ? '#b2dfdb' : 'transparent'}">
-      <td>
-        <strong>{{ b.nationalId }}</strong><br>
-        <span style="color: #666;">📞 {{ b.phone }}</span>
-      </td>
-      <td>
-        <strong style="color: #004d40; font-size: 15px;">{{ b.name }}</strong><br>
-        <span style="background-color: #ffe0b2; color: #e65100; padding: 2px 6px; border-radius: 4px; font-size: 12px;">{{ b.category }}</span>
-      </td>
-      <td>
-        {{ b.maritalStatus }} ({{ b.familyCount }} أفراد)<br>
-        <span style="color: #555; font-size: 12px;">🏠 {{ b.housing }}</span>
-      </td>
-      <td>{{ b.healthIssues || 'لا يوجد' }}</td>
-      <td style="max-width: 250px; color: #555;">{{ b.researchNotes || 'لم تدون ملاحظات' }}</td><td style="text-align: center;"><button (click)="openHistory(b, $event)" style="background: none; border: none; font-size: 24px; cursor: pointer;" title="سجل الصرف">👁️</button></td>
-    </tr>
-  </table></div>
+  <div *ngIf="errorMessage" style="background-color: #ffebee; border: 2px solid #e53935; color: #b71c1c; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-weight: bold; font-size: 15px;">
+    {{ errorMessage }}
+  </div>
 
-  <app-pagination 
-    [totalItems]="beneficiaries.length" 
-    [pageSize]="pageSize" 
-    [currentPage]="currentPage" 
-    (pageChange)="currentPage = $event" 
-    (pageSizeChange)="pageSize = $event">
-  </app-pagination>
-</div>
+  <!-- ========================================== -->
+  <!-- 1. شاشة العرض الكامل لملف المستفيد (DETAIL VIEW) -->
+  <!-- ========================================== -->
+  <div *ngIf="viewMode === 'detail' && selectedBen" class="profile-view-container">
+    
+    <!-- شريط الإجراءات العلوي -->
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid #ddd; padding-bottom: 12px;">
+      <button type="button" (click)="backToList()" 
+              style="display: inline-flex; align-items: center; gap: 8px; background: white; border: 1px solid #ccc; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold; color: #333;">
+        ← العودة لقائمة المستفيدين
+      </button>
 
-<div *ngIf="historyModalOpen" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 15px; box-sizing: border-box;">
-  <div style="background: white; padding: 20px; border-radius: 8px; width: 100%; max-width: 600px; max-height: 80vh; overflow-y: auto;">
-    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #004d40; padding-bottom: 10px; margin-bottom: 15px;">
-      <h3 style="margin: 0; color: #004d40;">سجل حركات: {{ selectedBenName }}</h3>
-      <button (click)="closeHistory()" style="background: #d32f2f; color: white; border: none; padding: 5px 15px; border-radius: 5px; cursor: pointer; font-weight: bold;">إغلاق ✖</button>
+      <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <button type="button" (click)="openEdit(selectedBen)" 
+                style="background-color: #004d40; color: white; border: none; padding: 8px 18px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold; display: flex; align-items: center; gap: 6px;">
+          ✏️ تعديل بيانات الملف
+        </button>
+
+        <button type="button" (click)="printProfile()" 
+                style="background-color: #37474f; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 6px;">
+          🖨️ طباعة تقرير الحالة
+        </button>
+      </div>
     </div>
-    <div *ngIf="selectedHistory.length === 0" style="text-align: center; padding: 20px; color: #666;">
-      لم يتم تسجيل أي حركات صرف أو مساعدات لهذا المستفيد حتى الآن.
+
+    <!-- بطاقة الهوية الأساسية للمستفيد -->
+    <div style="background: white; border: 1px solid #c8e6c9; border-radius: 10px; padding: 25px; margin-bottom: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); display: flex; align-items: center; gap: 25px; flex-wrap: wrap;">
+      <div style="width: 85px; height: 85px; border-radius: 50%; background: #e0f2f1; display: flex; align-items: center; justify-content: center; font-size: 38px; color: #004d40; border: 3px solid #80cbc4;">
+        👤
+      </div>
+
+      <div style="flex: 1; min-width: 250px;">
+        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+          <h2 style="margin: 0; color: #004d40; font-size: 24px;">{{ selectedBen.name }}</h2>
+          <span style="background-color: #ffe0b2; color: #e65100; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: bold;">
+            {{ selectedBen.category }}
+          </span>
+          <span style="background-color: #e8f5e9; color: #2e7d32; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: bold;">
+            {{ selectedBen.status || 'مستحق فعال' }}
+          </span>
+        </div>
+
+        <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 10px; color: #555; font-size: 14px;">
+          <span><strong>الرقم القومي:</strong> {{ selectedBen.nationalId }}</span>
+          <span><strong>الهاتف:</strong> {{ selectedBen.phone }}</span>
+          <span><strong>العنوان:</strong> {{ selectedBen.address }}</span>
+        </div>
+      </div>
     </div>
-    <div style="overflow-x: auto; width: 100%;" *ngIf="selectedHistory.length > 0">
-      <table border="1" cellpadding="10" cellspacing="0" style="width: 100%; border-collapse: collapse; font-size: 14px;">
-        <tr style="background-color: #e0f2f1; color: #004d40;">
-          <th>التاريخ</th>
-          <th>الصنف / المساعدة</th>
-          <th>الكمية</th>
-          <th>ملاحظات</th>
-        </tr>
-        <tr *ngFor="let h of selectedHistory">
-          <td>{{ h.date }}</td>
-          <td>
-            <span *ngIf="h.kind === 'خدمة'" style="background: #e3f2fd; color: #1565c0; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-left: 5px;">🩺 خدمة</span>
-            <span *ngIf="h.kind !== 'خدمة'" style="background: #e8f5e9; color: #2e7d32; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-left: 5px;">📦 عيني</span>
-            {{ h.itemName }}
-          </td>
-          <td><strong>{{ h.quantity }}</strong></td>
-          <td>{{ h.notes || '—' }}</td>
-        </tr>
+
+    <!-- شبكة بطاقات تفاصيل الملف الاجتماعي -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; margin-bottom: 25px;">
+      
+      <!-- بطاقة الحالة الأسرية والمعيشية -->
+      <div style="background: white; border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.04);">
+        <h3 style="margin: 0 0 15px 0; color: #00695c; border-bottom: 2px solid #b2dfdb; padding-bottom: 8px; font-size: 16px;">
+          🏠 الجانب الأسري والسكن
+        </h3>
+        <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+          <tr style="border-bottom: 1px solid #eee;">
+            <td style="padding: 8px 0; color: #666; width: 130px;">الحالة الاجتماعية:</td>
+            <td style="padding: 8px 0; font-weight: bold; color: #333;">{{ selectedBen.maritalStatus }}</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #eee;">
+            <td style="padding: 8px 0; color: #666;">عدد أفراد الأسرة:</td>
+            <td style="padding: 8px 0; font-weight: bold; color: #333;">{{ selectedBen.familyCount }} أفراد</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #eee;">
+            <td style="padding: 8px 0; color: #666;">طبيعة السكن:</td>
+            <td style="padding: 8px 0; font-weight: bold; color: #333;">{{ selectedBen.housing }}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; color: #666;">العنوان التفصيلي:</td>
+            <td style="padding: 8px 0; font-weight: bold; color: #333;">{{ selectedBen.address }}</td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- بطاقة الحالة الصحية وتوصيات الباحث -->
+      <div style="background: white; border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.04);">
+        <h3 style="margin: 0 0 15px 0; color: #00695c; border-bottom: 2px solid #b2dfdb; padding-bottom: 8px; font-size: 16px;">
+          🩺 الحالة الصحية وتقرير البحث
+        </h3>
+        <div style="margin-bottom: 12px;">
+          <div style="font-size: 13px; color: #666; margin-bottom: 4px;">الأمراض المزمنة والإعاقات:</div>
+          <div style="background: #fafafa; padding: 10px; border-radius: 6px; border: 1px solid #eee; font-weight: bold; color: #333;">
+            {{ selectedBen.healthIssues || 'لا توجد أمراض أو إعاقات مسجلة' }}
+          </div>
+        </div>
+
+        <div>
+          <div style="font-size: 13px; color: #666; margin-bottom: 4px;">ملاحظات وتوصيات الباحث الاجتماعي:</div>
+          <div style="background: #fafafa; padding: 10px; border-radius: 6px; border: 1px solid #eee; color: #444; line-height: 1.5;">
+            {{ selectedBen.researchNotes || 'لم تُدون أي ملاحظات بحثية إضافية' }}
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- السجل الكامل لحركات الصرف والمساعدات -->
+    <div style="background: white; border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.04);">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #004d40; padding-bottom: 10px; margin-bottom: 15px;">
+        <h3 style="margin: 0; color: #004d40; font-size: 17px;">
+          📦 سجل حركات الصرف والمساعدات المسلمة للحالة
+        </h3>
+        <span style="background: #e0f2f1; color: #004d40; padding: 4px 10px; border-radius: 12px; font-weight: bold; font-size: 13px;">
+          إجمالي الحركات: {{ getBeneficiaryDistributions(selectedBen.id).length }}
+        </span>
+      </div>
+
+      <div *ngIf="getBeneficiaryDistributions(selectedBen.id).length === 0" style="text-align: center; padding: 30px; color: #777;">
+        لم يتم تسجيل أي حركات صرف أو مساعدات لهذه الحالة حتى الآن.
+      </div>
+
+      <div *ngIf="getBeneficiaryDistributions(selectedBen.id).length > 0" style="overflow-x: auto; width: 100%;">
+        <table border="1" cellpadding="10" cellspacing="0" style="width: 100%; border-collapse: collapse; font-size: 14px;">
+          <thead>
+            <tr style="background-color: #e0f2f1; color: #004d40;">
+              <th>تاريخ الصرف</th>
+              <th>نوع المساعدة</th>
+              <th>الصنف / الخدمة</th>
+              <th>الكمية</th>
+              <th>ملاحظات الصرف</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let h of getBeneficiaryDistributions(selectedBen.id)">
+              <td style="color: #444; font-weight: bold;">{{ h.date }}</td>
+              <td>
+                <span *ngIf="h.kind === 'خدمة'" style="background: #e3f2fd; color: #1565c0; padding: 3px 8px; border-radius: 10px; font-size: 11px; font-weight: bold;">
+                  🩺 خدمة
+                </span>
+                <span *ngIf="h.kind !== 'خدمة'" style="background: #e8f5e9; color: #2e7d32; padding: 3px 8px; border-radius: 10px; font-size: 11px; font-weight: bold;">
+                  📦 صنف ملموس
+                </span>
+              </td>
+              <td><strong>{{ h.itemName }}</strong></td>
+              <td>
+                <strong style="font-size: 15px; color: #004d40;">{{ h.quantity }}</strong> {{ h.unit }}
+              </td>
+              <td style="color: #555;">{{ h.notes || '—' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+
+  <!-- ========================================== -->
+  <!-- 2. شاشة الإضافة والتعديل المنفصلة (FORM VIEW) -->
+  <!-- ========================================== -->
+  <div *ngIf="viewMode === 'form'" class="form-view-container">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #ddd; padding-bottom: 10px;">
+      <div>
+        <h2 style="color: #004d40; margin: 0;">
+          {{ formMode === 'add' ? '➕ فتح ملف حالة جديد (بحث اجتماعي)' : '🔄 تعديل بيانات ملف المستفيد: ' + currentBen.name }}
+        </h2>
+        <p style="color: #666; margin: 5px 0 0 0; font-size: 14px;">
+          تسجيل البيانات الاجتماعية والصحية الشاملة للحالة لخدمة برنامج إدارة الحالات (CRM).
+        </p>
+      </div>
+
+      <button type="button" (click)="backToList()" 
+              style="background: white; border: 1px solid #ccc; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold; color: #333;">
+        ← إلغاء والعودة للقائمة
+      </button>
+    </div>
+
+    <div style="background-color: #f9f9f9; padding: 25px; border-radius: 8px; border: 1px solid #ddd; box-shadow: 0 2px 6px rgba(0,0,0,0.05);">
+      <form (ngSubmit)="onSubmit()">
+        
+        <!-- القسم الأول: البيانات الأساسية -->
+        <h4 style="color: #00695c; margin: 0 0 15px 0; font-size: 16px; border-bottom: 2px solid #b2dfdb; padding-bottom: 6px;">
+          1. البيانات الشخصية والاتصال
+        </h4>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 25px;">
+          <div>
+            <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">الرقم القومي (14 رقم) *</label>
+            <input type="text" [(ngModel)]="currentBen.nationalId" name="nationalId" placeholder="14 رقم قومي" required 
+                   style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; font-weight: bold;">
+          </div>
+
+          <div>
+            <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">الاسم الرباعي للمستفيد *</label>
+            <input type="text" [(ngModel)]="currentBen.name" name="name" placeholder="الاسم كاملاً" required 
+                   style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; font-weight: bold;">
+          </div>
+
+          <div>
+            <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">رقم الهاتف للتواصل *</label>
+            <input type="text" [(ngModel)]="currentBen.phone" name="phone" placeholder="01xxxxxxxxx" required 
+                   style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box;">
+          </div>
+
+          <div>
+            <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">فئة الاستحقاق</label>
+            <select [(ngModel)]="currentBen.category" name="category" 
+                    style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; font-weight: bold;">
+              <option *ngFor="let c of categories" [value]="c">{{ c }}</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- القسم الثاني: الجانب الأسري والسكن -->
+        <h4 style="color: #00695c; margin: 0 0 15px 0; font-size: 16px; border-bottom: 2px solid #b2dfdb; padding-bottom: 6px;">
+          2. الجانب الأسري ومعيشة السكن
+        </h4>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 25px;">
+          <div>
+            <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">الحالة الاجتماعية</label>
+            <select [(ngModel)]="currentBen.maritalStatus" name="maritalStatus" 
+                    style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box;">
+              <option *ngFor="let m of maritalStatuses" [value]="m">{{ m }}</option>
+            </select>
+          </div>
+
+          <div>
+            <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">عدد أفراد الأسرة</label>
+            <input type="number" [(ngModel)]="currentBen.familyCount" name="familyCount" min="1" 
+                   style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; font-weight: bold;">
+          </div>
+
+          <div>
+            <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">طبيعة السكن</label>
+            <select [(ngModel)]="currentBen.housing" name="housing" 
+                    style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box;">
+              <option *ngFor="let h of housingTypes" [value]="h">{{ h }}</option>
+            </select>
+          </div>
+
+          <div>
+            <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">حالة الملف</label>
+            <select [(ngModel)]="currentBen.status" name="status" 
+                    style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box;">
+              <option value="مستحق فعال">مستحق فعال</option>
+              <option value="مستحق مؤقت">مستحق مؤقت</option>
+              <option value="تحت الدراسة">تحت الدراسة</option>
+              <option value="موقوف">موقوف</option>
+            </select>
+          </div>
+
+          <div style="grid-column: 1 / -1;">
+            <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">العنوان التفصيلي (الشارع، المنطقة، علامة مميزة) *</label>
+            <input type="text" [(ngModel)]="currentBen.address" name="address" placeholder="مثال: الجيزة، العمرانية الغربية، شارع النصر..." required 
+                   style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box;">
+          </div>
+        </div>
+
+        <!-- القسم الثالث: الجانب الصحي وبحث الحالة -->
+        <h4 style="color: #00695c; margin: 0 0 15px 0; font-size: 16px; border-bottom: 2px solid #b2dfdb; padding-bottom: 6px;">
+          3. الجانب الصحي وبحث الحالة وتوصيات الباحث
+        </h4>
+        <div style="display: grid; grid-template-columns: 1fr; gap: 15px; margin-bottom: 25px;">
+          <div>
+            <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">الأمراض المزمنة أو الإعاقات (إن وجدت)</label>
+            <input type="text" [(ngModel)]="currentBen.healthIssues" name="healthIssues" placeholder="مثال: مريض سكر، إعاقة بصرية، يحتاج جلسات علاج طبيعي..." 
+                   style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box;">
+          </div>
+
+          <div>
+            <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">ملاحظات وتوصيات الباحث الاجتماعي</label>
+            <textarea [(ngModel)]="currentBen.researchNotes" name="researchNotes" placeholder="سجل تقرير المعاينة الميدانية: الديون، حالة السقف والمطبخ، الأجهزة المعطلة، ونوع المساعدة الموصى بها..." rows="4" 
+                      style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; resize: vertical; box-sizing: border-box; line-height: 1.5;"></textarea>
+          </div>
+        </div>
+
+        <!-- أزرار الإجراء -->
+        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+          <button type="submit" style="padding: 14px 28px; background-color: #004d40; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: bold; flex: 1;">
+            {{ currentBen.id ? '🔄 تحديث بيانات الملف وحفظ' : '💾 حفظ وفتح ملف الحالة' }}
+          </button>
+          <button type="button" (click)="backToList()" style="padding: 14px 24px; background-color: #757575; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px;">
+            إلغاء والعودة
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- ========================================== -->
+  <!-- 3. شاشة القائمة الرئيسية للمستفيدين (LIST VIEW) -->
+  <!-- ========================================== -->
+  <div *ngIf="viewMode === 'list'" class="list-view-container">
+    
+    <!-- رأس الشاشة وزر الإضافة المنفصل -->
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 20px;">
+      <div>
+        <h2 style="color: #004d40; margin: 0;">👨‍👩‍👧‍👦 إدارة ملفات المستفيدين (نظام CRM)</h2>
+        <p style="color: #666; margin: 5px 0 0 0; font-size: 14px;">
+          قائمة الحالات والأسر المستفيدة. اضغط على أي حالة لعرض ملفها الشامل وسجل حركاتها الكامل.
+        </p>
+      </div>
+
+      <div>
+        <button type="button" (click)="openAdd()" 
+                style="background-color: #004d40; color: white; border: none; padding: 12px 22px; border-radius: 6px; cursor: pointer; font-size: 15px; font-weight: bold; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+          ➕ فتح ملف حالة جديد
+        </button>
+      </div>
+    </div>
+
+    <!-- الفلترة والبحث السريع -->
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;">
+      <!-- تبويب الفئات -->
+      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <button type="button" (click)="selectedCategoryFilter = 'الكل'"
+                [style.background-color]="selectedCategoryFilter === 'الكل' ? '#004d40' : '#e0e0e0'"
+                [style.color]="selectedCategoryFilter === 'الكل' ? 'white' : '#333'"
+                style="padding: 8px 16px; border: none; border-radius: 20px; cursor: pointer; font-weight: bold; font-size: 13px;">
+          الكل ({{ beneficiaries.length }})
+        </button>
+
+        <button *ngFor="let c of categories" type="button" (click)="selectedCategoryFilter = c"
+                [style.background-color]="selectedCategoryFilter === c ? '#004d40' : '#e0e0e0'"
+                [style.color]="selectedCategoryFilter === c ? 'white' : '#333'"
+                style="padding: 8px 14px; border: none; border-radius: 20px; cursor: pointer; font-weight: bold; font-size: 13px;">
+          {{ c }}
+        </button>
+      </div>
+
+      <!-- خانة البحث -->
+      <div style="min-width: 250px; flex: 1; max-width: 380px;">
+        <input type="text" [(ngModel)]="searchTerm" placeholder="🔍 بحث بالاسم، الرقم القومي، الهاتف، العنوان..." 
+               style="width: 100%; padding: 10px 14px; border-radius: 20px; border: 1px solid #ccc; box-sizing: border-box; font-size: 13px;">
+      </div>
+    </div>
+
+    <!-- جدول قائمة المستفيدين النظيف -->
+    <div style="overflow-x: auto; width: 100%; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+      <table border="1" cellpadding="10" cellspacing="0" style="width: 100%; border-collapse: collapse; font-size: 14px; background-color: white;">
+        <thead>
+          <tr style="background-color: #e0f2f1; color: #004d40;">
+            <th>الاسم والملف</th>
+            <th>الرقم القومي / الهاتف</th>
+            <th>الأسرة والمعيشة</th>
+            <th>الحالة الصحية والبحث</th>
+            <th style="text-align: center;">حالة الملف</th>
+            <th style="text-align: center; width: 180px;">إجراءات الحالة</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let b of paginatedBeneficiaries" (click)="openDetail(b)" class="clickable-row">
+            <td>
+              <strong style="color: #004d40; font-size: 15px;">{{ b.name }}</strong><br>
+              <span style="background-color: #ffe0b2; color: #e65100; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold;">
+                {{ b.category }}
+              </span>
+            </td>
+
+            <td>
+              <strong>{{ b.nationalId }}</strong><br>
+              <span style="color: #666; font-size: 12px;">📞 {{ b.phone }}</span>
+            </td>
+
+            <td>
+              {{ b.maritalStatus }} ({{ b.familyCount }} أفراد)<br>
+              <span style="color: #555; font-size: 12px;">🏠 {{ b.housing }}</span>
+            </td>
+
+            <td style="max-width: 220px;">
+              <div style="color: #333; font-size: 13px;">{{ b.healthIssues || '—' }}</div>
+              <div *ngIf="b.researchNotes" style="color: #777; font-size: 11px; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                📝 {{ b.researchNotes }}
+              </div>
+            </td>
+
+            <td style="text-align: center;">
+              <span style="background-color: #e8f5e9; color: #2e7d32; padding: 3px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">
+                {{ b.status || 'مستحق فعال' }}
+              </span>
+            </td>
+
+            <td style="text-align: center;" (click)="$event.stopPropagation()">
+              <button type="button" (click)="openDetail(b)" 
+                      style="background-color: #00695c; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; margin-left: 6px;">
+                👁️ عرض الملف
+              </button>
+              <button type="button" (click)="openEdit(b, $event)" 
+                      style="background-color: #f5f5f5; color: #333; border: 1px solid #ccc; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                ✏️
+              </button>
+            </td>
+          </tr>
+
+          <tr *ngIf="filteredBeneficiaries.length === 0">
+            <td colspan="6" style="text-align: center; padding: 30px; color: #888;">
+              لا توجد حالات مسجلة مطابقة للبحث أو التصفية الحالية.
+            </td>
+          </tr>
+        </tbody>
       </table>
     </div>
+
+    <!-- ترقيم الصفحات -->
+    <app-pagination 
+      [totalItems]="filteredBeneficiaries.length" 
+      [pageSize]="pageSize" 
+      [currentPage]="currentPage" 
+      (pageChange)="currentPage = $event" 
+      (pageSizeChange)="pageSize = $event">
+    </app-pagination>
+
   </div>
+
 </div>

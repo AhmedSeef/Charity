@@ -1,6 +1,8 @@
-import { Component, ChangeDetectorRef, OnInit } from '@angular/core';
+import { Component, ChangeDetectorRef, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { Api } from '../api';
 import { PaginationComponent } from '../pagination/pagination';
 
@@ -11,24 +13,30 @@ import { PaginationComponent } from '../pagination/pagination';
   templateUrl: './beneficiaries.html',
   styleUrls: ['./beneficiaries.css']
 })
-export class BeneficiariesComponent implements OnInit {
+export class BeneficiariesComponent implements OnInit, OnDestroy {
+  // Navigation / Views: 'list' | 'detail' | 'form'
+  viewMode: 'list' | 'detail' | 'form' = 'list';
+  formMode: 'add' | 'edit' = 'add';
+  selectedBen: any = null;
+
   beneficiaries: any[] = [];
   distributions: any[] = [];
   inventory: any[] = [];
-  
+
+  // Search & Filtering
+  searchTerm: string = '';
+  selectedCategoryFilter: string = 'الكل';
+
+  // Pagination
   currentPage: number = 1;
   pageSize: number = 5;
 
-  get paginatedBeneficiaries(): any[] {
-    const start = (this.currentPage - 1) * this.pageSize;
-    return this.beneficiaries.slice(start, start + this.pageSize);
-  }
+  // Alerts
+  successMessage: string = '';
+  errorMessage: string = '';
 
-  historyModalOpen = false;
-  selectedHistory: any[] = [];
-  selectedBenName = '';
-  
-  newBen: any = { 
+  currentBen: any = { 
+    id: null,
     nationalId: '', 
     name: '', 
     phone: '',
@@ -46,68 +54,177 @@ export class BeneficiariesComponent implements OnInit {
   maritalStatuses = ['متزوج', 'أرمل', 'مطلق', 'أعزب'];
   housingTypes = ['إيجار جديد', 'إيجار قديم', 'ملك', 'سكن مشترك', 'سكن متهالك/يحتاج ترميم'];
 
-  constructor(private api: Api, private cdr: ChangeDetectorRef) {}
+  private querySub?: Subscription;
+
+  constructor(
+    private api: Api, 
+    private cdr: ChangeDetectorRef,
+    private route: ActivatedRoute,
+    private router: Router
+  ) {}
 
   ngOnInit(): void {
     this.loadData();
   }
 
-  loadData() {
-    this.api.getBeneficiaries().subscribe((data: any) => { this.beneficiaries = data; this.cdr.detectChanges(); });
-    this.api.getDistributions().subscribe((data: any) => { this.distributions = data; this.cdr.detectChanges(); });
-    this.api.getInventory().subscribe((data: any) => { this.inventory = data; this.cdr.detectChanges(); });
-  }
-
-  selectBeneficiary(b: any) {
-    this.newBen = { ...b };
-    this.cdr.detectChanges();
-    // Scroll to top for better UX
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-
-  resetForm() {
-    this.newBen = { 
-      nationalId: '', name: '', phone: '', category: 'أرامل وأيتام', maritalStatus: 'متزوج',
-      familyCount: 1, address: '', housing: 'إيجار جديد', healthIssues: '', researchNotes: '', status: 'مستحق فعال' 
-    };
-    this.cdr.detectChanges();
-  }
-
-  onSubmit() {
-    if (!this.newBen.name || !this.newBen.nationalId) return;
-    
-    if (this.newBen.id) {
-      this.api.updateBeneficiary(this.newBen).subscribe(() => {
-        this.loadData();
-        this.resetForm();
-      });
-    } else {
-      this.api.addBeneficiary(this.newBen).subscribe(() => {
-        this.loadData();
-        this.resetForm();
-      });
+  ngOnDestroy(): void {
+    if (this.querySub) {
+      this.querySub.unsubscribe();
     }
   }
 
-  openHistory(b: any, event: Event) {
-    event.stopPropagation();
-    this.selectedBenName = b.name;
-    this.selectedHistory = this.distributions
-      .filter(dist => String(dist.beneficiaryId) === String(b.id))
+  loadData() {
+    this.api.getBeneficiaries().subscribe((data: any[]) => { 
+      this.beneficiaries = data; 
+      this.initRouteSync();
+      this.cdr.detectChanges(); 
+    });
+    this.api.getDistributions().subscribe((data: any[]) => { 
+      this.distributions = data; 
+      this.cdr.detectChanges(); 
+    });
+    this.api.getInventory().subscribe((data: any[]) => { 
+      this.inventory = data; 
+      this.cdr.detectChanges(); 
+    });
+  }
+
+  initRouteSync() {
+    if (this.querySub) return;
+    this.querySub = this.route.queryParams.subscribe(params => {
+      const mode = params['mode'];
+      const id = params['id'];
+
+      if (mode === 'detail' && id) {
+        const found = this.beneficiaries.find(b => String(b.id) === String(id));
+        if (found) {
+          this.selectedBen = found;
+          this.viewMode = 'detail';
+        } else {
+          this.viewMode = 'list';
+        }
+      } else if (mode === 'edit' && id) {
+        const found = this.beneficiaries.find(b => String(b.id) === String(id));
+        if (found) {
+          this.currentBen = { ...found };
+          this.formMode = 'edit';
+          this.viewMode = 'form';
+        } else {
+          this.viewMode = 'list';
+        }
+      } else if (mode === 'add') {
+        this.resetForm();
+        this.formMode = 'add';
+        this.viewMode = 'form';
+      } else {
+        this.viewMode = 'list';
+        this.selectedBen = null;
+      }
+      this.cdr.detectChanges();
+    });
+  }
+
+  // View switchers
+  openDetail(b: any) {
+    this.router.navigate([], { relativeTo: this.route, queryParams: { mode: 'detail', id: b.id } });
+  }
+
+  openAdd() {
+    this.router.navigate([], { relativeTo: this.route, queryParams: { mode: 'add' } });
+  }
+
+  openEdit(b: any, event?: Event) {
+    if (event) event.stopPropagation();
+    this.router.navigate([], { relativeTo: this.route, queryParams: { mode: 'edit', id: b.id } });
+  }
+
+  backToList() {
+    this.router.navigate([], { relativeTo: this.route, queryParams: {} });
+  }
+
+  // Distribution History for selected beneficiary
+  getBeneficiaryDistributions(benId: string): any[] {
+    return this.distributions
+      .filter(dist => String(dist.beneficiaryId) === String(benId))
       .map(dist => {
         const item = this.inventory.find(i => String(i.id) === String(dist.inventoryId));
         return {
           ...dist,
           kind: item ? (item.kind || 'صنف ملموس') : 'صنف ملموس',
-          itemName: item ? `${item.itemName} (${item.unit})` : 'غير معروف'
+          itemName: item ? item.itemName : 'مساعدة عينية',
+          unit: item ? (item.unit || '') : ''
         };
       });
-    this.historyModalOpen = true;
-    this.cdr.detectChanges();
   }
 
-  closeHistory() {
-    this.historyModalOpen = false;
-    this.cdr.detectChanges();
+  // Filter & Search
+  get filteredBeneficiaries(): any[] {
+    return this.beneficiaries.filter(b => {
+      const matchCat = this.selectedCategoryFilter === 'الكل' || b.category === this.selectedCategoryFilter;
+      const term = this.searchTerm.trim().toLowerCase();
+      const matchSearch = !term ||
+        (b.name && b.name.toLowerCase().includes(term)) ||
+        (b.nationalId && b.nationalId.includes(term)) ||
+        (b.phone && b.phone.includes(term)) ||
+        (b.address && b.address.toLowerCase().includes(term));
+      return matchCat && matchSearch;
+    });
+  }
+
+  get paginatedBeneficiaries(): any[] {
+    const start = (this.currentPage - 1) * this.pageSize;
+    return this.filteredBeneficiaries.slice(start, start + this.pageSize);
+  }
+
+  resetForm() {
+    this.currentBen = { 
+      id: null,
+      nationalId: '', 
+      name: '', 
+      phone: '', 
+      category: 'أرامل وأيتام', 
+      maritalStatus: 'متزوج',
+      familyCount: 1, 
+      address: '', 
+      housing: 'إيجار جديد', 
+      healthIssues: '', 
+      researchNotes: '', 
+      status: 'مستحق فعال' 
+    };
+  }
+
+  onSubmit() {
+    if (!this.currentBen.name || !this.currentBen.nationalId) {
+      this.errorMessage = 'يرجى إدخال اسم المستفيد والرقم القومي بشكل صحيح.';
+      return;
+    }
+
+    this.errorMessage = '';
+
+    if (this.currentBen.id) {
+      this.api.updateBeneficiary(this.currentBen).subscribe(() => {
+        this.successMessage = `✅ تم تحديث بيانات المستفيد (${this.currentBen.name}) بنجاح!`;
+        this.api.getBeneficiaries().subscribe((data: any[]) => {
+          this.beneficiaries = data;
+          this.openDetail(this.currentBen);
+          this.cdr.detectChanges();
+        });
+        setTimeout(() => { this.successMessage = ''; this.cdr.detectChanges(); }, 4000);
+      });
+    } else {
+      this.api.addBeneficiary(this.currentBen).subscribe((added: any) => {
+        this.successMessage = `✅ تم تسجيل وفتح ملف الحالة الجديد (${added.name}) بنجاح!`;
+        this.api.getBeneficiaries().subscribe((data: any[]) => {
+          this.beneficiaries = data;
+          this.openDetail(added);
+          this.cdr.detectChanges();
+        });
+        setTimeout(() => { this.successMessage = ''; this.cdr.detectChanges(); }, 4000);
+      });
+    }
+  }
+
+  printProfile() {
+    window.print();
   }
 }
