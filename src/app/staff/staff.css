@@ -6,3 +6,38 @@
 .clickable-row:hover {
   background-color: #e0f2f1 !important;
 }
+
+.profile-view-container {
+  animation: fadeIn 0.2s ease;
+}
+
+.form-view-container {
+  animation: fadeIn 0.2s ease;
+}
+
+.list-view-container {
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media print {
+  /* Hide sidebar and navigation buttons when printing */
+  button, nav, .nav-links, .pagination-container {
+    display: none !important;
+  }
+
+  body, .app-container, .main-content {
+    background: white !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .profile-view-container {
+    border: none !important;
+    box-shadow: none !important;
+  }
+}

@@ -184,6 +184,11 @@ export class Api {
     }
     return of(data); 
   }
+  deleteStaff(id: string): Observable<any> { 
+    this.db.staff = this.db.staff.filter((x: any) => String(x.id) !== String(id)); 
+    this.save(); 
+    return of(true); 
+  }
 }
 `;
 
