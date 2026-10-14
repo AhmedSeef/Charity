@@ -2,11 +2,12 @@ import { Component, ChangeDetectorRef, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Api } from '../api';
+import { PaginationComponent } from '../pagination/pagination';
 
 @Component({
   selector: 'app-items-catalog',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PaginationComponent],
   templateUrl: './items-catalog.html',
   styleUrls: ['./items-catalog.css']
 })
@@ -15,6 +16,9 @@ export class ItemsCatalogComponent implements OnInit {
   selectedFilter: 'الكل' | 'صنف ملموس' | 'خدمة' = 'الكل';
   searchTerm: string = '';
   successMessage: string = '';
+
+  currentPage: number = 1;
+  pageSize: number = 5;
 
   itemForm: any = {
     id: null,
@@ -88,6 +92,11 @@ export class ItemsCatalogComponent implements OnInit {
         (item.unit && item.unit.toLowerCase().includes(term));
       return matchFilter && matchSearch;
     });
+  }
+
+  get paginatedItems(): any[] {
+    const start = (this.currentPage - 1) * this.pageSize;
+    return this.filteredItems.slice(start, start + this.pageSize);
   }
 
   selectItem(item: any) {

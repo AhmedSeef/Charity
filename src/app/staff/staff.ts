@@ -2,16 +2,25 @@ import { Component, ChangeDetectorRef, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Api } from '../api';
+import { PaginationComponent } from '../pagination/pagination';
 
 @Component({
   selector: 'app-staff',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PaginationComponent],
   templateUrl: './staff.html',
   styleUrls: ['./staff.css']
 })
 export class StaffComponent implements OnInit {
   staffList: any[] = [];
+  currentPage: number = 1;
+  pageSize: number = 5;
+
+  get paginatedStaff(): any[] {
+    const start = (this.currentPage - 1) * this.pageSize;
+    return this.staffList.slice(start, start + this.pageSize);
+  }
+
   newStaff: any = { nationalId: '', name: '', phone: '', type: 'متطوع', role: 'باحث اجتماعي', salary: null, joinDate: new Date().toISOString().split('T')[0] };
 
   types = ['متطوع', 'موظف براتب'];

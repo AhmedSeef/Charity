@@ -2,11 +2,12 @@ import { Component, ChangeDetectorRef, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Api } from '../api';
+import { PaginationComponent } from '../pagination/pagination';
 
 @Component({
   selector: 'app-donations',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PaginationComponent],
   templateUrl: './donations.html',
   styleUrls: ['./donations.css']
 })
@@ -16,6 +17,9 @@ export class DonationsComponent implements OnInit {
   selectedFilter: 'الكل' | 'نقدي' | 'عيني' | 'خدمة' = 'الكل';
   searchTerm: string = '';
   successMessage: string = '';
+
+  currentPage: number = 1;
+  pageSize: number = 5;
 
   newDonation: any = {
     donorName: '',
@@ -151,6 +155,11 @@ export class DonationsComponent implements OnInit {
         (d.itemName && d.itemName.toLowerCase().includes(term));
       return matchFilter && matchSearch;
     });
+  }
+
+  get paginatedDonations(): any[] {
+    const start = (this.currentPage - 1) * this.pageSize;
+    return this.filteredDonations.slice(start, start + this.pageSize);
   }
 
   onSubmit() {

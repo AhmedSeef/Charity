@@ -90,7 +90,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let item of filteredTangibleItems" class="clickable-row">
+        <tr *ngFor="let item of paginatedTangibleItems" class="clickable-row">
           <td>
             <code style="background: #eceff1; padding: 2px 6px; border-radius: 4px; font-weight: bold; color: #37474f;">
               {{ item.code || '—' }}
@@ -143,6 +143,14 @@
       </tbody>
     </table>
   </div>
+
+  <app-pagination 
+    [totalItems]="filteredTangibleItems.length" 
+    [pageSize]="pageSize" 
+    [currentPage]="currentPage" 
+    (pageChange)="currentPage = $event" 
+    (pageSizeChange)="pageSize = $event">
+  </app-pagination>
 
   <!-- نافذة تعديل الرصيد والجرد المخزني المنبثقة -->
   <div *ngIf="adjustModalOpen" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 15px; box-sizing: border-box;">

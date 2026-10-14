@@ -46,7 +46,7 @@
       <th>النوع والراتب</th>
       <th>تاريخ الانضمام</th>
     </tr>
-    <tr *ngFor="let s of staffList" (click)="selectStaff(s)" class="clickable-row" [ngStyle]="{'background-color': newStaff.id === s.id ? '#b2dfdb' : 'transparent'}">
+    <tr *ngFor="let s of paginatedStaff" (click)="selectStaff(s)" class="clickable-row" [ngStyle]="{'background-color': newStaff.id === s.id ? '#b2dfdb' : 'transparent'}">
       <td>
         <strong>{{ s.name }}</strong><br>
         <span style="color: #666; font-size: 12px;">{{ s.nationalId }}</span>
@@ -62,4 +62,12 @@
       <td>{{ s.joinDate }}</td>
     </tr>
   </table></div>
+
+  <app-pagination 
+    [totalItems]="staffList.length" 
+    [pageSize]="pageSize" 
+    [currentPage]="currentPage" 
+    (pageChange)="currentPage = $event" 
+    (pageSizeChange)="pageSize = $event">
+  </app-pagination>
 </div>

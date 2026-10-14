@@ -257,7 +257,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let d of filteredDonations">
+        <tr *ngFor="let d of paginatedDonations">
           <td>
             <strong style="font-size: 15px; color: #004d40;">{{ d.donorName }}</strong>
             <div *ngIf="d.donorPhone" style="color: #666; font-size: 12px; margin-top: 2px;">📞 {{ d.donorPhone }}</div>
@@ -322,4 +322,12 @@
       </tbody>
     </table>
   </div>
+
+  <app-pagination 
+    [totalItems]="filteredDonations.length" 
+    [pageSize]="pageSize" 
+    [currentPage]="currentPage" 
+    (pageChange)="currentPage = $event" 
+    (pageSizeChange)="pageSize = $event">
+  </app-pagination>
 </div>

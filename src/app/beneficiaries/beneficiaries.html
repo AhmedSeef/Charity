@@ -58,7 +58,7 @@
       <th>الحالة الصحية</th>
       <th>ملخص بحث الحالة</th><th>سجل الصرف</th>
     </tr>
-    <tr *ngFor="let b of beneficiaries" 
+    <tr *ngFor="let b of paginatedBeneficiaries" 
         (click)="selectBeneficiary(b)" 
         class="clickable-row" 
         [ngStyle]="{'background-color': newBen.id === b.id ? '#b2dfdb' : 'transparent'}">
@@ -78,6 +78,14 @@
       <td style="max-width: 250px; color: #555;">{{ b.researchNotes || 'لم تدون ملاحظات' }}</td><td style="text-align: center;"><button (click)="openHistory(b, $event)" style="background: none; border: none; font-size: 24px; cursor: pointer;" title="سجل الصرف">👁️</button></td>
     </tr>
   </table></div>
+
+  <app-pagination 
+    [totalItems]="beneficiaries.length" 
+    [pageSize]="pageSize" 
+    [currentPage]="currentPage" 
+    (pageChange)="currentPage = $event" 
+    (pageSizeChange)="pageSize = $event">
+  </app-pagination>
 </div>
 
 <div *ngIf="historyModalOpen" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 15px; box-sizing: border-box;">

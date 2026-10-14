@@ -118,7 +118,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let d of distributions">
+        <tr *ngFor="let d of paginatedDistributions">
           <td>
             <strong style="color: #004d40; font-size: 15px;">{{ getBenName(d.beneficiaryId) }}</strong>
           </td>
@@ -154,4 +154,12 @@
       </tbody>
     </table>
   </div>
+
+  <app-pagination 
+    [totalItems]="distributions.length" 
+    [pageSize]="pageSize" 
+    [currentPage]="currentPage" 
+    (pageChange)="currentPage = $event" 
+    (pageSizeChange)="pageSize = $event">
+  </app-pagination>
 </div>

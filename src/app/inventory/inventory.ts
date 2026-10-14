@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { Api } from '../api';
+import { PaginationComponent } from '../pagination/pagination';
 
 @Component({
   selector: 'app-inventory',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, PaginationComponent],
   templateUrl: './inventory.html',
   styleUrls: ['./inventory.css']
 })
@@ -16,6 +17,9 @@ export class InventoryComponent implements OnInit {
   selectedTypeFilter: string = 'الكل';
   searchTerm: string = '';
   successMessage: string = '';
+
+  currentPage: number = 1;
+  pageSize: number = 5;
 
   // Stock Adjustment Modal
   adjustModalOpen: boolean = false;
@@ -65,6 +69,11 @@ export class InventoryComponent implements OnInit {
         (item.type && item.type.toLowerCase().includes(term));
       return matchType && matchSearch;
     });
+  }
+
+  get paginatedTangibleItems(): any[] {
+    const start = (this.currentPage - 1) * this.pageSize;
+    return this.filteredTangibleItems.slice(start, start + this.pageSize);
   }
 
   openAdjustModal(item: any, event: Event) {
