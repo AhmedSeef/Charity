@@ -89,6 +89,7 @@ export class BeneficiariesComponent implements OnInit {
         const item = this.inventory.find(i => String(i.id) === String(dist.inventoryId));
         return {
           ...dist,
+          kind: item ? (item.kind || 'صنف ملموس') : 'صنف ملموس',
           itemName: item ? `${item.itemName} (${item.unit})` : 'غير معروف'
         };
       });

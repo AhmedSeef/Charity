@@ -1,36 +1,321 @@
 <div dir="rtl" style="text-align: right;">
-  <h2>إدارة التبرعات</h2>
+  <div style="margin-bottom: 20px;">
+    <h2 style="color: #004d40; margin: 0;">💰 إدارة التبرعات (نقدية وعينية)</h2>
+    <p style="color: #666; margin: 5px 0 0 0; font-size: 14px;">
+      تسجيل استلام التبرعات النقدية في الخزينة، والتبرعات العينية الملموسة التي تزيد رصيد المخزن تلقائياً، ورعاية الخدمات.
+    </p>
+  </div>
 
-  <div style="background-color: #f9f9f9; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #ddd;">
-    <h3>استلام تبرع جديد (نقدي أو عيني)</h3>
-    <form (ngSubmit)="onSubmit()" style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; flex-wrap: wrap;">
-      
-      <input type="text" [(ngModel)]="newDonation.donorName" name="donorName" placeholder="اسم المتبرع (أو فاعل خير)" required style="padding: 8px; width: 200px;">
-      
-      <input type="number" [(ngModel)]="newDonation.amount" name="amount" placeholder="المبلغ أو القيمة التقديرية" required style="padding: 8px; width: 180px;">
-      
-      <select [(ngModel)]="newDonation.type" name="type" required style="padding: 8px;">
-        <option *ngFor="let t of types" [value]="t">{{ t }}</option>
-      </select>
+  <!-- ملخص إحصائي للتبرعات -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 20px;">
+    <div style="background-color: #fff8e1; border: 1px solid #ffe082; border-radius: 8px; padding: 15px; text-align: center;">
+      <div style="font-size: 13px; color: #f57f17; font-weight: bold;">💵 إجمالي النقدية بالخزينة</div>
+      <div style="font-size: 26px; font-weight: bold; color: #e65100; margin-top: 5px;">{{ totalCash | number:'1.0-0' }} ج.م</div>
+      <div style="font-size: 11px; color: #777; margin-top: 4px;">زكاة وصدقات وكفالات نقدية</div>
+    </div>
 
-      <input type="date" [(ngModel)]="newDonation.date" name="date" required style="padding: 8px;">
+    <div style="background-color: #e8f5e9; border: 1px solid #c8e6c9; border-radius: 8px; padding: 15px; text-align: center;">
+      <div style="font-size: 13px; color: #2e7d32; font-weight: bold;">📦 حركات التبرع العيني</div>
+      <div style="font-size: 26px; font-weight: bold; color: #1b5e20; margin-top: 5px;">{{ inKindCount }}</div>
+      <div style="font-size: 11px; color: #777; margin-top: 4px;">أصناف غذائية وبطاطين وأدوية زادت بالمخزن</div>
+    </div>
 
-      <button type="submit" style="padding: 8px 15px; background-color: #004d40; color: white; border: none; cursor: pointer;">إضافة التبرع</button>
+    <div style="background-color: #e3f2fd; border: 1px solid #bbdefb; border-radius: 8px; padding: 15px; text-align: center;">
+      <div style="font-size: 13px; color: #1565c0; font-weight: bold;">🩺 رعاية وتبرع بالخدمات</div>
+      <div style="font-size: 26px; font-weight: bold; color: #0d47a1; margin-top: 5px;">{{ serviceCount }}</div>
+      <div style="font-size: 11px; color: #777; margin-top: 4px;">كشوفات طبية وعمليات جراحية وتجهيز</div>
+    </div>
+  </div>
+
+  <!-- تنبيه نجاح الإضافة -->
+  <div *ngIf="successMessage" style="background-color: #e8f5e9; border: 2px solid #43a047; color: #1b5e20; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-weight: bold; font-size: 15px; box-shadow: 0 2px 6px rgba(0,0,0,0.1);">
+    {{ successMessage }}
+  </div>
+
+  <!-- فورم استلام تبرع جديد -->
+  <div style="background-color: #f9f9f9; padding: 20px; border-radius: 8px; margin-bottom: 25px; border: 1px solid #ddd; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+    <h3 style="margin-top: 0; color: #004d40; border-bottom: 2px solid #004d40; padding-bottom: 10px;">
+      📥 استلام تبرع جديد (نقدي أو عيني للمخزن)
+    </h3>
+
+    <form (ngSubmit)="onSubmit()">
+      <!-- نوع التبرع -->
+      <div style="margin-bottom: 15px;">
+        <label style="font-weight: bold; color: #333; display: block; margin-bottom: 8px;">نوع التبرع الوارد:</label>
+        <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; background: white; padding: 8px 15px; border: 2px solid #f57f17; border-radius: 6px;"
+                 [ngStyle]="{'background-color': newDonation.donationKind === 'نقدي' ? '#fff8e1' : 'white'}">
+            <input type="radio" name="donationKind" [(ngModel)]="newDonation.donationKind" value="نقدي" (change)="onKindChange()">
+            <strong>💵 تبرع نقدي (أموال بالخزينة)</strong>
+          </label>
+
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; background: white; padding: 8px 15px; border: 2px solid #2e7d32; border-radius: 6px;"
+                 [ngStyle]="{'background-color': newDonation.donationKind === 'عيني' ? '#e8f5e9' : 'white'}">
+            <input type="radio" name="donationKind" [(ngModel)]="newDonation.donationKind" value="عيني" (change)="onKindChange()">
+            <strong>📦 تبرع عيني (أصناف ملموسة تزيد المخزون)</strong>
+          </label>
+
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; background: white; padding: 8px 15px; border: 2px solid #1565c0; border-radius: 6px;"
+                 [ngStyle]="{'background-color': newDonation.donationKind === 'خدمة' ? '#e3f2fd' : 'white'}">
+            <input type="radio" name="donationKind" [(ngModel)]="newDonation.donationKind" value="خدمة" (change)="onKindChange()">
+            <strong>🩺 تبرع / رعاية خدمة (كشوفات، عمليات، ترميم...)</strong>
+          </label>
+        </div>
+      </div>
+
+      <!-- إشعار تأثير التبرع التلقائي -->
+      <div *ngIf="newDonation.donationKind === 'عيني'" style="background-color: #e8f5e9; border: 1px solid #81c784; border-right: 5px solid #2e7d32; padding: 12px 15px; margin-bottom: 15px; border-radius: 4px; font-size: 13px; color: #1b5e20;">
+        🟢 <strong>تأثير مباشر على المخزون:</strong> بمجرد الحفظ، سيزيد رصيد صنف 
+        <strong>({{ getSelectedItemName() }})</strong> من 
+        <strong>{{ getSelectedItemStock() }}</strong> إلى 
+        <strong>{{ getSelectedItemStock() + (newDonation.quantity || 0) }} {{ newDonation.unit }}</strong> تلقائياً!
+      </div>
+
+      <div *ngIf="newDonation.donationKind === 'نقدي'" style="background-color: #fffde7; border: 1px solid #fff59d; border-right: 5px solid #fbc02d; padding: 12px 15px; margin-bottom: 15px; border-radius: 4px; font-size: 13px; color: #f57f17;">
+        💵 <strong>إيداع بالخزينة:</strong> سيتم إضافة المبلغ ({{ newDonation.amount || 0 }} ج.م) فوراً إلى رصيد الجمعية النقدي.
+      </div>
+
+      <!-- بيانات المتبرع الأساسية -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px; margin-bottom: 15px;">
+        <div>
+          <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">اسم المتبرع (أو فاعل خير) *</label>
+          <input type="text" [(ngModel)]="newDonation.donorName" name="donorName" placeholder="مثال: فاعل خير، أ. محمد أحمد..." required 
+                 style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box;">
+        </div>
+
+        <div>
+          <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">رقم هاتف المتبرع (اختياري)</label>
+          <input type="text" [(ngModel)]="newDonation.donorPhone" name="donorPhone" placeholder="01xxxxxxxxx" 
+                 style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box;">
+        </div>
+
+        <div>
+          <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">تاريخ الاستلام *</label>
+          <input type="date" [(ngModel)]="newDonation.date" name="date" required 
+                 style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box;">
+        </div>
+      </div>
+
+      <!-- الحقول المخصصة للتبرع النقدي -->
+      <div *ngIf="newDonation.donationKind === 'نقدي'" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px; margin-bottom: 15px;">
+        <div>
+          <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">المبلغ النقدي (ج.م) *</label>
+          <input type="number" [(ngModel)]="newDonation.amount" name="amount" placeholder="مثال: 100 أو 5000" min="1" required 
+                 style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; font-weight: bold; font-size: 16px;">
+        </div>
+
+        <div>
+          <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">بند التبرع</label>
+          <select [(ngModel)]="newDonation.cashCategory" name="cashCategory" style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box;">
+            <option *ngFor="let cat of cashCategories" [value]="cat">{{ cat }}</option>
+          </select>
+        </div>
+
+        <div>
+          <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">طريقة السداد / التحصيل</label>
+          <select [(ngModel)]="newDonation.paymentMethod" name="paymentMethod" style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box;">
+            <option *ngFor="let pm of paymentMethods" [value]="pm">{{ pm }}</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- الحقول المخصصة للتبرع العيني (أصناف المخزن) -->
+      <div *ngIf="newDonation.donationKind === 'عيني'" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px; margin-bottom: 15px;">
+        <div>
+          <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">اختر الصنف المتبرع به للمخزن *</label>
+          <select [(ngModel)]="newDonation.inventoryId" name="inventoryId" (change)="onItemSelect()" required 
+                  style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; font-weight: bold;">
+            <option value="" disabled>-- اختر الصنف --</option>
+            <option *ngFor="let item of tangibleItems" [value]="item.id">
+              {{ item.itemName }} (المتوفر حالياً: {{ item.quantity }} {{ item.unit }})
+            </option>
+          </select>
+        </div>
+
+        <div>
+          <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">الكمية المتبرع بها *</label>
+          <div style="display: flex; gap: 8px;">
+            <input type="number" [(ngModel)]="newDonation.quantity" name="quantity" min="1" placeholder="مثال: 20" required 
+                   style="flex: 1; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; font-weight: bold; font-size: 16px;">
+            <span style="background: #e0f2f1; color: #004d40; padding: 10px 14px; border-radius: 5px; font-weight: bold; display: flex; align-items: center;">
+              {{ newDonation.unit || 'وحدة' }}
+            </span>
+          </div>
+        </div>
+
+        <div>
+          <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">القيمة التقديرية بالجنيه (اختياري)</label>
+          <input type="number" [(ngModel)]="newDonation.estimatedValue" name="estimatedValue" placeholder="مثال: 600" 
+                 style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box;">
+        </div>
+      </div>
+
+      <!-- الحقول المخصصة للتبرع بالخدمات -->
+      <div *ngIf="newDonation.donationKind === 'خدمة'" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px; margin-bottom: 15px;">
+        <div>
+          <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">اختر الخدمة المتبرع برعايتها *</label>
+          <select [(ngModel)]="newDonation.inventoryId" name="inventoryId" (change)="onItemSelect()" required 
+                  style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; font-weight: bold;">
+            <option value="" disabled>-- اختر الخدمة --</option>
+            <option *ngFor="let s of serviceItems" [value]="s.id">
+              {{ s.itemName }} (الوحدة: {{ s.unit }})
+            </option>
+          </select>
+        </div>
+
+        <div>
+          <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">العدد / الحالات المكفولة *</label>
+          <div style="display: flex; gap: 8px;">
+            <input type="number" [(ngModel)]="newDonation.quantity" name="quantity" min="1" placeholder="مثال: 5" required 
+                   style="flex: 1; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; font-weight: bold; font-size: 16px;">
+            <span style="background: #e3f2fd; color: #1565c0; padding: 10px 14px; border-radius: 5px; font-weight: bold; display: flex; align-items: center;">
+              {{ newDonation.unit || 'حالة' }}
+            </span>
+          </div>
+        </div>
+
+        <div>
+          <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">التكلفة التقديرية للتبرع (اختياري)</label>
+          <input type="number" [(ngModel)]="newDonation.estimatedValue" name="estimatedValue" placeholder="0" 
+                 style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box;">
+        </div>
+      </div>
+
+      <!-- ملاحظات -->
+      <div style="margin-bottom: 15px;">
+        <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">ملاحظات إضافية (اختياري)</label>
+        <input type="text" [(ngModel)]="newDonation.notes" name="notes" placeholder="ملاحظات حول التبرع أو وصية المتبرع..." 
+               style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box;">
+      </div>
+
+      <!-- أزرار الحفظ -->
+      <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px;">
+        <button type="submit" style="padding: 12px 25px; background-color: #004d40; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 15px; font-weight: bold; flex: 1;">
+          {{ newDonation.donationKind === 'عيني' ? '📦 تسجيل التبرع العيني وزيادة رصيد المخزن' : '💾 استلام وحفظ التبرع' }}
+        </button>
+        <button type="button" (click)="resetForm()" style="padding: 12px 20px; background-color: #757575; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 15px;">
+          مسح الحقول
+        </button>
+      </div>
     </form>
   </div>
 
-  <div style="overflow-x: auto; width: 100%; border-radius: 8px;"><table border="1" cellpadding="10" cellspacing="0" style="width: 100%; border-collapse: collapse; text-align: right;">
-    <tr style="background-color: #e0f2f1; color: #004d40;">
-      <th>اسم المتبرع</th>
-      <th>المبلغ / القيمة التقديرية</th>
-      <th>نوع التبرع</th>
-      <th>التاريخ</th>
-    </tr>
-    <tr *ngFor="let d of donations">
-      <td><strong>{{ d.donorName }}</strong></td>
-      <td>{{ d.amount }}</td>
-      <td>{{ d.type }}</td>
-      <td>{{ d.date }}</td>
-    </tr>
-  </table></div>
+  <!-- الفلترة والبحث في جدول التبرعات -->
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;">
+    <!-- أزرار التبويب -->
+    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+      <button type="button" (click)="selectedFilter = 'الكل'"
+              [style.background-color]="selectedFilter === 'الكل' ? '#004d40' : '#e0e0e0'"
+              [style.color]="selectedFilter === 'الكل' ? 'white' : '#333'"
+              style="padding: 8px 16px; border: none; border-radius: 20px; cursor: pointer; font-weight: bold; font-size: 13px;">
+        الكل ({{ donations.length }})
+      </button>
+
+      <button type="button" (click)="selectedFilter = 'نقدي'"
+              [style.background-color]="selectedFilter === 'نقدي' ? '#f57f17' : '#e0e0e0'"
+              [style.color]="selectedFilter === 'نقدي' ? 'white' : '#333'"
+              style="padding: 8px 16px; border: none; border-radius: 20px; cursor: pointer; font-weight: bold; font-size: 13px;">
+        💵 تبرعات نقدية
+      </button>
+
+      <button type="button" (click)="selectedFilter = 'عيني'"
+              [style.background-color]="selectedFilter === 'عيني' ? '#2e7d32' : '#e0e0e0'"
+              [style.color]="selectedFilter === 'عيني' ? 'white' : '#333'"
+              style="padding: 8px 16px; border: none; border-radius: 20px; cursor: pointer; font-weight: bold; font-size: 13px;">
+        📦 تبرعات عينية للمخزن ({{ inKindCount }})
+      </button>
+
+      <button type="button" (click)="selectedFilter = 'خدمة'"
+              [style.background-color]="selectedFilter === 'خدمة' ? '#1565c0' : '#e0e0e0'"
+              [style.color]="selectedFilter === 'خدمة' ? 'white' : '#333'"
+              style="padding: 8px 16px; border: none; border-radius: 20px; cursor: pointer; font-weight: bold; font-size: 13px;">
+        🩺 تبرع بخدمات ({{ serviceCount }})
+      </button>
+    </div>
+
+    <!-- خانة البحث -->
+    <div style="min-width: 250px; flex: 1; max-width: 350px;">
+      <input type="text" [(ngModel)]="searchTerm" placeholder="🔍 بحث باسم المتبرع أو الصنف..." 
+             style="width: 100%; padding: 8px 12px; border-radius: 20px; border: 1px solid #ccc; box-sizing: border-box; font-size: 13px;">
+    </div>
+  </div>
+
+  <!-- جدول التبرعات -->
+  <div style="overflow-x: auto; width: 100%; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+    <table border="1" cellpadding="10" cellspacing="0" style="width: 100%; border-collapse: collapse; text-align: right; background-color: white; font-size: 14px;">
+      <thead>
+        <tr style="background-color: #e0f2f1; color: #004d40;">
+          <th>المتبرع</th>
+          <th>نوع التبرع</th>
+          <th>التفاصيل / القيمة والمخزون</th>
+          <th>بند التبرع</th>
+          <th>التاريخ</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let d of filteredDonations">
+          <td>
+            <strong style="font-size: 15px; color: #004d40;">{{ d.donorName }}</strong>
+            <div *ngIf="d.donorPhone" style="color: #666; font-size: 12px; margin-top: 2px;">📞 {{ d.donorPhone }}</div>
+          </td>
+
+          <td>
+            <span *ngIf="d.donationKind === 'عيني'" style="background-color: #e8f5e9; color: #2e7d32; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: bold;">
+              📦 عيني (مخزني)
+            </span>
+            <span *ngIf="d.donationKind === 'خدمة'" style="background-color: #e3f2fd; color: #1565c0; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: bold;">
+              🩺 خدمة ورعاية
+            </span>
+            <span *ngIf="d.donationKind === 'نقدي' || !d.donationKind" style="background-color: #fff8e1; color: #f57f17; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: bold;">
+              💵 نقدي بالخزينة
+            </span>
+          </td>
+
+          <td>
+            <!-- إذا كان نقدي -->
+            <div *ngIf="d.donationKind === 'نقدي' || !d.donationKind">
+              <strong style="color: #2e7d32; font-size: 16px;">{{ d.amount | number:'1.0-0' }} ج.م</strong>
+              <div *ngIf="d.paymentMethod" style="color: #666; font-size: 12px; margin-top: 2px;">{{ d.paymentMethod }}</div>
+            </div>
+
+            <!-- إذا كان عيني -->
+            <div *ngIf="d.donationKind === 'عيني'">
+              <strong style="color: #004d40; font-size: 15px;">{{ d.quantity }} {{ d.unit }} {{ d.itemName }}</strong>
+              <span style="background-color: #c8e6c9; color: #1b5e20; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-right: 5px; font-weight: bold;">
+                +{{ d.quantity }} بالمخزن
+              </span>
+              <div *ngIf="d.amount" style="color: #777; font-size: 12px; margin-top: 2px;">
+                قيمة تقديرية: {{ d.amount | number:'1.0-0' }} ج.م
+              </div>
+            </div>
+
+            <!-- إذا كان خدمة -->
+            <div *ngIf="d.donationKind === 'خدمة'">
+              <strong style="color: #1565c0; font-size: 15px;">{{ d.quantity }} {{ d.unit }} ({{ d.itemName }})</strong>
+            </div>
+
+            <div *ngIf="d.notes" style="color: #555; font-size: 12px; margin-top: 4px; font-style: italic;">
+              📝 {{ d.notes }}
+            </div>
+          </td>
+
+          <td>
+            <span style="background-color: #f5f5f5; color: #333; padding: 3px 8px; border-radius: 4px; font-size: 12px; border: 1px solid #e0e0e0;">
+              {{ d.type }}
+            </span>
+          </td>
+
+          <td style="color: #555; font-size: 13px;">
+            {{ d.date }}
+          </td>
+        </tr>
+
+        <tr *ngIf="filteredDonations.length === 0">
+          <td colspan="5" style="text-align: center; padding: 25px; color: #888;">
+            لا توجد تبرعات مسجلة مطابقة للبحث أو التصفية الحالية.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 </div>

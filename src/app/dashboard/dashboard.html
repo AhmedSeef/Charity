@@ -1,20 +1,157 @@
-<div style="padding: 20px; text-align: right;" dir="rtl">
-  <h2 style="color: #004d40; border-bottom: 2px solid #004d40; padding-bottom: 10px;">إحصائيات النظام السريعة</h2>
-  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; text-align: center; margin-top: 20px;">
+<div style="padding: 10px; text-align: right;" dir="rtl">
+  <div style="margin-bottom: 25px; border-bottom: 2px solid #004d40; padding-bottom: 10px;">
+    <h2 style="color: #004d40; margin: 0;">📊 لوحة التحكم والإحصائيات الشاملة</h2>
+    <p style="color: #666; margin: 5px 0 0 0; font-size: 14px;">
+      نظرة عامة على رصيد الخزينة، والمخزون الملموس، والخدمات، وحركات التبرع والصرف.
+    </p>
+  </div>
+
+  <!-- البطاقات الإحصائية الرئيسية -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; margin-bottom: 30px;">
     
-    <div style="flex: 1; padding: 20px; background-color: #e0f2f1; border: 1px solid #b2dfdb; border-radius: 8px;">
-      <h3 style="margin: 0; color: #00695c;">المستفيدين المسجلين</h3>
-      <p style="font-size: 32px; font-weight: bold; color: #004d40; margin: 15px 0 0 0;">{{ beneficiariesCount }}</p>
+    <!-- الخزينة النقدية -->
+    <div style="padding: 20px; background-color: #fff8e1; border: 1px solid #ffe082; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-size: 13px; font-weight: bold; color: #f57f17;">💵 رصيد الخزينة النقدي</span>
+        <span style="background: #ffecb3; padding: 2px 6px; border-radius: 10px; font-size: 11px; color: #e65100;">أموال وتبرعات</span>
+      </div>
+      <p style="font-size: 26px; font-weight: bold; color: #e65100; margin: 12px 0 0 0;">
+        {{ totalCashDonations | number:'1.0-0' }} <span style="font-size: 16px;">ج.م</span>
+      </p>
+      <div style="font-size: 11px; color: #777; margin-top: 6px;">
+        زكاة مال، صدقات، كفالات أيتام
+      </div>
     </div>
-    
-    <div style="flex: 1; padding: 20px; background-color: #fff3e0; border: 1px solid #ffe0b2; border-radius: 8px;">
-      <h3 style="margin: 0; color: #e65100;">حركات التبرعات</h3>
-      <p style="font-size: 32px; font-weight: bold; color: #e65100; margin: 15px 0 0 0;">{{ donationsCount }}</p>
+
+    <!-- المستفيدين -->
+    <div style="padding: 20px; background-color: #e0f2f1; border: 1px solid #b2dfdb; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-size: 13px; font-weight: bold; color: #00695c;">👨‍👩‍👧‍👦 ملفات المستفيدين</span>
+        <span style="background: #b2dfdb; padding: 2px 6px; border-radius: 10px; font-size: 11px; color: #004d40;">حالات وأسر</span>
+      </div>
+      <p style="font-size: 26px; font-weight: bold; color: #004d40; margin: 12px 0 0 0;">
+        {{ beneficiariesCount }}
+      </p>
+      <div style="font-size: 11px; color: #777; margin-top: 6px;">
+        أيتام، مرضى، أرامل، غارمين، طوارئ
+      </div>
     </div>
+
+    <!-- الأصناف الملموسة بالمخزن -->
+    <div style="padding: 20px; background-color: #e8f5e9; border: 1px solid #c8e6c9; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-size: 13px; font-weight: bold; color: #2e7d32;">📦 أصناف المخزن الملموسة</span>
+        <span style="background: #c8e6c9; padding: 2px 6px; border-radius: 10px; font-size: 11px; color: #1b5e20;">بضاعة ومخزون</span>
+      </div>
+      <p style="font-size: 26px; font-weight: bold; color: #1b5e20; margin: 12px 0 0 0;">
+        {{ tangibleItemsCount }} <span style="font-size: 14px; font-weight: normal; color: #555;">صنف مسجل</span>
+      </p>
+      <div style="font-size: 11px; color: #777; margin-top: 6px;">
+        يزيد رصيدها بالتبرع العيني ويقل بالصرف
+      </div>
+    </div>
+
+    <!-- الخدمات والمساعدات -->
+    <div style="padding: 20px; background-color: #e3f2fd; border: 1px solid #bbdefb; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-size: 13px; font-weight: bold; color: #1565c0;">🩺 الخدمات والرعاية</span>
+        <span style="background: #bbdefb; padding: 2px 6px; border-radius: 10px; font-size: 11px; color: #0d47a1;">غير مخزنية</span>
+      </div>
+      <p style="font-size: 26px; font-weight: bold; color: #0d47a1; margin: 12px 0 0 0;">
+        {{ servicesCount }} <span style="font-size: 14px; font-weight: normal; color: #555;">خدمة متاحة</span>
+      </p>
+      <div style="font-size: 11px; color: #777; margin-top: 6px;">
+        كشوفات، عمليات، ترميم منازل، تجهيز عرائس
+      </div>
+    </div>
+
+    <!-- حركات الصرف المنفذة -->
+    <div style="padding: 20px; background-color: #fbe9e7; border: 1px solid #ffccbc; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-size: 13px; font-weight: bold; color: #d84315;">🔄 إجمالي حركات الصرف</span>
+        <span style="background: #ffccbc; padding: 2px 6px; border-radius: 10px; font-size: 11px; color: #bf360c;">مساعدات مسلمة</span>
+      </div>
+      <p style="font-size: 26px; font-weight: bold; color: #bf360c; margin: 12px 0 0 0;">
+        {{ distributionsCount }}
+      </p>
+      <div style="font-size: 11px; color: #777; margin-top: 6px;">
+        مساعدات عينية وخدمات قُدمت للمستحقين
+      </div>
+    </div>
+
+    <!-- فريق العمل والمتطوعين -->
+    <div style="padding: 20px; background-color: #f3e5f5; border: 1px solid #e1bee7; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-size: 13px; font-weight: bold; color: #6a1b9a;">👥 الموارد البشرية</span>
+        <span style="background: #e1bee7; padding: 2px 6px; border-radius: 10px; font-size: 11px; color: #4a148c;">فريق العمل</span>
+      </div>
+      <p style="font-size: 26px; font-weight: bold; color: #4a148c; margin: 12px 0 0 0;">
+        {{ staffCount }} <span style="font-size: 14px; font-weight: normal; color: #555;">فرد</span>
+      </p>
+      <div style="font-size: 11px; color: #777; margin-top: 6px;">
+        باحثين، موظفين براتب، ومتطوعين
+      </div>
+    </div>
+
+  </div>
+
+  <!-- جداول الحركات الحديثة -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
     
-    <div style="flex: 1; padding: 20px; background-color: #e8eaf6; border: 1px solid #c5cae9; border-radius: 8px;">
-      <h3 style="margin: 0; color: #283593;">أصناف المخزن</h3>
-      <p style="font-size: 32px; font-weight: bold; color: #283593; margin: 15px 0 0 0;">{{ inventoryCount }}</p>
+    <!-- آخر التبرعات الواردة -->
+    <div style="background: white; border: 1px solid #ddd; border-radius: 8px; padding: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <h3 style="margin: 0; color: #004d40; font-size: 16px;">📥 أحدث التبرعات المستلمة</h3>
+        <a routerLink="/donations" style="color: #00695c; font-size: 12px; font-weight: bold; text-decoration: none;">عرض الكل ←</a>
+      </div>
+      <div style="overflow-x: auto; width: 100%;">
+        <table border="1" cellpadding="8" cellspacing="0" style="width: 100%; border-collapse: collapse; font-size: 13px;">
+          <tr style="background: #e0f2f1; color: #004d40;">
+            <th>المتبرع</th>
+            <th>النوع والتفاصيل</th>
+            <th>التاريخ</th>
+          </tr>
+          <tr *ngFor="let d of recentDonations">
+            <td><strong>{{ d.donorName }}</strong></td>
+            <td>
+              <span *ngIf="d.donationKind === 'عيني'" style="color: #1b5e20; font-weight: bold;">
+                📦 {{ d.quantity }} {{ d.unit }} {{ d.itemName }}
+              </span>
+              <span *ngIf="d.donationKind === 'خدمة'" style="color: #0d47a1; font-weight: bold;">
+                🩺 {{ d.quantity }} {{ d.unit }} ({{ d.itemName }})
+              </span>
+              <span *ngIf="d.donationKind === 'نقدي' || !d.donationKind" style="color: #e65100; font-weight: bold;">
+                💵 {{ d.amount | number:'1.0-0' }} ج.م
+              </span>
+            </td>
+            <td style="color: #666; font-size: 12px;">{{ d.date }}</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- آخر حركات الصرف -->
+    <div style="background: white; border: 1px solid #ddd; border-radius: 8px; padding: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <h3 style="margin: 0; color: #bf360c; font-size: 16px;">📤 أحدث حركات الصرف</h3>
+        <a routerLink="/distributions" style="color: #bf360c; font-size: 12px; font-weight: bold; text-decoration: none;">عرض الكل ←</a>
+      </div>
+      <div style="overflow-x: auto; width: 100%;">
+        <table border="1" cellpadding="8" cellspacing="0" style="width: 100%; border-collapse: collapse; font-size: 13px;">
+          <tr style="background: #fbe9e7; color: #bf360c;">
+            <th>المستفيد</th>
+            <th>المساعدة المسلمة</th>
+            <th>التاريخ</th>
+          </tr>
+          <tr *ngFor="let dist of recentDistributions">
+            <td><strong>{{ getBenName(dist.beneficiaryId) }}</strong></td>
+            <td>
+              <strong style="color: #bf360c;">{{ dist.quantity }}</strong> {{ getItemName(dist.inventoryId) }}
+            </td>
+            <td style="color: #666; font-size: 12px;">{{ dist.date }}</td>
+          </tr>
+        </table>
+      </div>
     </div>
 
   </div>

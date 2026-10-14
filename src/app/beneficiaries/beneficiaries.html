@@ -99,9 +99,13 @@
         </tr>
         <tr *ngFor="let h of selectedHistory">
           <td>{{ h.date }}</td>
-          <td>{{ h.itemName }}</td>
-          <td>{{ h.quantity }}</td>
-          <td>{{ h.notes }}</td>
+          <td>
+            <span *ngIf="h.kind === 'خدمة'" style="background: #e3f2fd; color: #1565c0; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-left: 5px;">🩺 خدمة</span>
+            <span *ngIf="h.kind !== 'خدمة'" style="background: #e8f5e9; color: #2e7d32; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-left: 5px;">📦 عيني</span>
+            {{ h.itemName }}
+          </td>
+          <td><strong>{{ h.quantity }}</strong></td>
+          <td>{{ h.notes || '—' }}</td>
         </tr>
       </table>
     </div>

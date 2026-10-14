@@ -1,44 +1,157 @@
 <div dir="rtl" style="text-align: right;">
-  <h2>حركات الصرف وتوزيع المساعدات</h2>
+  <div style="margin-bottom: 20px;">
+    <h2 style="color: #004d40; margin: 0;">🔄 حركات الصرف وتوزيع المساعدات</h2>
+    <p style="color: #666; margin: 5px 0 0 0; font-size: 14px;">
+      تسجيل تسليم المساعدات العينية من المخزن للمستفيدين (مع خصم الرصيد تلقائياً)، وتقديم الخدمات الطبية والاجتماعية.
+    </p>
+  </div>
 
-  <div style="background-color: #f9f9f9; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #ddd;">
-    <h3>تسجيل حركة صرف جديدة</h3>
-    <form (ngSubmit)="onSubmit()" style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; flex-wrap: wrap;">
-      
-      <select [(ngModel)]="newDist.beneficiaryId" name="beneficiaryId" required style="padding: 8px; width: 200px;">
-        <option value="" disabled selected>-- اختر المستفيد --</option>
-        <option *ngFor="let b of beneficiaries" [value]="b.id">{{ b.name }} ({{ b.nationalId }})</option>
-      </select>
+  <!-- تنبيهات النجاح والخطأ -->
+  <div *ngIf="successMessage" style="background-color: #e8f5e9; border: 2px solid #43a047; color: #1b5e20; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-weight: bold; font-size: 15px;">
+    {{ successMessage }}
+  </div>
 
-      <select [(ngModel)]="newDist.inventoryId" name="inventoryId" required style="padding: 8px; width: 200px;">
-        <option value="" disabled selected>-- اختر الصنف --</option>
-        <option *ngFor="let i of inventory" [value]="i.id">{{ i.itemName }} (المتاح: {{ i.quantity }} {{ i.unit }})</option>
-      </select>
+  <div *ngIf="errorMessage" style="background-color: #ffebee; border: 2px solid #e53935; color: #b71c1c; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-weight: bold; font-size: 15px;">
+    {{ errorMessage }}
+  </div>
 
-      <input type="number" [(ngModel)]="newDist.quantity" name="quantity" placeholder="الكمية" required style="padding: 8px; width: 100px;">
-      
-      <input type="date" [(ngModel)]="newDist.date" name="date" required style="padding: 8px;">
+  <!-- فورم صرف مساعدة جديدة -->
+  <div style="background-color: #f9f9f9; padding: 20px; border-radius: 8px; margin-bottom: 25px; border: 1px solid #ddd; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+    <h3 style="margin-top: 0; color: #bf360c; border-bottom: 2px solid #bf360c; padding-bottom: 10px;">
+      📤 تسجيل حركة صرف أو تقديم خدمة
+    </h3>
 
-      <input type="text" [(ngModel)]="newDist.notes" name="notes" placeholder="ملاحظات (اختياري)" style="padding: 8px; width: 200px;">
+    <form (ngSubmit)="onSubmit()">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px; margin-bottom: 15px;">
+        <!-- اختيار المستفيد -->
+        <div>
+          <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">المستفيد المستحق *</label>
+          <select [(ngModel)]="newDist.beneficiaryId" name="beneficiaryId" required 
+                  style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; font-weight: bold;">
+            <option value="" disabled selected>-- اختر المستفيد --</option>
+            <option *ngFor="let b of beneficiaries" [value]="b.id">
+              {{ b.name }} ({{ b.category }} - {{ b.nationalId }})
+            </option>
+          </select>
+        </div>
 
-      <button type="submit" style="padding: 8px 15px; background-color: #d84315; color: white; border: none; cursor: pointer;">صرف وإضافة الحركة</button>
+        <!-- اختيار الصنف أو الخدمة -->
+        <div>
+          <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">الصنف الملموس أو الخدمة *</label>
+          <select [(ngModel)]="newDist.inventoryId" name="inventoryId" required 
+                  style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; font-weight: bold;">
+            <option value="" disabled selected>-- اختر من الدليل والمخزن --</option>
+            <optgroup label="📦 الأصناف الملموسة (المخزن)">
+              <ng-container *ngFor="let i of inventory">
+                <option *ngIf="i.kind === 'صنف ملموس'" [value]="i.id">
+                  {{ i.itemName }} [المتاح: {{ i.quantity }} {{ i.unit }}]
+                </option>
+              </ng-container>
+            </optgroup>
+            <optgroup label="🩺 الخدمات والمساعدات">
+              <ng-container *ngFor="let s of inventory">
+                <option *ngIf="s.kind === 'خدمة'" [value]="s.id">
+                  {{ s.itemName }} [خدمة - {{ s.unit }}]
+                </option>
+              </ng-container>
+            </optgroup>
+          </select>
+        </div>
+
+        <!-- الكمية -->
+        <div>
+          <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">الكمية / العدد *</label>
+          <div style="display: flex; gap: 8px;">
+            <input type="number" [(ngModel)]="newDist.quantity" name="quantity" min="1" placeholder="1" required 
+                   style="flex: 1; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; font-weight: bold; font-size: 16px;">
+            <span style="background: #efebe9; color: #4e342e; padding: 10px 14px; border-radius: 5px; font-weight: bold; display: flex; align-items: center;">
+              {{ selectedItem?.unit || 'وحدة' }}
+            </span>
+          </div>
+        </div>
+
+        <!-- تاريخ الصرف -->
+        <div>
+          <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">تاريخ الصرف *</label>
+          <input type="date" [(ngModel)]="newDist.date" name="date" required 
+                 style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box;">
+        </div>
+      </div>
+
+      <!-- تنبيه حالة الرصيد المباشر -->
+      <div *ngIf="selectedItem && selectedItem.kind === 'صنف ملموس'" style="margin-bottom: 15px;">
+        <div *ngIf="!isStockInsufficient" style="background-color: #fbe9e7; border-right: 4px solid #d84315; padding: 10px 15px; border-radius: 4px; font-size: 13px; color: #bf360c;">
+          💡 <strong>حركة المخزن:</strong> الرصيد المتاح هو <strong>{{ selectedItem.quantity }} {{ selectedItem.unit }}</strong>. سيتبقى بعد الصرف: <strong>{{ selectedItem.quantity - newDist.quantity }} {{ selectedItem.unit }}</strong>.
+        </div>
+        <div *ngIf="isStockInsufficient" style="background-color: #ffebee; border-right: 4px solid #c62828; padding: 10px 15px; border-radius: 4px; font-size: 13px; color: #c62828; font-weight: bold;">
+          ⚠️ تحذير: الكمية المطلوبة ({{ newDist.quantity }}) تتجاوز الرصيد المتوفر بالمخزن ({{ selectedItem.quantity }})!
+        </div>
+      </div>
+
+      <!-- ملاحظات -->
+      <div style="margin-bottom: 15px;">
+        <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">ملاحظات الصرف (اختياري)</label>
+        <input type="text" [(ngModel)]="newDist.notes" name="notes" placeholder="ملاحظات حول استلام الحالة، أو رقم إذن الصرف..." 
+               style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box;">
+      </div>
+
+      <button type="submit" [disabled]="isStockInsufficient" 
+              style="padding: 12px 25px; background-color: #d84315; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 15px; font-weight: bold; width: 100%; opacity: 1;"
+              [style.opacity]="isStockInsufficient ? '0.6' : '1'"
+              [style.cursor]="isStockInsufficient ? 'not-allowed' : 'pointer'">
+        📤 صرف وإتمام الحركة وتحديث المخزن
+      </button>
     </form>
   </div>
 
-  <div style="overflow-x: auto; width: 100%; border-radius: 8px;"><table border="1" cellpadding="10" cellspacing="0" style="width: 100%; border-collapse: collapse;">
-    <tr style="background-color: #fbe9e7; color: #bf360c;">
-      <th>المستفيد</th>
-      <th>الصنف المصروف</th>
-      <th>الكمية</th>
-      <th>تاريخ الصرف</th>
-      <th>ملاحظات</th>
-    </tr>
-    <tr *ngFor="let d of distributions">
-      <td><strong>{{ getBenName(d.beneficiaryId) }}</strong></td>
-      <td>{{ getItemName(d.inventoryId) }}</td>
-      <td>{{ d.quantity }}</td>
-      <td>{{ d.date }}</td>
-      <td>{{ d.notes }}</td>
-    </tr>
-  </table></div>
+  <!-- جدول حركات الصرف والتوزيع -->
+  <div style="overflow-x: auto; width: 100%; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+    <table border="1" cellpadding="10" cellspacing="0" style="width: 100%; border-collapse: collapse; background-color: white; font-size: 14px;">
+      <thead>
+        <tr style="background-color: #fbe9e7; color: #bf360c;">
+          <th>المستفيد</th>
+          <th>نوع المساعدة</th>
+          <th>الصنف / الخدمة المصروفة</th>
+          <th>الكمية</th>
+          <th>تاريخ الصرف</th>
+          <th>ملاحظات</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let d of distributions">
+          <td>
+            <strong style="color: #004d40; font-size: 15px;">{{ getBenName(d.beneficiaryId) }}</strong>
+          </td>
+
+          <td>
+            <span *ngIf="getItem(d.inventoryId)?.kind === 'خدمة'" style="background-color: #e3f2fd; color: #1565c0; padding: 4px 8px; border-radius: 10px; font-size: 12px; font-weight: bold;">
+              🩺 خدمة
+            </span>
+            <span *ngIf="getItem(d.inventoryId)?.kind !== 'خدمة'" style="background-color: #efebe9; color: #4e342e; padding: 4px 8px; border-radius: 10px; font-size: 12px; font-weight: bold;">
+              📦 عيني مخزني
+            </span>
+          </td>
+
+          <td>
+            <strong>{{ getItemName(d.inventoryId) }}</strong>
+          </td>
+
+          <td>
+            <strong style="font-size: 16px; color: #bf360c;">{{ d.quantity }}</strong>
+            <span style="color: #666; font-size: 12px; margin-right: 4px;">{{ getItem(d.inventoryId)?.unit || '' }}</span>
+          </td>
+
+          <td style="color: #555;">{{ d.date }}</td>
+
+          <td style="color: #555;">{{ d.notes || '—' }}</td>
+        </tr>
+
+        <tr *ngIf="distributions.length === 0">
+          <td colspan="6" style="text-align: center; padding: 25px; color: #888;">
+            لا توجد حركات صرف مسجلة حتى الآن.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 </div>

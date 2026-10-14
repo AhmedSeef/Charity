@@ -101,46 +101,80 @@
   ],
   "donations": [
     {
+      "id": "d_inkind_1",
+      "donorName": "م. حسام الدين",
+      "donorPhone": "01011223344",
+      "donationKind": "عيني",
+      "inventoryId": "i1",
+      "itemName": "أرز مصري",
+      "quantity": 20,
+      "unit": "كيلو",
+      "amount": 600,
+      "type": "تبرع عيني (أغذية للمخزن)",
+      "date": "2026-10-12",
+      "notes": "تم توريد 20 كيلو أرز إلى المخزن"
+    },
+    {
+      "id": "d_service_1",
+      "donorName": "د. شريف عيون",
+      "donorPhone": "01122334455",
+      "donationKind": "خدمة",
+      "inventoryId": "s1",
+      "itemName": "كشف طبي تخصصي (باطنة/عيون)",
+      "quantity": 10,
+      "unit": "كشف",
+      "amount": 0,
+      "type": "رعاية وتبرع بكشوفات طبية",
+      "date": "2026-10-13",
+      "notes": "كشوفات مجانية لمرضى الجمعية"
+    },
+    {
       "id": "d1",
       "donorName": "فاعل خير",
       "amount": 5000,
       "type": "زكاة مال",
-      "date": "2026-09-15"
+      "date": "2026-09-15",
+      "donationKind": "نقدي"
     },
     {
       "id": "d2",
       "donorName": "محمد علي",
       "amount": 1000,
       "type": "صدقة جارية",
-      "date": "2026-10-05"
+      "date": "2026-10-05",
+      "donationKind": "نقدي"
     },
     {
       "id": "d3",
       "donorName": "شركة الأمل للتجارة",
       "amount": 15000,
       "type": "زكاة مال",
-      "date": "2026-10-08"
+      "date": "2026-10-08",
+      "donationKind": "نقدي"
     },
     {
       "id": "d4",
       "donorName": "سارة أحمد",
       "amount": 300,
       "type": "كفارة يمين",
-      "date": "2026-10-09"
+      "date": "2026-10-09",
+      "donationKind": "نقدي"
     },
     {
       "id": "d5",
       "donorName": "فاعل خير",
       "amount": 2500,
       "type": "كفالة يتيم",
-      "date": "2026-10-10"
+      "date": "2026-10-10",
+      "donationKind": "نقدي"
     },
     {
       "id": "d6",
       "donorName": "الحاج إبراهيم الدسوقي",
       "amount": 10000,
       "type": "صدقة جارية",
-      "date": "2026-10-10"
+      "date": "2026-10-10",
+      "donationKind": "نقدي"
     }
   ],
   "inventory": [
@@ -149,63 +183,112 @@
       "itemName": "أرز مصري",
       "quantity": 450,
       "unit": "كيلو",
-      "type": "أغذية جافة"
+      "type": "أغذية جافة",
+      "kind": "صنف ملموس"
     },
     {
       "id": "i2",
       "itemName": "سكر أبيض",
       "quantity": 300,
       "unit": "كيلو",
-      "type": "أغذية جافة"
+      "type": "أغذية جافة",
+      "kind": "صنف ملموس"
     },
     {
       "id": "i3",
       "itemName": "لحوم مفرومة",
       "quantity": 120,
       "unit": "كيلو",
-      "type": "لحوم ومجمدات"
+      "type": "لحوم ومجمدات",
+      "kind": "صنف ملموس"
     },
     {
       "id": "i4",
       "itemName": "أدوية سكر (ميكستارد)",
       "quantity": 45,
       "unit": "علبة",
-      "type": "طبي"
+      "type": "طبي",
+      "kind": "صنف ملموس"
     },
     {
       "id": "i5",
       "itemName": "أكفان شرعية",
       "quantity": 10,
       "unit": "قطعة",
-      "type": "متنوع"
+      "type": "متنوع",
+      "kind": "صنف ملموس"
     },
     {
       "id": "i6",
       "itemName": "كرسي متحرك",
       "quantity": 5,
       "unit": "قطعة",
-      "type": "طبي"
+      "type": "طبي",
+      "kind": "صنف ملموس"
     },
     {
       "id": "i7",
       "itemName": "زيت طعام",
       "quantity": 95,
       "unit": "زجاجة",
-      "type": "أغذية جافة"
+      "type": "أغذية جافة",
+      "kind": "صنف ملموس"
     },
     {
       "id": "i8",
       "itemName": "بطاطين شتوية",
       "quantity": 150,
       "unit": "قطعة",
-      "type": "متنوع"
+      "type": "متنوع",
+      "kind": "صنف ملموس"
     },
     {
       "id": "i9",
       "itemName": "شنط رمضان/إطعام",
       "quantity": 50,
       "unit": "كرتونة",
-      "type": "أغذية جافة"
+      "type": "أغذية جافة",
+      "kind": "صنف ملموس"
+    },
+    {
+      "id": "s1",
+      "itemName": "كشف طبي تخصصي (باطنة/عيون)",
+      "kind": "خدمة",
+      "quantity": 0,
+      "unit": "كشف",
+      "type": "خدمات طبية"
+    },
+    {
+      "id": "s2",
+      "itemName": "عملية جراحية (مياه بيضاء)",
+      "kind": "خدمة",
+      "quantity": 0,
+      "unit": "عملية",
+      "type": "خدمات طبية"
+    },
+    {
+      "id": "s3",
+      "itemName": "تجهيز عرائس (أجهزة كهربائية)",
+      "kind": "خدمة",
+      "quantity": 0,
+      "unit": "حالة",
+      "type": "خدمات اجتماعية"
+    },
+    {
+      "id": "s4",
+      "itemName": "ترميم سقف وبناء منزل",
+      "kind": "خدمة",
+      "quantity": 0,
+      "unit": "منزل",
+      "type": "خدمات إيواء وتعمير"
+    },
+    {
+      "id": "s5",
+      "itemName": "سداد ديون غارم/غارمة",
+      "kind": "خدمة",
+      "quantity": 0,
+      "unit": "حالة",
+      "type": "خدمات اجتماعية"
     }
   ],
   "distributions": [
