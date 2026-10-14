@@ -91,10 +91,28 @@ export class DonationsComponent implements OnInit {
     }
   }
 
+  donationUnits = [
+    'كيلو',
+    'قطعة',
+    'إزازة / زجاجة',
+    'علبة',
+    'كرتونة',
+    'كيس',
+    'شكارة / شوال',
+    'شنطة / وجبة',
+    'شريط (دواء)',
+    'لتر',
+    'متر',
+    'طقم / باقة'
+  ];
+
   onItemSelect() {
     const item = this.inventory.find(i => String(i.id) === String(this.newDonation.inventoryId));
     if (item) {
-      this.newDonation.unit = item.unit || '';
+      this.newDonation.unit = item.unit || 'كيلو';
+      if (item.unit && !this.donationUnits.includes(item.unit)) {
+        this.donationUnits.unshift(item.unit);
+      }
     }
   }
 

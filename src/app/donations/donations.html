@@ -133,13 +133,17 @@
         </div>
 
         <div>
-          <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">الكمية المتبرع بها *</label>
+          <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">الكمية والوحدة المتبرع بها *</label>
           <div style="display: flex; gap: 8px;">
             <input type="number" [(ngModel)]="newDonation.quantity" name="quantity" min="1" placeholder="مثال: 20" required 
-                   style="flex: 1; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; font-weight: bold; font-size: 16px;">
-            <span style="background: #e0f2f1; color: #004d40; padding: 10px 14px; border-radius: 5px; font-weight: bold; display: flex; align-items: center;">
-              {{ newDonation.unit || 'وحدة' }}
-            </span>
+                   style="flex: 1; min-width: 90px; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; font-weight: bold; font-size: 16px;">
+            <select [(ngModel)]="newDonation.unit" name="unit" 
+                    style="flex: 1; min-width: 140px; padding: 10px; border-radius: 5px; border: 1px solid #004d40; background-color: #e0f2f1; color: #004d40; font-weight: bold; font-size: 14px; cursor: pointer;">
+              <option *ngFor="let u of donationUnits" [value]="u">{{ u }}</option>
+            </select>
+          </div>
+          <div style="font-size: 11px; color: #666; margin-top: 4px;">
+            الوحدات البسيطة: بالكيلو، بالقطعة، بالإزازة، بالعلبة، بالكرتونة، بالشكارة...
           </div>
         </div>
 
