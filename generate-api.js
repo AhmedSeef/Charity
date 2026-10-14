@@ -28,9 +28,13 @@ export class Api {
       let modified = false;
 
       if (this.db.inventory && Array.isArray(this.db.inventory)) {
-        this.db.inventory.forEach((item: any) => {
+        this.db.inventory.forEach((item: any, idx: number) => {
           if (!item.kind) {
             item.kind = 'صنف ملموس';
+            modified = true;
+          }
+          if (!item.code) {
+            item.code = (item.kind === 'خدمة' ? 'SRV-' : 'ITM-') + String(idx + 1).padStart(3, '0');
             modified = true;
           }
         });
@@ -38,11 +42,11 @@ export class Api {
         const hasServices = this.db.inventory.some((i: any) => i.kind === 'خدمة');
         if (!hasServices) {
           this.db.inventory.push(
-            { id: 's1', itemName: 'كشف طبي تخصصي (باطنة/عيون)', kind: 'خدمة', quantity: 0, unit: 'كشف', type: 'خدمات طبية' },
-            { id: 's2', itemName: 'عملية جراحية (مياه بيضاء)', kind: 'خدمة', quantity: 0, unit: 'عملية', type: 'خدمات طبية' },
-            { id: 's3', itemName: 'تجهيز عرائس (أجهزة كهربائية)', kind: 'خدمة', quantity: 0, unit: 'حالة', type: 'خدمات اجتماعية' },
-            { id: 's4', itemName: 'ترميم سقف وبناء منزل', kind: 'خدمة', quantity: 0, unit: 'منزل', type: 'خدمات إيواء وتعمير' },
-            { id: 's5', itemName: 'سداد ديون غارم/غارمة', kind: 'خدمة', quantity: 0, unit: 'حالة', type: 'خدمات اجتماعية' }
+            { id: 's1', code: 'SRV-001', itemName: 'كشف طبي تخصصي (باطنة/عيون)', kind: 'خدمة', quantity: 0, unit: 'كشف', type: 'خدمات طبية' },
+            { id: 's2', code: 'SRV-002', itemName: 'عملية جراحية (مياه بيضاء)', kind: 'خدمة', quantity: 0, unit: 'عملية', type: 'خدمات طبية' },
+            { id: 's3', code: 'SRV-003', itemName: 'تجهيز عرائس (أجهزة كهربائية)', kind: 'خدمة', quantity: 0, unit: 'حالة', type: 'خدمات اجتماعية' },
+            { id: 's4', code: 'SRV-004', itemName: 'ترميم سقف وبناء منزل', kind: 'خدمة', quantity: 0, unit: 'منزل', type: 'خدمات إيواء وتعمير' },
+            { id: 's5', code: 'SRV-005', itemName: 'سداد ديون غارم/غارمة', kind: 'خدمة', quantity: 0, unit: 'حالة', type: 'خدمات اجتماعية' }
           );
           modified = true;
         }
@@ -110,6 +114,9 @@ export class Api {
   addInventory(data: any): Observable<any> { 
     data.id = 'i_' + Date.now().toString(); 
     if (!data.kind) data.kind = 'صنف ملموس';
+    if (!data.code) {
+      data.code = (data.kind === 'خدمة' ? 'SRV-' : 'ITM-') + Math.floor(100 + Math.random() * 900);
+    }
     if (data.kind === 'خدمة') {
       data.quantity = 0;
     } else {
@@ -181,4 +188,4 @@ export class Api {
 `;
 
 fs.writeFileSync('d:/Charity/charity-app/src/app/api.ts', apiTs, 'utf8');
-console.log('api.ts successfully written!');
+console.log('api.ts successfully written with item codes support!');

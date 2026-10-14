@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { DashboardComponent } from './dashboard/dashboard';
 import { BeneficiariesComponent } from './beneficiaries/beneficiaries';
+import { ItemsCatalogComponent } from './items-catalog/items-catalog';
 import { DonationsComponent } from './donations/donations';
 import { InventoryComponent } from './inventory/inventory';
 import { DistributionsComponent } from './distributions/distributions';
@@ -14,8 +15,9 @@ export const routes: Routes = [
   { path: 'login', component: LoginComponent },
   { path: 'dashboard', component: DashboardComponent, canActivate: [authGuard] },
   { path: 'beneficiaries', component: BeneficiariesComponent, canActivate: [authGuard] },
-  { path: 'donations', component: DonationsComponent, canActivate: [authGuard] },
+  { path: 'items-catalog', component: ItemsCatalogComponent, canActivate: [authGuard] },
   { path: 'inventory', component: InventoryComponent, canActivate: [authGuard] },
+  { path: 'donations', component: DonationsComponent, canActivate: [authGuard] },
   { path: 'distributions', component: DistributionsComponent, canActivate: [authGuard] },
   { path: 'staff', component: StaffComponent, canActivate: [authGuard] },
   { path: 'settings', component: SettingsComponent, canActivate: [authGuard] }

@@ -1,0 +1,254 @@
+<div dir="rtl" style="text-align: right;">
+  <div style="margin-bottom: 20px;">
+    <h2 style="color: #004d40; margin: 0;">🏷️ الشاشة التعريفية للأصناف والخدمات</h2>
+    <p style="color: #666; margin: 5px 0 0 0; font-size: 14px;">
+      الدليل التعريفي الموحد: هنا تسجل وتعرف كل الأصناف الملموسة والخدمات التي تقدمها الجمعية، لتظهر جاهزة للاستخدام في شاشات التبرعات والمخازن والصرف.
+    </p>
+  </div>
+
+  <!-- ملخص الدليل التعريفي -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 25px;">
+    <div style="background-color: #f1f8e9; border: 1px solid #dcedc8; border-radius: 8px; padding: 15px; text-align: center;">
+      <div style="font-size: 13px; color: #33691e; font-weight: bold;">📋 إجمالي المواد والخدمات بالدليل</div>
+      <div style="font-size: 26px; font-weight: bold; color: #1b5e20; margin-top: 5px;">{{ items.length }}</div>
+      <div style="font-size: 11px; color: #666; margin-top: 4px;">أصناف مخزنية + خدمات ورعاية</div>
+    </div>
+
+    <div style="background-color: #e8f5e9; border: 1px solid #c8e6c9; border-radius: 8px; padding: 15px; text-align: center;">
+      <div style="font-size: 13px; color: #2e7d32; font-weight: bold;">📦 أصناف ملموسة (مخزنية)</div>
+      <div style="font-size: 26px; font-weight: bold; color: #1b5e20; margin-top: 5px;">{{ tangibleCount }}</div>
+      <div style="font-size: 11px; color: #666; margin-top: 4px;">تتبع كميات المخزن ورصيد الرفوف</div>
+    </div>
+
+    <div style="background-color: #e3f2fd; border: 1px solid #bbdefb; border-radius: 8px; padding: 15px; text-align: center;">
+      <div style="font-size: 13px; color: #1565c0; font-weight: bold;">🩺 خدمات ومساعدات غير مخزنية</div>
+      <div style="font-size: 26px; font-weight: bold; color: #0d47a1; margin-top: 5px;">{{ serviceCount }}</div>
+      <div style="font-size: 11px; color: #666; margin-top: 4px;">كشوفات، عمليات، ترميم منازل، تجهيز</div>
+    </div>
+  </div>
+
+  <!-- تنبيه النجاح -->
+  <div *ngIf="successMessage" style="background-color: #e8f5e9; border: 2px solid #43a047; color: #1b5e20; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-weight: bold; font-size: 15px;">
+    {{ successMessage }}
+  </div>
+
+  <!-- فورم تعريف صنف أو خدمة جديدة -->
+  <div style="background-color: #f9f9f9; padding: 20px; border-radius: 8px; margin-bottom: 25px; border: 1px solid #ddd; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+    <h3 style="margin-top: 0; color: #004d40; border-bottom: 2px solid #004d40; padding-bottom: 10px;">
+      {{ itemForm.id ? '🔄 تعديل تعريف الصنف أو الخدمة' : '➕ تعريف وتسجيل صنف / خدمة جديدة' }}
+    </h3>
+
+    <form (ngSubmit)="onSubmit()">
+      <!-- اختيار النوع -->
+      <div style="margin-bottom: 15px;">
+        <label style="font-weight: bold; color: #333; display: block; margin-bottom: 8px;">حدد طبيعة التعريف:</label>
+        <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; background: white; padding: 10px 18px; border: 2px solid #2e7d32; border-radius: 6px;"
+                 [ngStyle]="{'background-color': itemForm.kind === 'صنف ملموس' ? '#e8f5e9' : 'white'}">
+            <input type="radio" name="kind" [(ngModel)]="itemForm.kind" value="صنف ملموس" (change)="onKindChange()">
+            <strong>📦 صنف ملموس (بضاعة تخزن بالمخازن)</strong>
+          </label>
+
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; background: white; padding: 10px 18px; border: 2px solid #1565c0; border-radius: 6px;"
+                 [ngStyle]="{'background-color': itemForm.kind === 'خدمة' ? '#e3f2fd' : 'white'}">
+            <input type="radio" name="kind" [(ngModel)]="itemForm.kind" value="خدمة" (change)="onKindChange()">
+            <strong>🩺 خدمة ومساعدة (كشف طبي، عمليات، ترميم...)</strong>
+          </label>
+        </div>
+      </div>
+
+      <!-- إشعار توجيهي -->
+      <div *ngIf="itemForm.kind === 'صنف ملموس'" style="background-color: #e8f5e9; border-right: 4px solid #2e7d32; padding: 10px 15px; margin-bottom: 15px; border-radius: 4px; font-size: 13px; color: #1b5e20;">
+        💡 <strong>صنف ملموس:</strong> بمجرد تعريفه هنا، سيظهر في قائمة الأصناف بشاشة المخزن. ويمكن استلام تبرعات به تزيد رصيده، وصرفه للمستحقين بخصم رصيده.
+      </div>
+      <div *ngIf="itemForm.kind === 'خدمة'" style="background-color: #e3f2fd; border-right: 4px solid #1565c0; padding: 10px 15px; margin-bottom: 15px; border-radius: 4px; font-size: 13px; color: #0d47a1;">
+        💡 <strong>خدمة ومساعدة:</strong> بمجرد تعريفها هنا، ستظهر في شاشة التبرعات لمن يرغب في رعايتها، وتظهر في شاشة الصرف لتقديمها للمستفيدين كخدمة مباشرة.
+      </div>
+
+      <!-- الحقول الأساسية -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 15px;">
+        <div>
+          <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">كود الصنف / المعرف *</label>
+          <input type="text" [(ngModel)]="itemForm.code" name="code" placeholder="مثال: ITM-101" required 
+                 style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; font-weight: bold; background: #fafafa;">
+        </div>
+
+        <div>
+          <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">{{ itemForm.kind === 'صنف ملموس' ? 'اسم الصنف' : 'اسم الخدمة أو المساعدة' }} *</label>
+          <input type="text" [(ngModel)]="itemForm.itemName" name="itemName" 
+                 [placeholder]="itemForm.kind === 'صنف ملموس' ? 'مثال: أرز مصري، سكر أبيض، بطانية شتوية...' : 'مثال: كشف طبي تخصصي، ترميم سقف، تجهيز عروسة...'" 
+                 required style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; font-weight: bold;">
+        </div>
+
+        <div>
+          <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">وحدة القياس / التعامل</label>
+          <select [(ngModel)]="itemForm.unit" name="unit" style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box;">
+            <ng-container *ngIf="itemForm.kind === 'صنف ملموس'">
+              <option *ngFor="let u of tangibleUnits" [value]="u">{{ u }}</option>
+            </ng-container>
+            <ng-container *ngIf="itemForm.kind === 'خدمة'">
+              <option *ngFor="let u of serviceUnits" [value]="u">{{ u }}</option>
+            </ng-container>
+          </select>
+        </div>
+
+        <div>
+          <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">التصنيف المعتمد</label>
+          <select [(ngModel)]="itemForm.type" name="type" style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box;">
+            <ng-container *ngIf="itemForm.kind === 'صنف ملموس'">
+              <option *ngFor="let t of tangibleTypes" [value]="t">{{ t }}</option>
+            </ng-container>
+            <ng-container *ngIf="itemForm.kind === 'خدمة'">
+              <option *ngFor="let t of serviceTypes" [value]="t">{{ t }}</option>
+            </ng-container>
+          </select>
+        </div>
+      </div>
+
+      <!-- حقول إضافية للأصناف الملموسة -->
+      <div *ngIf="itemForm.kind === 'صنف ملموس' && !itemForm.id" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 15px;">
+        <div>
+          <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">الرصيد الافتتاحي بالمخزن حالياً (اختياري)</label>
+          <input type="number" [(ngModel)]="itemForm.initialStock" name="initialStock" min="0" placeholder="0" 
+                 style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box;">
+        </div>
+
+        <div>
+          <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">حد إعادة الطلب (تنبيه قرب النفاذ)</label>
+          <input type="number" [(ngModel)]="itemForm.minAlert" name="minAlert" min="1" placeholder="10" 
+                 style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box;">
+        </div>
+      </div>
+
+      <!-- الوصف والملاحظات -->
+      <div style="margin-bottom: 15px;">
+        <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">الوصف والمعايير (اختياري)</label>
+        <input type="text" [(ngModel)]="itemForm.notes" name="notes" placeholder="ملاحظات حول الصنف، طريقة التخزين، أو معايير استحقاق الخدمة..." 
+               style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box;">
+      </div>
+
+      <!-- أزرار الإجراء -->
+      <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px;">
+        <button type="submit" style="padding: 12px 25px; background-color: #004d40; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 15px; font-weight: bold; flex: 1;">
+          {{ itemForm.id ? '🔄 تحديث تعريف الصنف / الخدمة' : '💾 حفظ وإدراج في الدليل التعريفي' }}
+        </button>
+        <button type="button" *ngIf="itemForm.id" (click)="resetForm()" style="padding: 12px 20px; background-color: #757575; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 15px;">
+          إلغاء التعديل
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- الفلترة والبحث -->
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;">
+    <!-- أزرار التبويب -->
+    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+      <button type="button" (click)="selectedFilter = 'الكل'"
+              [style.background-color]="selectedFilter === 'الكل' ? '#004d40' : '#e0e0e0'"
+              [style.color]="selectedFilter === 'الكل' ? 'white' : '#333'"
+              style="padding: 8px 16px; border: none; border-radius: 20px; cursor: pointer; font-weight: bold; font-size: 13px;">
+        الكل ({{ items.length }})
+      </button>
+
+      <button type="button" (click)="selectedFilter = 'صنف ملموس'"
+              [style.background-color]="selectedFilter === 'صنف ملموس' ? '#2e7d32' : '#e0e0e0'"
+              [style.color]="selectedFilter === 'صنف ملموس' ? 'white' : '#333'"
+              style="padding: 8px 16px; border: none; border-radius: 20px; cursor: pointer; font-weight: bold; font-size: 13px;">
+        📦 أصناف ملموسة ({{ tangibleCount }})
+      </button>
+
+      <button type="button" (click)="selectedFilter = 'خدمة'"
+              [style.background-color]="selectedFilter === 'خدمة' ? '#1565c0' : '#e0e0e0'"
+              [style.color]="selectedFilter === 'خدمة' ? 'white' : '#333'"
+              style="padding: 8px 16px; border: none; border-radius: 20px; cursor: pointer; font-weight: bold; font-size: 13px;">
+        🩺 خدمات ومساعدات ({{ serviceCount }})
+      </button>
+    </div>
+
+    <!-- خانة البحث -->
+    <div style="min-width: 250px; flex: 1; max-width: 350px;">
+      <input type="text" [(ngModel)]="searchTerm" placeholder="🔍 بحث بالاسم، الكود، أو التصنيف..." 
+             style="width: 100%; padding: 8px 12px; border-radius: 20px; border: 1px solid #ccc; box-sizing: border-box; font-size: 13px;">
+    </div>
+  </div>
+
+  <!-- جدول الأصناف والخدمات المعرفة -->
+  <div style="overflow-x: auto; width: 100%; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+    <table border="1" cellpadding="10" cellspacing="0" style="width: 100%; border-collapse: collapse; background-color: white; font-size: 14px;">
+      <thead>
+        <tr style="background-color: #e0f2f1; color: #004d40;">
+          <th style="width: 110px;">كود الصنف</th>
+          <th style="text-align: right;">الاسم والوصف</th>
+          <th style="text-align: center;">طبيعة التعريف</th>
+          <th style="text-align: center;">وحدة القياس</th>
+          <th style="text-align: right;">التصنيف</th>
+          <th style="text-align: center;">الرصيد بالمخزن</th>
+          <th style="text-align: center; width: 130px;">إجراءات</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of filteredItems" 
+            (click)="selectItem(item)" 
+            class="clickable-row" 
+            [ngStyle]="{'background-color': itemForm.id === item.id ? '#b2dfdb' : 'transparent'}">
+          <td>
+            <code style="background: #eceff1; padding: 2px 6px; border-radius: 4px; font-weight: bold; color: #37474f;">
+              {{ item.code || '—' }}
+            </code>
+          </td>
+
+          <td>
+            <strong style="color: #004d40; font-size: 15px;">{{ item.itemName }}</strong>
+            <div *ngIf="item.notes" style="color: #777; font-size: 12px; margin-top: 2px;">{{ item.notes }}</div>
+          </td>
+
+          <td style="text-align: center;">
+            <span *ngIf="item.kind === 'صنف ملموس'" style="background-color: #e8f5e9; color: #2e7d32; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: bold;">
+              📦 صنف ملموس
+            </span>
+            <span *ngIf="item.kind === 'خدمة'" style="background-color: #e3f2fd; color: #1565c0; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: bold;">
+              🩺 خدمة ورعاية
+            </span>
+          </td>
+
+          <td style="text-align: center;">
+            <span style="font-weight: bold; color: #555;">{{ item.unit }}</span>
+          </td>
+
+          <td>
+            <span style="background-color: #f5f5f5; color: #424242; padding: 3px 8px; border-radius: 4px; font-size: 12px; border: 1px solid #e0e0e0;">
+              {{ item.type }}
+            </span>
+          </td>
+
+          <td style="text-align: center;">
+            <div *ngIf="item.kind === 'صنف ملموس'">
+              <strong style="font-size: 16px; color: #004d40;">{{ item.quantity || 0 }}</strong>
+              <span style="color: #666; font-size: 12px; margin-right: 3px;">{{ item.unit }}</span>
+            </div>
+            <div *ngIf="item.kind === 'خدمة'" style="color: #1565c0; font-size: 12px;">
+              خدمة حسب الحالات
+            </div>
+          </td>
+
+          <td style="text-align: center;">
+            <button type="button" (click)="selectItem(item)" 
+                    style="background-color: #004d40; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; margin-left: 5px;">
+              ✏️ تعديل
+            </button>
+            <button type="button" (click)="deleteItem(item.id, $event)" 
+                    style="background-color: #ffebee; color: #c62828; border: 1px solid #ffcdd2; padding: 5px 8px; border-radius: 4px; cursor: pointer; font-size: 12px;">
+              🗑️
+            </button>
+          </td>
+        </tr>
+
+        <tr *ngIf="filteredItems.length === 0">
+          <td colspan="7" style="text-align: center; padding: 25px; color: #888;">
+            لا توجد أصناف أو خدمات مطابقة للبحث أو التصفية الحالية.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

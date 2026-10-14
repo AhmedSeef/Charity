@@ -204,7 +204,8 @@ export class Api {
       "quantity": 450,
       "unit": "كيلو",
       "type": "أغذية جافة",
-      "kind": "صنف ملموس"
+      "kind": "صنف ملموس",
+      "code": "ITM-001"
     },
     {
       "id": "i2",
@@ -212,7 +213,8 @@ export class Api {
       "quantity": 300,
       "unit": "كيلو",
       "type": "أغذية جافة",
-      "kind": "صنف ملموس"
+      "kind": "صنف ملموس",
+      "code": "ITM-002"
     },
     {
       "id": "i3",
@@ -220,7 +222,8 @@ export class Api {
       "quantity": 120,
       "unit": "كيلو",
       "type": "لحوم ومجمدات",
-      "kind": "صنف ملموس"
+      "kind": "صنف ملموس",
+      "code": "ITM-003"
     },
     {
       "id": "i4",
@@ -228,7 +231,8 @@ export class Api {
       "quantity": 45,
       "unit": "علبة",
       "type": "طبي",
-      "kind": "صنف ملموس"
+      "kind": "صنف ملموس",
+      "code": "ITM-004"
     },
     {
       "id": "i5",
@@ -236,7 +240,8 @@ export class Api {
       "quantity": 10,
       "unit": "قطعة",
       "type": "متنوع",
-      "kind": "صنف ملموس"
+      "kind": "صنف ملموس",
+      "code": "ITM-005"
     },
     {
       "id": "i6",
@@ -244,7 +249,8 @@ export class Api {
       "quantity": 5,
       "unit": "قطعة",
       "type": "طبي",
-      "kind": "صنف ملموس"
+      "kind": "صنف ملموس",
+      "code": "ITM-006"
     },
     {
       "id": "i7",
@@ -252,7 +258,8 @@ export class Api {
       "quantity": 95,
       "unit": "زجاجة",
       "type": "أغذية جافة",
-      "kind": "صنف ملموس"
+      "kind": "صنف ملموس",
+      "code": "ITM-007"
     },
     {
       "id": "i8",
@@ -260,7 +267,8 @@ export class Api {
       "quantity": 150,
       "unit": "قطعة",
       "type": "متنوع",
-      "kind": "صنف ملموس"
+      "kind": "صنف ملموس",
+      "code": "ITM-008"
     },
     {
       "id": "i9",
@@ -268,7 +276,8 @@ export class Api {
       "quantity": 50,
       "unit": "كرتونة",
       "type": "أغذية جافة",
-      "kind": "صنف ملموس"
+      "kind": "صنف ملموس",
+      "code": "ITM-009"
     },
     {
       "id": "s1",
@@ -276,7 +285,8 @@ export class Api {
       "kind": "خدمة",
       "quantity": 0,
       "unit": "كشف",
-      "type": "خدمات طبية"
+      "type": "خدمات طبية",
+      "code": "SRV-010"
     },
     {
       "id": "s2",
@@ -284,7 +294,8 @@ export class Api {
       "kind": "خدمة",
       "quantity": 0,
       "unit": "عملية",
-      "type": "خدمات طبية"
+      "type": "خدمات طبية",
+      "code": "SRV-011"
     },
     {
       "id": "s3",
@@ -292,7 +303,8 @@ export class Api {
       "kind": "خدمة",
       "quantity": 0,
       "unit": "حالة",
-      "type": "خدمات اجتماعية"
+      "type": "خدمات اجتماعية",
+      "code": "SRV-012"
     },
     {
       "id": "s4",
@@ -300,7 +312,8 @@ export class Api {
       "kind": "خدمة",
       "quantity": 0,
       "unit": "منزل",
-      "type": "خدمات إيواء وتعمير"
+      "type": "خدمات إيواء وتعمير",
+      "code": "SRV-013"
     },
     {
       "id": "s5",
@@ -308,7 +321,8 @@ export class Api {
       "kind": "خدمة",
       "quantity": 0,
       "unit": "حالة",
-      "type": "خدمات اجتماعية"
+      "type": "خدمات اجتماعية",
+      "code": "SRV-014"
     }
   ],
   "distributions": [
@@ -414,9 +428,13 @@ export class Api {
       let modified = false;
 
       if (this.db.inventory && Array.isArray(this.db.inventory)) {
-        this.db.inventory.forEach((item: any) => {
+        this.db.inventory.forEach((item: any, idx: number) => {
           if (!item.kind) {
             item.kind = 'صنف ملموس';
+            modified = true;
+          }
+          if (!item.code) {
+            item.code = (item.kind === 'خدمة' ? 'SRV-' : 'ITM-') + String(idx + 1).padStart(3, '0');
             modified = true;
           }
         });
@@ -424,11 +442,11 @@ export class Api {
         const hasServices = this.db.inventory.some((i: any) => i.kind === 'خدمة');
         if (!hasServices) {
           this.db.inventory.push(
-            { id: 's1', itemName: 'كشف طبي تخصصي (باطنة/عيون)', kind: 'خدمة', quantity: 0, unit: 'كشف', type: 'خدمات طبية' },
-            { id: 's2', itemName: 'عملية جراحية (مياه بيضاء)', kind: 'خدمة', quantity: 0, unit: 'عملية', type: 'خدمات طبية' },
-            { id: 's3', itemName: 'تجهيز عرائس (أجهزة كهربائية)', kind: 'خدمة', quantity: 0, unit: 'حالة', type: 'خدمات اجتماعية' },
-            { id: 's4', itemName: 'ترميم سقف وبناء منزل', kind: 'خدمة', quantity: 0, unit: 'منزل', type: 'خدمات إيواء وتعمير' },
-            { id: 's5', itemName: 'سداد ديون غارم/غارمة', kind: 'خدمة', quantity: 0, unit: 'حالة', type: 'خدمات اجتماعية' }
+            { id: 's1', code: 'SRV-001', itemName: 'كشف طبي تخصصي (باطنة/عيون)', kind: 'خدمة', quantity: 0, unit: 'كشف', type: 'خدمات طبية' },
+            { id: 's2', code: 'SRV-002', itemName: 'عملية جراحية (مياه بيضاء)', kind: 'خدمة', quantity: 0, unit: 'عملية', type: 'خدمات طبية' },
+            { id: 's3', code: 'SRV-003', itemName: 'تجهيز عرائس (أجهزة كهربائية)', kind: 'خدمة', quantity: 0, unit: 'حالة', type: 'خدمات اجتماعية' },
+            { id: 's4', code: 'SRV-004', itemName: 'ترميم سقف وبناء منزل', kind: 'خدمة', quantity: 0, unit: 'منزل', type: 'خدمات إيواء وتعمير' },
+            { id: 's5', code: 'SRV-005', itemName: 'سداد ديون غارم/غارمة', kind: 'خدمة', quantity: 0, unit: 'حالة', type: 'خدمات اجتماعية' }
           );
           modified = true;
         }
@@ -496,6 +514,9 @@ export class Api {
   addInventory(data: any): Observable<any> { 
     data.id = 'i_' + Date.now().toString(); 
     if (!data.kind) data.kind = 'صنف ملموس';
+    if (!data.code) {
+      data.code = (data.kind === 'خدمة' ? 'SRV-' : 'ITM-') + Math.floor(100 + Math.random() * 900);
+    }
     if (data.kind === 'خدمة') {
       data.quantity = 0;
     } else {

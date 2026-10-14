@@ -1,35 +1,27 @@
 import { Component, ChangeDetectorRef, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
 import { Api } from '../api';
 
 @Component({
   selector: 'app-inventory',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './inventory.html',
   styleUrls: ['./inventory.css']
 })
 export class InventoryComponent implements OnInit {
   inventory: any[] = [];
-  selectedFilter: 'الكل' | 'صنف ملموس' | 'خدمة' = 'الكل';
+  selectedTypeFilter: string = 'الكل';
   searchTerm: string = '';
+  successMessage: string = '';
 
-  newItem: any = {
-    id: null,
-    itemName: '',
-    kind: 'صنف ملموس', // 'صنف ملموس' | 'خدمة'
-    quantity: 0,
-    unit: 'كيلو',
-    type: 'أغذية جافة',
-    notes: ''
-  };
-
-  tangibleUnits = ['كيلو', 'كرتونة', 'علبة', 'زجاجة', 'قطعة', 'شريط (دواء)', 'شنطة / وجبة', 'متر'];
-  serviceUnits = ['خدمة / استشارة', 'كشف طبي', 'عملية جراحية', 'حالة / مساعدة', 'جلسة علاجية', 'منزل / سقف', 'منحة / كفالة'];
-
-  tangibleTypes = ['أغذية جافة', 'لحوم ومجمدات', 'أدوية ومستلزمات طبية', 'أجهزة تعويضية وكراسي', 'ملابس وبطاطين', 'أكفان وتجهيز متوفين', 'متنوع'];
-  serviceTypes = ['خدمات طبية وعلاجية', 'خدمات اجتماعية وتجهيز', 'خدمات إيواء وتعمير', 'خدمات تعليمية وكفالات', 'سداد ديون وغارمين'];
+  // Stock Adjustment Modal
+  adjustModalOpen: boolean = false;
+  selectedStockItem: any = null;
+  adjustedQuantity: number = 0;
+  adjustmentReason: string = 'جرد مخزني دوري';
 
   constructor(private api: Api, private cdr: ChangeDetectorRef) {}
 
@@ -39,90 +31,73 @@ export class InventoryComponent implements OnInit {
 
   loadData() {
     this.api.getInventory().subscribe((data: any[]) => {
+      // Focus on tangible items with actual warehouse stock
       this.inventory = data;
       this.cdr.detectChanges();
     });
   }
 
-  onKindChange() {
-    if (this.newItem.kind === 'صنف ملموس') {
-      this.newItem.unit = 'كيلو';
-      this.newItem.type = 'أغذية جافة';
-    } else {
-      this.newItem.quantity = 0;
-      this.newItem.unit = 'كشف طبي';
-      this.newItem.type = 'خدمات طبية وعلاجية';
-    }
+  get tangibleItems(): any[] {
+    return this.inventory.filter(i => i.kind === 'صنف ملموس');
   }
 
-  get filteredInventory(): any[] {
-    return this.inventory.filter(item => {
-      const matchFilter = this.selectedFilter === 'الكل' || item.kind === this.selectedFilter;
-      const term = this.searchTerm.trim().toLowerCase();
-      const matchSearch = !term || 
-        (item.itemName && item.itemName.toLowerCase().includes(term)) ||
-        (item.type && item.type.toLowerCase().includes(term)) ||
-        (item.unit && item.unit.toLowerCase().includes(term));
-      return matchFilter && matchSearch;
-    });
-  }
-
-  get tangibleCount(): number {
-    return this.inventory.filter(i => i.kind === 'صنف ملموس').length;
-  }
-
-  get serviceCount(): number {
-    return this.inventory.filter(i => i.kind === 'خدمة').length;
+  get totalUnitsInWarehouse(): number {
+    return this.tangibleItems.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
   }
 
   get lowStockCount(): number {
-    return this.inventory.filter(i => i.kind === 'صنف ملموس' && Number(i.quantity) < 10).length;
+    return this.tangibleItems.filter(i => Number(i.quantity) < Number(i.minAlert || 10)).length;
   }
 
-  selectItem(item: any) {
-    this.newItem = { ...item };
-    this.cdr.detectChanges();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  get availableCategories(): string[] {
+    const cats = new Set<string>();
+    this.tangibleItems.forEach(i => { if (i.type) cats.add(i.type); });
+    return Array.from(cats);
   }
 
-  resetForm() {
-    this.newItem = {
-      id: null,
-      itemName: '',
-      kind: 'صنف ملموس',
-      quantity: 0,
-      unit: 'كيلو',
-      type: 'أغذية جافة',
-      notes: ''
-    };
-    this.cdr.detectChanges();
+  get filteredTangibleItems(): any[] {
+    return this.tangibleItems.filter(item => {
+      const matchType = this.selectedTypeFilter === 'الكل' || item.type === this.selectedTypeFilter;
+      const term = this.searchTerm.trim().toLowerCase();
+      const matchSearch = !term ||
+        (item.itemName && item.itemName.toLowerCase().includes(term)) ||
+        (item.code && item.code.toLowerCase().includes(term)) ||
+        (item.type && item.type.toLowerCase().includes(term));
+      return matchType && matchSearch;
+    });
   }
 
-  onSubmit() {
-    if (!this.newItem.itemName) return;
-
-    if (this.newItem.id) {
-      this.api.updateInventory(this.newItem).subscribe(() => {
-        this.loadData();
-        this.resetForm();
-      });
-    } else {
-      this.api.addInventory(this.newItem).subscribe(() => {
-        this.loadData();
-        this.resetForm();
-      });
-    }
-  }
-
-  deleteItem(id: string, event: Event) {
+  openAdjustModal(item: any, event: Event) {
     event.stopPropagation();
-    if (confirm('هل أنت متأكد من رغبتك في حذف هذا الصنف من الدليل؟')) {
-      this.api.deleteInventory(id).subscribe(() => {
-        this.loadData();
-        if (this.newItem.id === id) {
-          this.resetForm();
-        }
-      });
-    }
+    this.selectedStockItem = { ...item };
+    this.adjustedQuantity = Number(item.quantity || 0);
+    this.adjustmentReason = 'جرد مخزني دوري وتصحيح رصيد';
+    this.adjustModalOpen = true;
+    this.cdr.detectChanges();
+  }
+
+  closeAdjustModal() {
+    this.adjustModalOpen = false;
+    this.selectedStockItem = null;
+    this.cdr.detectChanges();
+  }
+
+  saveStockAdjustment() {
+    if (!this.selectedStockItem) return;
+    const oldQty = this.selectedStockItem.quantity;
+    const newQty = Number(this.adjustedQuantity);
+
+    const updatedItem = {
+      ...this.selectedStockItem,
+      quantity: newQty,
+      notes: this.adjustmentReason ? `${this.selectedStockItem.notes || ''} [تعديل رصيد: من ${oldQty} إلى ${newQty} - ${this.adjustmentReason}]` : this.selectedStockItem.notes
+    };
+
+    this.api.updateInventory(updatedItem).subscribe(() => {
+      this.successMessage = `✅ تم تحديث رصيد (${updatedItem.itemName}) بالمخزن إلى (${newQty} ${updatedItem.unit}) بنجاح!`;
+      this.closeAdjustModal();
+      this.loadData();
+      setTimeout(() => { this.successMessage = ''; this.cdr.detectChanges(); }, 4000);
+    });
   }
 }

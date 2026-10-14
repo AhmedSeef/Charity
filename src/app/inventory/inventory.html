@@ -1,201 +1,105 @@
 <div dir="rtl" style="text-align: right;">
-  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 20px; gap: 10px;">
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 20px; gap: 15px;">
     <div>
-      <h2 style="color: #004d40; margin: 0;">📦 دليل الأصناف والخدمات والمخازن</h2>
+      <h2 style="color: #004d40; margin: 0;">📦 مخازن الجمعية ومتابعة الأرصدة</h2>
       <p style="color: #666; margin: 5px 0 0 0; font-size: 14px;">
-        تسجيل الأصناف الملموسة المتاحة في المخازن، والخدمات والمساعدات الاجتماعية والطبية التي تقدمها الجمعية.
+        متابعة كميات البضاعة والأصناف الملموسة بالمخزن، الرصيد المتاح، التنبيهات، وعمل الجرد الدوري.
       </p>
+    </div>
+
+    <div>
+      <a routerLink="/items-catalog" 
+         style="display: inline-flex; align-items: center; gap: 8px; background-color: #004d40; color: white; text-decoration: none; padding: 10px 18px; border-radius: 6px; font-weight: bold; font-size: 14px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        🏷️ الشاشة التعريفية (إضافة أصناف وخدمات جديدة) ←
+      </a>
     </div>
   </div>
 
-  <!-- ملخص إحصائي سريع -->
+  <!-- مؤشرات المخزن السريعة -->
   <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 25px;">
     <div style="background-color: #e8f5e9; border: 1px solid #c8e6c9; border-radius: 8px; padding: 15px; text-align: center;">
-      <div style="font-size: 13px; color: #2e7d32; font-weight: bold;">📦 أصناف ملموسة (مخزنية)</div>
-      <div style="font-size: 28px; font-weight: bold; color: #1b5e20; margin-top: 5px;">{{ tangibleCount }}</div>
-      <div style="font-size: 11px; color: #555; margin-top: 4px;">يزيد رصيدها بالتبرع العيني ويقل بالصرف</div>
+      <div style="font-size: 13px; color: #2e7d32; font-weight: bold;">📦 الأصناف المخزنية المعرفة</div>
+      <div style="font-size: 26px; font-weight: bold; color: #1b5e20; margin-top: 5px;">{{ tangibleItems.length }}</div>
+      <div style="font-size: 11px; color: #666; margin-top: 4px;">أرز، سكر، زيت، لحوم، بطاطين...</div>
     </div>
 
-    <div style="background-color: #e3f2fd; border: 1px solid #bbdefb; border-radius: 8px; padding: 15px; text-align: center;">
-      <div style="font-size: 13px; color: #1565c0; font-weight: bold;">🩺 خدمات ورعاية اجتماعية</div>
-      <div style="font-size: 28px; font-weight: bold; color: #0d47a1; margin-top: 5px;">{{ serviceCount }}</div>
-      <div style="font-size: 11px; color: #555; margin-top: 4px;">كشوفات، عمليات، ترميم، تجهيز عرائس</div>
+    <div style="background-color: #f1f8e9; border: 1px solid #dcedc8; border-radius: 8px; padding: 15px; text-align: center;">
+      <div style="font-size: 13px; color: #33691e; font-weight: bold;">🔢 إجمالي الوحدات بالمخزن</div>
+      <div style="font-size: 26px; font-weight: bold; color: #33691e; margin-top: 5px;">{{ totalUnitsInWarehouse | number:'1.0-0' }}</div>
+      <div style="font-size: 11px; color: #666; margin-top: 4px;">مجموع كميات كافة الأصناف المخزنة</div>
     </div>
 
     <div style="background-color: #fff3e0; border: 1px solid #ffe0b2; border-radius: 8px; padding: 15px; text-align: center;">
       <div style="font-size: 13px; color: #e65100; font-weight: bold;">⚠️ تنبيهات قرب نفاذ الرصيد</div>
-      <div style="font-size: 28px; font-weight: bold; color: #b71c1c; margin-top: 5px;">{{ lowStockCount }}</div>
-      <div style="font-size: 11px; color: #555; margin-top: 4px;">أصناف مخزنية رصيدها أقل من 10 وحدات</div>
+      <div style="font-size: 26px; font-weight: bold; color: #b71c1c; margin-top: 5px;">{{ lowStockCount }}</div>
+      <div style="font-size: 11px; color: #666; margin-top: 4px;">أصناف وصلت للحد الأدنى وتتطلب توريداً</div>
     </div>
   </div>
 
-  <!-- فورم الإضافة والتعديل -->
-  <div style="background-color: #f9f9f9; padding: 20px; border-radius: 8px; margin-bottom: 25px; border: 1px solid #ddd; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-    <h3 style="margin-top: 0; color: #004d40; border-bottom: 2px solid #004d40; padding-bottom: 10px;">
-      {{ newItem.id ? '🔄 تعديل بيانات الصنف أو الخدمة' : '➕ تسجيل صنف جديد (ملموس أو خدمة)' }}
-    </h3>
+  <!-- تنبيه النجاح -->
+  <div *ngIf="successMessage" style="background-color: #e8f5e9; border: 2px solid #43a047; color: #1b5e20; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-weight: bold; font-size: 15px;">
+    {{ successMessage }}
+  </div>
 
-    <form (ngSubmit)="onSubmit()">
-      <!-- اختيار نوع الصنف -->
-      <div style="margin-bottom: 15px;">
-        <label style="font-weight: bold; color: #333; margin-left: 10px; display: block; margin-bottom: 8px;">طبيعة الصنف المراد تسجيله:</label>
-        <div style="display: flex; gap: 15px; flex-wrap: wrap;">
-          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; background: white; padding: 8px 15px; border: 2px solid #004d40; border-radius: 6px;"
-                 [ngStyle]="{'background-color': newItem.kind === 'صنف ملموس' ? '#e0f2f1' : 'white'}">
-            <input type="radio" name="kind" [(ngModel)]="newItem.kind" value="صنف ملموس" (change)="onKindChange()">
-            <strong>📦 صنف ملموس (بضاعة / مخزون)</strong>
-          </label>
-
-          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; background: white; padding: 8px 15px; border: 2px solid #1565c0; border-radius: 6px;"
-                 [ngStyle]="{'background-color': newItem.kind === 'خدمة' ? '#e3f2fd' : 'white'}">
-            <input type="radio" name="kind" [(ngModel)]="newItem.kind" value="خدمة" (change)="onKindChange()">
-            <strong>🩺 خدمة (كشف طبي، عمليات، ترميم، تجهيز...)</strong>
-          </label>
-        </div>
-      </div>
-
-      <!-- إشعار توضيحي لطبيعة الصنف -->
-      <div *ngIf="newItem.kind === 'صنف ملموس'" style="background-color: #e8f5e9; border-right: 4px solid #2e7d32; padding: 10px 15px; margin-bottom: 15px; border-radius: 4px; font-size: 13px; color: #1b5e20;">
-        💡 <strong>الأصناف الملموسة:</strong> تخضع لإدارة المخزن وتتبع الكميات. عندما يسجل متبرع تبرعاً عينياً بهذا الصنف يزيد رصيد المخزن تلقائياً، وعند الصرف لمستفيد يقل الرصيد.
-      </div>
-      <div *ngIf="newItem.kind === 'خدمة'" style="background-color: #e3f2fd; border-right: 4px solid #1976d2; padding: 10px 15px; margin-bottom: 15px; border-radius: 4px; font-size: 13px; color: #0d47a1;">
-        💡 <strong>الخدمات والمساعدات:</strong> لا تتطلب تتبع أرصدة رفوف بالمخزن. تُستخدم لتسجيل التبرع بالخدمات (مثل تبرع أطباء أو كفالة عمليات) وتُصرف في ملف المستفيد مباشرة.
-      </div>
-
-      <!-- حقول الإدخال -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px; margin-bottom: 15px;">
-        <div>
-          <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">{{ newItem.kind === 'صنف ملموس' ? 'اسم الصنف بالمخزن' : 'اسم الخدمة أو المساعدة' }} *</label>
-          <input type="text" [(ngModel)]="newItem.itemName" name="itemName" 
-                 [placeholder]="newItem.kind === 'صنف ملموس' ? 'مثال: أرز مصري، سكر، بطاطين...' : 'مثال: كشف عيون، تجهيز عروسة، ترميم سقف...'" 
-                 required style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box;">
-        </div>
-
-        <div *ngIf="newItem.kind === 'صنف ملموس'">
-          <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">الرصيد الافتتاحي بالمخزن</label>
-          <input type="number" [(ngModel)]="newItem.quantity" name="quantity" min="0" placeholder="0" 
-                 style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box;">
-        </div>
-
-        <div>
-          <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">وحدة القياس / التوزيع</label>
-          <select [(ngModel)]="newItem.unit" name="unit" style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box;">
-            <ng-container *ngIf="newItem.kind === 'صنف ملموس'">
-              <option *ngFor="let u of tangibleUnits" [value]="u">{{ u }}</option>
-            </ng-container>
-            <ng-container *ngIf="newItem.kind === 'خدمة'">
-              <option *ngFor="let u of serviceUnits" [value]="u">{{ u }}</option>
-            </ng-container>
-          </select>
-        </div>
-
-        <div>
-          <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">التصنيف العام</label>
-          <select [(ngModel)]="newItem.type" name="type" style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box;">
-            <ng-container *ngIf="newItem.kind === 'صنف ملموس'">
-              <option *ngFor="let t of tangibleTypes" [value]="t">{{ t }}</option>
-            </ng-container>
-            <ng-container *ngIf="newItem.kind === 'خدمة'">
-              <option *ngFor="let t of serviceTypes" [value]="t">{{ t }}</option>
-            </ng-container>
-          </select>
-        </div>
-      </div>
-
-      <div style="margin-bottom: 15px;">
-        <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">ملاحظات أو مواصفات (اختياري)</label>
-        <input type="text" [(ngModel)]="newItem.notes" name="notes" placeholder="ملاحظات حول طريقة التخزين، أو معايير الاستحقاق للخدمة..." 
-               style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box;">
-      </div>
-
-      <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px;">
-        <button type="submit" style="padding: 12px 25px; background-color: #004d40; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 15px; font-weight: bold; flex: 1;">
-          {{ newItem.id ? '🔄 تحديث بيانات الصنف / الخدمة' : '💾 حفظ وإضافة للدليل والمخزن' }}
-        </button>
-        <button type="button" *ngIf="newItem.id" (click)="resetForm()" style="padding: 12px 20px; background-color: #757575; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 15px;">
-          إلغاء التعديل
-        </button>
-      </div>
-    </form>
+  <!-- إشعار آلية عمل المخزن -->
+  <div style="background-color: #e0f2f1; border-right: 5px solid #004d40; padding: 12px 18px; margin-bottom: 20px; border-radius: 6px; font-size: 13px; color: #004d40;">
+    💡 <strong>التكامل التلقائي:</strong> رصيد هذه الأصناف يزيد تلقائياً عند استلام أي 
+    <a routerLink="/donations" style="color: #004d40; font-weight: bold; text-decoration: underline;">تبرع عيني</a>، 
+    ويتم خصمه تلقائياً فور تسجيل 
+    <a routerLink="/distributions" style="color: #004d40; font-weight: bold; text-decoration: underline;">حركة صرف</a> 
+    لأي مستفيد. يمكنك أيضاً استخدام زر <strong>"⚡ تعديل رصيد / جرد"</strong> لتصحيح الرصيد يدوياً في أي وقت.
   </div>
 
   <!-- الفلترة والبحث -->
   <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;">
-    <!-- أزرار التبويب -->
+    <!-- أزرار التصنيفات -->
     <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-      <button type="button" (click)="selectedFilter = 'الكل'"
-              [style.background-color]="selectedFilter === 'الكل' ? '#004d40' : '#e0e0e0'"
-              [style.color]="selectedFilter === 'الكل' ? 'white' : '#333'"
+      <button type="button" (click)="selectedTypeFilter = 'الكل'"
+              [style.background-color]="selectedTypeFilter === 'الكل' ? '#004d40' : '#e0e0e0'"
+              [style.color]="selectedTypeFilter === 'الكل' ? 'white' : '#333'"
               style="padding: 8px 16px; border: none; border-radius: 20px; cursor: pointer; font-weight: bold; font-size: 13px;">
-        الكل ({{ inventory.length }})
+        الكل ({{ tangibleItems.length }})
       </button>
 
-      <button type="button" (click)="selectedFilter = 'صنف ملموس'"
-              [style.background-color]="selectedFilter === 'صنف ملموس' ? '#2e7d32' : '#e0e0e0'"
-              [style.color]="selectedFilter === 'صنف ملموس' ? 'white' : '#333'"
-              style="padding: 8px 16px; border: none; border-radius: 20px; cursor: pointer; font-weight: bold; font-size: 13px;">
-        📦 أصناف ملموسة بالمخزن ({{ tangibleCount }})
-      </button>
-
-      <button type="button" (click)="selectedFilter = 'خدمة'"
-              [style.background-color]="selectedFilter === 'خدمة' ? '#1565c0' : '#e0e0e0'"
-              [style.color]="selectedFilter === 'خدمة' ? 'white' : '#333'"
-              style="padding: 8px 16px; border: none; border-radius: 20px; cursor: pointer; font-weight: bold; font-size: 13px;">
-        🩺 خدمات ومساعدات ({{ serviceCount }})
+      <button *ngFor="let cat of availableCategories" type="button" (click)="selectedTypeFilter = cat"
+              [style.background-color]="selectedTypeFilter === cat ? '#2e7d32' : '#e0e0e0'"
+              [style.color]="selectedTypeFilter === cat ? 'white' : '#333'"
+              style="padding: 8px 14px; border: none; border-radius: 20px; cursor: pointer; font-weight: bold; font-size: 13px;">
+        {{ cat }}
       </button>
     </div>
 
     <!-- خانة البحث -->
     <div style="min-width: 250px; flex: 1; max-width: 350px;">
-      <input type="text" [(ngModel)]="searchTerm" placeholder="🔍 بحث بالاسم أو التصنيف..." 
+      <input type="text" [(ngModel)]="searchTerm" placeholder="🔍 بحث باسم الصنف أو الكود..." 
              style="width: 100%; padding: 8px 12px; border-radius: 20px; border: 1px solid #ccc; box-sizing: border-box; font-size: 13px;">
     </div>
   </div>
 
-  <!-- جدول الأصناف والخدمات -->
+  <!-- جدول الأرصدة المخزنية -->
   <div style="overflow-x: auto; width: 100%; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
     <table border="1" cellpadding="10" cellspacing="0" style="width: 100%; border-collapse: collapse; background-color: white; font-size: 14px;">
       <thead>
         <tr style="background-color: #e0f2f1; color: #004d40;">
-          <th style="text-align: right;">اسم الصنف / الخدمة</th>
-          <th style="text-align: center;">النوع</th>
-          <th style="text-align: center;">الرصيد المتاح بالمخزن</th>
+          <th style="width: 110px;">كود الصنف</th>
+          <th style="text-align: right;">اسم الصنف الملموس</th>
           <th style="text-align: right;">التصنيف</th>
-          <th style="text-align: center;">إجراءات</th>
+          <th style="text-align: center;">الرصيد الفعلي المتوفر</th>
+          <th style="text-align: center;">حد الأمان (التنبيه)</th>
+          <th style="text-align: center; width: 160px;">إجراءات المخزن</th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let item of filteredInventory" 
-            (click)="selectItem(item)" 
-            class="clickable-row" 
-            [ngStyle]="{'background-color': newItem.id === item.id ? '#b2dfdb' : 'transparent'}">
+        <tr *ngFor="let item of filteredTangibleItems" class="clickable-row">
+          <td>
+            <code style="background: #eceff1; padding: 2px 6px; border-radius: 4px; font-weight: bold; color: #37474f;">
+              {{ item.code || '—' }}
+            </code>
+          </td>
+
           <td>
             <strong style="color: #004d40; font-size: 15px;">{{ item.itemName }}</strong>
             <div *ngIf="item.notes" style="color: #777; font-size: 12px; margin-top: 2px;">{{ item.notes }}</div>
-          </td>
-          
-          <td style="text-align: center;">
-            <span *ngIf="item.kind === 'صنف ملموس'" style="background-color: #e8f5e9; color: #2e7d32; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: bold;">
-              📦 صنف ملموس
-            </span>
-            <span *ngIf="item.kind === 'خدمة'" style="background-color: #e3f2fd; color: #1565c0; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: bold;">
-              🩺 خدمة اجتماعية/طبية
-            </span>
-          </td>
-
-          <td style="text-align: center;">
-            <div *ngIf="item.kind === 'صنف ملموس'">
-              <span style="font-size: 18px; font-weight: bold;" [style.color]="item.quantity < 10 ? '#d32f2f' : '#004d40'">
-                {{ item.quantity }}
-              </span>
-              <span style="color: #666; font-size: 13px; margin-right: 4px;">{{ item.unit }}</span>
-              <div *ngIf="item.quantity < 10" style="color: #d32f2f; font-size: 11px; font-weight: bold; margin-top: 2px;">
-                ⚠️ رصيد منخفض
-              </div>
-            </div>
-            <div *ngIf="item.kind === 'خدمة'" style="color: #1565c0; font-size: 13px; font-weight: bold;">
-              متاح حسب الحالات 🩺
-            </div>
           </td>
 
           <td>
@@ -205,23 +109,83 @@
           </td>
 
           <td style="text-align: center;">
-            <button type="button" (click)="selectItem(item)" 
-                    style="background-color: #004d40; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; margin-left: 5px;">
-              ✏️ تعديل
-            </button>
-            <button type="button" (click)="deleteItem(item.id, $event)" 
-                    style="background-color: #ffebee; color: #c62828; border: 1px solid #ffcdd2; padding: 5px 8px; border-radius: 4px; cursor: pointer; font-size: 12px;">
-              🗑️
+            <div style="display: inline-flex; align-items: baseline; gap: 4px;">
+              <span style="font-size: 20px; font-weight: bold;" 
+                    [style.color]="item.quantity < (item.minAlert || 10) ? '#d32f2f' : '#1b5e20'">
+                {{ item.quantity | number:'1.0-0' }}
+              </span>
+              <span style="color: #555; font-size: 13px; font-weight: bold;">{{ item.unit }}</span>
+            </div>
+            
+            <div *ngIf="item.quantity < (item.minAlert || 10)" 
+                 style="background: #ffebee; color: #c62828; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-top: 4px;">
+              ⚠️ رصيد منخفض يتطلب توريداً
+            </div>
+          </td>
+
+          <td style="text-align: center; color: #666;">
+            {{ item.minAlert || 10 }} {{ item.unit }}
+          </td>
+
+          <td style="text-align: center;">
+            <button type="button" (click)="openAdjustModal(item, $event)" 
+                    style="background-color: #00695c; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold;">
+              ⚡ تعديل رصيد / جرد
             </button>
           </td>
         </tr>
 
-        <tr *ngIf="filteredInventory.length === 0">
-          <td colspan="5" style="text-align: center; padding: 25px; color: #888;">
-            لا توجد أصناف أو خدمات مطابقة للبحث أو التصفية الحالية.
+        <tr *ngIf="filteredTangibleItems.length === 0">
+          <td colspan="6" style="text-align: center; padding: 25px; color: #888;">
+            لا توجد أصناف مخزنية مسجلة مطابقة للبحث أو التصفية.
           </td>
         </tr>
       </tbody>
     </table>
+  </div>
+
+  <!-- نافذة تعديل الرصيد والجرد المخزني المنبثقة -->
+  <div *ngIf="adjustModalOpen" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 15px; box-sizing: border-box;">
+    <div style="background: white; padding: 25px; border-radius: 8px; width: 100%; max-width: 480px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #004d40; padding-bottom: 10px; margin-bottom: 15px;">
+        <h3 style="margin: 0; color: #004d40;">⚡ تعديل رصيد المخزن (جرد)</h3>
+        <button (click)="closeAdjustModal()" style="background: none; border: none; font-size: 18px; cursor: pointer; color: #777;">✖</button>
+      </div>
+
+      <div style="margin-bottom: 15px; background: #e8f5e9; padding: 12px; border-radius: 6px;">
+        <div>الصنف: <strong>{{ selectedStockItem?.itemName }}</strong> ({{ selectedStockItem?.code }})</div>
+        <div style="margin-top: 4px; font-size: 13px; color: #2e7d32;">
+          الرصيد الحالي المسجل: <strong>{{ selectedStockItem?.quantity }} {{ selectedStockItem?.unit }}</strong>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 15px;">
+        <label style="font-size: 13px; color: #333; font-weight: bold; display: block; margin-bottom: 5px;">الرصيد الفعلي الجديد بعد الجرد:</label>
+        <div style="display: flex; gap: 8px;">
+          <input type="number" [(ngModel)]="adjustedQuantity" min="0" 
+                 style="flex: 1; padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-size: 16px; font-weight: bold;">
+          <span style="background: #eee; padding: 10px 14px; border-radius: 5px; font-weight: bold; display: flex; align-items: center;">
+            {{ selectedStockItem?.unit }}
+          </span>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 20px;">
+        <label style="font-size: 13px; color: #333; font-weight: bold; display: block; margin-bottom: 5px;">سبب التعديل أو ملاحظات الجرد:</label>
+        <input type="text" [(ngModel)]="adjustmentReason" placeholder="مثال: جرد نهاية الشهر، معالجة تالف..." 
+               style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box;">
+      </div>
+
+      <div style="display: flex; gap: 10px;">
+        <button type="button" (click)="saveStockAdjustment()" 
+                style="padding: 10px 20px; background-color: #004d40; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; flex: 1;">
+          💾 حفظ وتحديث رصيد المخزن
+        </button>
+        <button type="button" (click)="closeAdjustModal()" 
+                style="padding: 10px 18px; background-color: #757575; color: white; border: none; border-radius: 5px; cursor: pointer;">
+          إلغاء
+        </button>
+      </div>
+    </div>
   </div>
 </div>
