@@ -107,6 +107,11 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
       } else if (mode === 'edit' && id) {
         const found = this.beneficiaries.find(b => String(b.id) === String(id));
         if (found) {
+          if (!this.canEditBeneficiary(found)) {
+            this.errorMessage = `🔒 غير مصرح: لا تملك صلاحية تعديل هذا المستفيد! الملف مسجل ومملوك لـ (${found.registeredByCharityName || 'الجمعية الأصلية'}). صلاحيتكم تقتصر على الاطلاع وسجل المساعدات وإضافة حركات صرف جديدة.`;
+            this.router.navigate([], { relativeTo: this.route, queryParams: { mode: 'detail', id: found.id } });
+            return;
+          }
           this.currentBen = { ...found };
           this.formMode = 'edit';
           this.viewMode = 'form';
@@ -125,6 +130,13 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
     });
   }
 
+  // Authorization helper: ONLY the registering charity has edit permissions
+  canEditBeneficiary(b: any): boolean {
+    if (!b) return false;
+    const activeId = this.api.getActiveCharityId();
+    return !b.registeredByCharityId || b.registeredByCharityId === activeId;
+  }
+
   // View switchers
   openDetail(b: any) {
     this.router.navigate([], { relativeTo: this.route, queryParams: { mode: 'detail', id: b.id } });
@@ -136,6 +148,12 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
 
   openEdit(b: any, event?: Event) {
     if (event) event.stopPropagation();
+    if (!this.canEditBeneficiary(b)) {
+      this.errorMessage = `🔒 عذراً، التعديل مقصور قانونياً على الجمعية التي أنشأت الملف أول مرة (${b.registeredByCharityName || 'الجمعية المسجلة'}).`;
+      this.cdr.detectChanges();
+      setTimeout(() => { this.errorMessage = ''; this.cdr.detectChanges(); }, 5000);
+      return;
+    }
     this.router.navigate([], { relativeTo: this.route, queryParams: { mode: 'edit', id: b.id } });
   }
 
@@ -212,15 +230,26 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
     this.errorMessage = '';
 
     if (this.currentBen.id) {
-      this.api.updateBeneficiary(this.currentBen).subscribe(() => {
-        this.successMessage = `✅ تم تحديث بيانات المستفيد (${this.currentBen.name}) بنجاح!`;
-        this.api.getBeneficiaries().subscribe((data: any[]) => {
-          this.beneficiaries = data;
-          this.openDetail(this.currentBen);
-          this.cdr.detectChanges();
+      try {
+        this.api.updateBeneficiary(this.currentBen).subscribe({
+          next: () => {
+            this.successMessage = `✅ تم تحديث بيانات المستفيد (${this.currentBen.name}) بنجاح!`;
+            this.api.getBeneficiaries().subscribe((data: any[]) => {
+              this.beneficiaries = data;
+              this.openDetail(this.currentBen);
+              this.cdr.detectChanges();
+            });
+            setTimeout(() => { this.successMessage = ''; this.cdr.detectChanges(); }, 4000);
+          },
+          error: (err: any) => {
+            this.errorMessage = err.message || '⚠️ غير مصرح بتعديل هذا الملف.';
+            this.cdr.detectChanges();
+          }
         });
-        setTimeout(() => { this.successMessage = ''; this.cdr.detectChanges(); }, 4000);
-      });
+      } catch (e: any) {
+        this.errorMessage = e.message || '⚠️ غير مصرح بتعديل هذا الملف.';
+        this.cdr.detectChanges();
+      }
     } else {
       this.api.addBeneficiary(this.currentBen).subscribe((added: any) => {
         this.successMessage = `✅ تم تسجيل وفتح ملف الحالة الجديد (${added.name}) بنجاح!`;

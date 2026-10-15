@@ -796,10 +796,25 @@ export class Api {
   updateBeneficiary(data: any): Observable<any> {
     const idx = this.db.beneficiaries.findIndex((x: any) => String(x.id) === String(data.id));
     if (idx > -1) {
-      this.db.beneficiaries[idx] = data;
+      const existing = this.db.beneficiaries[idx];
+      const activeId = this.getActiveCharityId();
+
+      // Authorization & Stewardship Rule: ONLY the registering charity can edit!
+      if (existing.registeredByCharityId && existing.registeredByCharityId !== activeId) {
+        const errorMsg = 'غير مصرح: لا تملك صلاحية تعديل هذا المستفيد! التعديل مقصور قانونياً على الجمعية التي سجلت الملف أول مرة (' + (existing.registeredByCharityName || 'الجمعية الأصلية') + ').';
+        console.error(errorMsg);
+        throw new Error(errorMsg);
+      }
+
+      this.db.beneficiaries[idx] = {
+        ...data,
+        registeredByCharityId: existing.registeredByCharityId,
+        registeredByCharityName: existing.registeredByCharityName
+      };
       this.save();
+      return of(this.db.beneficiaries[idx]);
     }
-    return of(data);
+    throw new Error('المستفيد غير موجود');
   }
 
   // ==========================================
