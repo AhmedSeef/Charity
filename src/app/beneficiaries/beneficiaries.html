@@ -49,6 +49,10 @@
           <span style="background-color: #e8f5e9; color: #2e7d32; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: bold;">
             {{ selectedBen.status || 'مستحق فعال' }}
           </span>
+          <span *ngIf="selectedBen.registeredByCharityName" 
+                style="background-color: #ede7f6; color: #4527a0; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; border: 1px solid #d1c4e9;">
+            🏢 مسجل لدى: {{ selectedBen.registeredByCharityName }}
+          </span>
         </div>
 
         <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 10px; color: #555; font-size: 14px;">
@@ -109,19 +113,48 @@
 
     </div>
 
-    <!-- السجل الكامل لحركات الصرف والمساعدات -->
+    <!-- السجل الكامل لحركات الصرف والمساعدات (الشبكة الموحدة) -->
     <div style="background: white; border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.04);">
-      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #004d40; padding-bottom: 10px; margin-bottom: 15px;">
-        <h3 style="margin: 0; color: #004d40; font-size: 17px;">
-          📦 سجل حركات الصرف والمساعدات المسلمة للحالة
-        </h3>
-        <span style="background: #e0f2f1; color: #004d40; padding: 4px 10px; border-radius: 12px; font-weight: bold; font-size: 13px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #004d40; padding-bottom: 10px; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+        <div>
+          <h3 style="margin: 0; color: #004d40; font-size: 17px; display: flex; align-items: center; gap: 8px;">
+            <span>📦 سجل المساعدات الموحد للحالة عبر شبكة الجمعيات</span>
+            <span style="background: #e8f5e9; color: #2e7d32; font-size: 11px; padding: 2px 8px; border-radius: 10px; border: 1px solid #c8e6c9;">
+              منع ازدواجية الصرف
+            </span>
+          </h3>
+          <p style="margin: 4px 0 0 0; color: #666; font-size: 12px;">
+            يعرض هذا السجل كافة المساعدات التي تسلّمها المستفيد سواءً من جمعيتنا أو من الجمعيات الشريكة الأخرى.
+          </p>
+        </div>
+        
+        <span style="background: #e0f2f1; color: #004d40; padding: 4px 12px; border-radius: 12px; font-weight: bold; font-size: 13px;">
           إجمالي الحركات: {{ getBeneficiaryDistributions(selectedBen.id).length }}
         </span>
       </div>
 
+      <!-- تنبيه استحقاق ذكي عند وجود صرف سابق من جمعيات أخرى -->
+      <div *ngIf="getOtherCharitiesAid(selectedBen.id).length > 0" 
+           style="background-color: #fff8e1; border: 2px solid #ffa000; border-radius: 8px; padding: 14px 18px; margin-bottom: 20px; color: #5d4037;">
+        <div style="display: flex; align-items: center; gap: 8px; font-weight: bold; font-size: 14px;">
+          <span style="font-size: 18px;">⚠️</span>
+          <span>تنبيه شبكة الجمعيات المشتركة:</span>
+          <span style="background: #e65100; color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px;">
+            صرف سابق مسجل من جمعيات شريكة
+          </span>
+        </div>
+        <div style="font-size: 13px; margin-top: 6px; line-height: 1.6;">
+          حصل هذا المستفيد على <strong>{{ getOtherCharitiesAid(selectedBen.id).length }}</strong> مساعدة سابقة من جمعيات شقيقة:
+          <span *ngFor="let o of getOtherCharitiesAid(selectedBen.id); let isLast = last" style="display: inline-block; background: white; padding: 2px 8px; border-radius: 4px; border: 1px solid #ffe082; margin: 2px 4px; font-weight: bold; color: #e65100;">
+            🏢 {{ o.charityName }}: {{ o.itemName }} ({{ o.amount ? (o.amount + ' ج.م') : (o.quantity + ' ' + o.unit) }}) بتاريخ {{ o.date }}
+          </span>
+          <br>
+          <span style="color: #6d4c41; font-size: 12px;">💡 يرجى التحقق من تواريخ الصرف لتفادي الازدواجية وتوجيه الدعم للأسر الأكثر احتياجاً.</span>
+        </div>
+      </div>
+
       <div *ngIf="getBeneficiaryDistributions(selectedBen.id).length === 0" style="text-align: center; padding: 30px; color: #777;">
-        لم يتم تسجيل أي حركات صرف أو مساعدات لهذه الحالة حتى الآن.
+        لم يتم تسجيل أي حركات صرف أو مساعدات لهذه الحالة حتى الآن من أي جمعية.
       </div>
 
       <div *ngIf="getBeneficiaryDistributions(selectedBen.id).length > 0" style="overflow-x: auto; width: 100%;">
@@ -129,26 +162,48 @@
           <thead>
             <tr style="background-color: #e0f2f1; color: #004d40;">
               <th>تاريخ الصرف</th>
+              <th>الجمعية المانحة</th>
               <th>نوع المساعدة</th>
               <th>الصنف / الخدمة</th>
-              <th>الكمية</th>
+              <th>الكمية / القيمة</th>
               <th>ملاحظات الصرف</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let h of getBeneficiaryDistributions(selectedBen.id)">
-              <td style="color: #444; font-weight: bold;">{{ h.date }}</td>
+            <tr *ngFor="let h of getBeneficiaryDistributions(selectedBen.id)" 
+                [style.background-color]="h.isFromCurrentCharity ? '#ffffff' : '#fafffa'">
+              <td style="color: #444; font-weight: bold; white-space: nowrap;">{{ h.date }}</td>
+              <td>
+                <span [style.background-color]="h.isFromCurrentCharity ? '#e8f5e9' : '#e1f5fe'"
+                      [style.color]="h.isFromCurrentCharity ? '#1b5e20' : '#0277bd'"
+                      style="padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: bold; display: inline-flex; align-items: center; gap: 5px; border: 1px solid rgba(0,0,0,0.08);">
+                  <span>{{ h.isFromCurrentCharity ? '⭐' : '🏢' }}</span>
+                  <span>{{ h.charityName }}</span>
+                  <small *ngIf="h.isFromCurrentCharity" style="color: #2e7d32; font-size: 10px;">(جمعيتنا)</small>
+                  <small *ngIf="!h.isFromCurrentCharity" style="color: #0288d1; font-size: 10px;">(شقيقة)</small>
+                </span>
+              </td>
               <td>
                 <span *ngIf="h.kind === 'خدمة'" style="background: #e3f2fd; color: #1565c0; padding: 3px 8px; border-radius: 10px; font-size: 11px; font-weight: bold;">
                   🩺 خدمة
                 </span>
-                <span *ngIf="h.kind !== 'خدمة'" style="background: #e8f5e9; color: #2e7d32; padding: 3px 8px; border-radius: 10px; font-size: 11px; font-weight: bold;">
+                <span *ngIf="h.kind === 'إعانة نقدية'" style="background: #fff3e0; color: #e65100; padding: 3px 8px; border-radius: 10px; font-size: 11px; font-weight: bold;">
+                  💵 إعانة مالية
+                </span>
+                <span *ngIf="h.kind !== 'خدمة' && h.kind !== 'إعانة نقدية'" style="background: #e8f5e9; color: #2e7d32; padding: 3px 8px; border-radius: 10px; font-size: 11px; font-weight: bold;">
                   📦 صنف ملموس
                 </span>
               </td>
-              <td><strong>{{ h.itemName }}</strong></td>
               <td>
-                <strong style="font-size: 15px; color: #004d40;">{{ h.quantity }}</strong> {{ h.unit }}
+                <strong>{{ h.itemName }}</strong>
+              </td>
+              <td>
+                <span *ngIf="h.amount" style="color: #2e7d32; font-weight: bold; font-size: 15px;">
+                  {{ h.amount | number:'1.0-0' }} ج.م
+                </span>
+                <span *ngIf="!h.amount">
+                  <strong style="font-size: 15px; color: #004d40;">{{ h.quantity }}</strong> {{ h.unit }}
+                </span>
               </td>
               <td style="color: #555;">{{ h.notes || '—' }}</td>
             </tr>
@@ -156,6 +211,7 @@
         </table>
       </div>
     </div>
+
 
   </div>
 
@@ -359,6 +415,9 @@
               <strong style="color: #004d40; font-size: 15px;">{{ b.name }}</strong><br>
               <span style="background-color: #ffe0b2; color: #e65100; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold;">
                 {{ b.category }}
+              </span>
+              <span *ngIf="b.registeredByCharityName" style="display: block; font-size: 11px; color: #5c6bc0; margin-top: 3px; font-weight: 500;">
+                🏢 {{ b.registeredByCharityName }}
               </span>
             </td>
 

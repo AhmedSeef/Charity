@@ -2,19 +2,24 @@ import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
 import { Observable, of } from 'rxjs';
 import { tap } from 'rxjs/operators';
+import { Api } from './api';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  constructor(private router: Router) {}
+  constructor(private router: Router, private api: Api) {}
 
   login(user: string, pass: string): Observable<any> {
     const localDb = localStorage.getItem('charity_db');
     let users = [];
     if (localDb) {
-      const db = JSON.parse(localDb);
-      users = db.users || [];
+      try {
+        const db = JSON.parse(localDb);
+        users = db.users || [];
+      } catch (e) {
+        users = [];
+      }
     }
 
     const matchedUser = users.find((u: any) => u.username === user && u.password === pass);
@@ -22,7 +27,11 @@ export class AuthService {
     return of(matchedUser ? [matchedUser] : []).pipe(
       tap((result: any) => {
         if (result && result.length > 0) {
-          localStorage.setItem('currentUser', JSON.stringify(result[0]));
+          const userObj = result[0];
+          localStorage.setItem('currentUser', JSON.stringify(userObj));
+          if (userObj.charityId) {
+            this.api.setActiveCharityId(userObj.charityId);
+          }
         }
       })
     );

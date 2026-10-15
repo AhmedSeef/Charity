@@ -2,7 +2,7 @@
   <div style="margin-bottom: 20px;">
     <h2 style="color: #004d40; margin: 0;">🔄 حركات الصرف وتوزيع المساعدات</h2>
     <p style="color: #666; margin: 5px 0 0 0; font-size: 14px;">
-      تسجيل تسليم المساعدات العينية من المخزن للمستفيدين (مع خصم الرصيد تلقائياً)، وتقديم الخدمات الطبية والاجتماعية.
+      تسجيل تسليم المساعدات العينية من مخازن الجمعية للمستفيدين (مع خصم الرصيد تلقائياً)، وتقديم الخدمات الطبية والاجتماعية.
     </p>
   </div>
 
@@ -15,36 +15,41 @@
     {{ errorMessage }}
   </div>
 
-  <!-- فورم صرف مساعدة جديدة -->
+  <!-- فورم صرف مساعدة جديدة من مخازن الجمعية الحالية -->
   <div style="background-color: #f9f9f9; padding: 20px; border-radius: 8px; margin-bottom: 25px; border: 1px solid #ddd; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-    <h3 style="margin-top: 0; color: #bf360c; border-bottom: 2px solid #bf360c; padding-bottom: 10px;">
-      📤 تسجيل حركة صرف أو تقديم خدمة
-    </h3>
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #bf360c; padding-bottom: 10px; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+      <h3 style="margin: 0; color: #bf360c;">
+        📤 تسجيل حركة صرف أو تقديم خدمة لحساب: <strong>{{ activeCharity?.name }}</strong>
+      </h3>
+      <span style="background: #efebe9; color: #4e342e; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: bold;">
+        🏢 الخصم يتم من مخزن جمعيتكم فقط
+      </span>
+    </div>
 
     <form (ngSubmit)="onSubmit()">
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px; margin-bottom: 15px;">
-        <!-- اختيار المستفيد -->
+        <!-- اختيار المستفيد (مشترك من الشبكة الموحدة) -->
         <div>
-          <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">المستفيد المستحق *</label>
+          <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">المستفيد المستحق (الشبكة الموحدة) *</label>
           <select [(ngModel)]="newDist.beneficiaryId" name="beneficiaryId" required 
                   style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; font-weight: bold;">
-            <option value="" disabled selected>-- اختر المستفيد --</option>
+            <option value="" disabled selected>-- اختر المستفيد من قاعدة الشبكة --</option>
             <option *ngFor="let b of beneficiaries" [value]="b.id">
               {{ b.name }} ({{ b.category }} - {{ b.nationalId }})
             </option>
           </select>
         </div>
 
-        <!-- اختيار الصنف أو الخدمة -->
+        <!-- اختيار الصنف أو الخدمة (معزول من مخزن الجمعية الحالية) -->
         <div>
-          <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">الصنف الملموس أو الخدمة *</label>
+          <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">الصنف أو الخدمة (مخزن {{ activeCharity?.name }}) *</label>
           <select [(ngModel)]="newDist.inventoryId" name="inventoryId" required 
                   style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; font-weight: bold;">
-            <option value="" disabled selected>-- اختر من الدليل والمخزن --</option>
-            <optgroup label="📦 الأصناف الملموسة (المخزن)">
+            <option value="" disabled selected>-- اختر من مخزن الجمعية --</option>
+            <optgroup label="📦 الأصناف الملموسة المتاحة بالمخزن">
               <ng-container *ngFor="let i of inventory">
                 <option *ngIf="i.kind === 'صنف ملموس'" [value]="i.id">
-                  {{ i.itemName }} [المتاح: {{ i.quantity }} {{ i.unit }}]
+                  {{ i.itemName }} [المتوفر لديكم: {{ i.quantity }} {{ i.unit }}]
                 </option>
               </ng-container>
             </optgroup>
@@ -81,10 +86,10 @@
       <!-- تنبيه حالة الرصيد المباشر -->
       <div *ngIf="selectedItem && selectedItem.kind === 'صنف ملموس'" style="margin-bottom: 15px;">
         <div *ngIf="!isStockInsufficient" style="background-color: #fbe9e7; border-right: 4px solid #d84315; padding: 10px 15px; border-radius: 4px; font-size: 13px; color: #bf360c;">
-          💡 <strong>حركة المخزن:</strong> الرصيد المتاح هو <strong>{{ selectedItem.quantity }} {{ selectedItem.unit }}</strong>. سيتبقى بعد الصرف: <strong>{{ selectedItem.quantity - newDist.quantity }} {{ selectedItem.unit }}</strong>.
+          💡 <strong>حركة المخزن الداخلي:</strong> الرصيد المتاح هو <strong>{{ selectedItem.quantity }} {{ selectedItem.unit }}</strong>. سيتبقى بعد الصرف: <strong>{{ selectedItem.quantity - newDist.quantity }} {{ selectedItem.unit }}</strong>.
         </div>
         <div *ngIf="isStockInsufficient" style="background-color: #ffebee; border-right: 4px solid #c62828; padding: 10px 15px; border-radius: 4px; font-size: 13px; color: #c62828; font-weight: bold;">
-          ⚠️ تحذير: الكمية المطلوبة ({{ newDist.quantity }}) تتجاوز الرصيد المتوفر بالمخزن ({{ selectedItem.quantity }})!
+          ⚠️ تحذير: الكمية المطلوبة ({{ newDist.quantity }}) تتجاوز الرصيد المتوفر بمخزن جمعيتكم ({{ selectedItem.quantity }})!
         </div>
       </div>
 
@@ -96,12 +101,31 @@
       </div>
 
       <button type="submit" [disabled]="isStockInsufficient" 
-              style="padding: 12px 25px; background-color: #d84315; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 15px; font-weight: bold; width: 100%; opacity: 1;"
+              style="padding: 12px 25px; background-color: #d84315; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 15px; font-weight: bold; width: 100%;"
               [style.opacity]="isStockInsufficient ? '0.6' : '1'"
               [style.cursor]="isStockInsufficient ? 'not-allowed' : 'pointer'">
-        📤 صرف وإتمام الحركة وتحديث المخزن
+        📤 صرف وإتمام الحركة وتحديث مخزن {{ activeCharity?.name }}
       </button>
     </form>
+  </div>
+
+  <!-- شريط التبديل بين حركات الجمعية وسجل الشبكة الموحد -->
+  <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+    <button type="button" (click)="setScope('my_charity')"
+            [style.background-color]="viewScope === 'my_charity' ? '#004d40' : '#e0e0e0'"
+            [style.color]="viewScope === 'my_charity' ? 'white' : '#333'"
+            style="padding: 9px 18px; border: none; border-radius: 20px; cursor: pointer; font-weight: bold; font-size: 13px; display: flex; align-items: center; gap: 6px;">
+      <span>⭐ حركات صرف {{ activeCharity?.name }} فقط</span>
+      <span style="background: rgba(255,255,255,0.3); padding: 1px 7px; border-radius: 10px; font-size: 12px;">{{ distributions.length }}</span>
+    </button>
+
+    <button type="button" (click)="setScope('all_network')"
+            [style.background-color]="viewScope === 'all_network' ? '#1565c0' : '#e0e0e0'"
+            [style.color]="viewScope === 'all_network' ? 'white' : '#333'"
+            style="padding: 9px 18px; border: none; border-radius: 20px; cursor: pointer; font-weight: bold; font-size: 13px; display: flex; align-items: center; gap: 6px;">
+      <span>🌐 السجل الموحد لكافة الجمعيات بالشبكة المشتركة</span>
+      <span style="background: rgba(255,255,255,0.3); padding: 1px 7px; border-radius: 10px; font-size: 12px;">{{ allNetworkDistributions.length }}</span>
+    </button>
   </div>
 
   <!-- جدول حركات الصرف والتوزيع -->
@@ -109,10 +133,11 @@
     <table border="1" cellpadding="10" cellspacing="0" style="width: 100%; border-collapse: collapse; background-color: white; font-size: 14px;">
       <thead>
         <tr style="background-color: #fbe9e7; color: #bf360c;">
-          <th>المستفيد</th>
+          <th>المستفيد المستحق</th>
+          <th>الجمعية المنفذة للصرف</th>
           <th>نوع المساعدة</th>
           <th>الصنف / الخدمة المصروفة</th>
-          <th>الكمية</th>
+          <th>الكمية / القيمة</th>
           <th>تاريخ الصرف</th>
           <th>ملاحظات</th>
         </tr>
@@ -124,31 +149,48 @@
           </td>
 
           <td>
-            <span *ngIf="getItem(d.inventoryId)?.kind === 'خدمة'" style="background-color: #e3f2fd; color: #1565c0; padding: 4px 8px; border-radius: 10px; font-size: 12px; font-weight: bold;">
+            <span [style.background-color]="d.charityId === activeCharity?.id ? '#e8f5e9' : '#e1f5fe'"
+                  [style.color]="d.charityId === activeCharity?.id ? '#1b5e20' : '#0277bd'"
+                  style="padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: bold; display: inline-flex; align-items: center; gap: 5px;">
+              <span>{{ d.charityId === activeCharity?.id ? '⭐' : '🏢' }}</span>
+              <span>{{ d.charityName || 'جمعية شقيقة' }}</span>
+            </span>
+          </td>
+
+          <td>
+            <span *ngIf="d.kind === 'خدمة'" style="background-color: #e3f2fd; color: #1565c0; padding: 4px 8px; border-radius: 10px; font-size: 12px; font-weight: bold;">
               🩺 خدمة
             </span>
-            <span *ngIf="getItem(d.inventoryId)?.kind !== 'خدمة'" style="background-color: #efebe9; color: #4e342e; padding: 4px 8px; border-radius: 10px; font-size: 12px; font-weight: bold;">
+            <span *ngIf="d.kind === 'إعانة نقدية'" style="background-color: #fff3e0; color: #e65100; padding: 4px 8px; border-radius: 10px; font-size: 12px; font-weight: bold;">
+              💵 إعانة مالية
+            </span>
+            <span *ngIf="d.kind !== 'خدمة' && d.kind !== 'إعانة نقدية'" style="background-color: #efebe9; color: #4e342e; padding: 4px 8px; border-radius: 10px; font-size: 12px; font-weight: bold;">
               📦 عيني مخزني
             </span>
           </td>
 
           <td>
-            <strong>{{ getItemName(d.inventoryId) }}</strong>
+            <strong>{{ getItemName(d) }}</strong>
           </td>
 
           <td>
-            <strong style="font-size: 16px; color: #bf360c;">{{ d.quantity }}</strong>
-            <span style="color: #666; font-size: 12px; margin-right: 4px;">{{ getItem(d.inventoryId)?.unit || '' }}</span>
+            <span *ngIf="d.amount" style="color: #2e7d32; font-weight: bold; font-size: 15px;">
+              {{ d.amount | number:'1.0-0' }} ج.م
+            </span>
+            <span *ngIf="!d.amount">
+              <strong style="font-size: 16px; color: #bf360c;">{{ d.quantity }}</strong>
+              <span style="color: #666; font-size: 12px; margin-right: 4px;">{{ d.unit || getItem(d.inventoryId)?.unit || '' }}</span>
+            </span>
           </td>
 
-          <td style="color: #555;">{{ d.date }}</td>
+          <td style="color: #555; white-space: nowrap;">{{ d.date }}</td>
 
           <td style="color: #555;">{{ d.notes || '—' }}</td>
         </tr>
 
-        <tr *ngIf="distributions.length === 0">
-          <td colspan="6" style="text-align: center; padding: 25px; color: #888;">
-            لا توجد حركات صرف مسجلة حتى الآن.
+        <tr *ngIf="displayedDistributions.length === 0">
+          <td colspan="7" style="text-align: center; padding: 25px; color: #888;">
+            لا توجد حركات صرف مسجلة في هذا النطاق.
           </td>
         </tr>
       </tbody>
@@ -156,7 +198,7 @@
   </div>
 
   <app-pagination 
-    [totalItems]="distributions.length" 
+    [totalItems]="displayedDistributions.length" 
     [pageSize]="pageSize" 
     [currentPage]="currentPage" 
     (pageChange)="currentPage = $event" 

@@ -79,11 +79,12 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
       this.initRouteSync();
       this.cdr.detectChanges(); 
     });
-    this.api.getDistributions().subscribe((data: any[]) => { 
+    // Load ALL distributions across the federated network for the beneficiary profile
+    this.api.getAllDistributions().subscribe((data: any[]) => { 
       this.distributions = data; 
       this.cdr.detectChanges(); 
     });
-    this.api.getInventory().subscribe((data: any[]) => { 
+    this.api.getAllInventory().subscribe((data: any[]) => { 
       this.inventory = data; 
       this.cdr.detectChanges(); 
     });
@@ -142,19 +143,28 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
     this.router.navigate([], { relativeTo: this.route, queryParams: {} });
   }
 
-  // Distribution History for selected beneficiary
+  // Distribution History for selected beneficiary across ALL charities in the network
   getBeneficiaryDistributions(benId: string): any[] {
-    return this.distributions
+    const activeId = this.api.getActiveCharityId();
+    return (this.distributions || [])
       .filter(dist => String(dist.beneficiaryId) === String(benId))
       .map(dist => {
-        const item = this.inventory.find(i => String(i.id) === String(dist.inventoryId));
+        const item = (this.inventory || []).find(i => String(i.id) === String(dist.inventoryId));
         return {
           ...dist,
-          kind: item ? (item.kind || 'صنف ملموس') : 'صنف ملموس',
-          itemName: item ? item.itemName : 'مساعدة عينية',
-          unit: item ? (item.unit || '') : ''
+          kind: dist.kind || (item ? (item.kind || 'صنف ملموس') : 'صنف ملموس'),
+          itemName: dist.itemName || (item ? item.itemName : 'مساعدة معتمدة'),
+          unit: dist.unit || (item ? (item.unit || '') : ''),
+          charityName: dist.charityName || 'جمعية شقيقة',
+          isFromCurrentCharity: dist.charityId === activeId
         };
       });
+  }
+
+  // Returns aid received from other partner charities (The Quantum Leap feature)
+  getOtherCharitiesAid(benId: string): any[] {
+    const activeId = this.api.getActiveCharityId();
+    return this.getBeneficiaryDistributions(benId).filter(d => d.charityId && d.charityId !== activeId);
   }
 
   // Filter & Search

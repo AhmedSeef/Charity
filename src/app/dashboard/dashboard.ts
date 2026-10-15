@@ -18,21 +18,30 @@ export class DashboardComponent implements OnInit {
   servicesCount = 0;
   distributionsCount = 0;
   staffCount = 0;
+  
+  // Federation Stats
+  charitiesCount = 0;
+  totalNetworkDistributionsCount = 0;
+  activeCharity: any = null;
 
   beneficiaries: any[] = [];
   inventory: any[] = [];
   recentDonations: any[] = [];
   recentDistributions: any[] = [];
 
-  constructor(private api: Api, private cdr: ChangeDetectorRef) {}
+  constructor(public api: Api, private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
+    this.activeCharity = this.api.getActiveCharity();
+
+    // 1. Beneficiaries (Shared across network)
     this.api.getBeneficiaries().subscribe((data: any[]) => { 
       this.beneficiaries = data;
       this.beneficiariesCount = data.length; 
       this.cdr.detectChanges(); 
     });
 
+    // 2. Donations (Isolated for active charity)
     this.api.getDonations().subscribe((data: any[]) => { 
       this.recentDonations = data.slice(0, 5);
       this.totalCashDonations = data
@@ -42,6 +51,7 @@ export class DashboardComponent implements OnInit {
       this.cdr.detectChanges(); 
     });
 
+    // 3. Inventory (Isolated for active charity)
     this.api.getInventory().subscribe((data: any[]) => { 
       this.inventory = data;
       this.tangibleItemsCount = data.filter(i => i.kind === 'صنف ملموس').length;
@@ -49,15 +59,28 @@ export class DashboardComponent implements OnInit {
       this.cdr.detectChanges(); 
     });
 
-    this.api.getDistributions().subscribe((data: any[]) => { 
+    // 4. Distributions (Isolated for active charity)
+    this.api.getDistributions(true).subscribe((data: any[]) => { 
       this.distributionsCount = data.length;
       this.recentDistributions = data.slice(0, 5);
       this.cdr.detectChanges(); 
     });
 
+    // 5. Staff (Isolated for active charity)
     this.api.getStaff().subscribe((data: any[]) => { 
       this.staffCount = data.length;
       this.cdr.detectChanges(); 
+    });
+
+    // 6. Federation statistics
+    this.api.getCharities().subscribe((list: any[]) => {
+      this.charitiesCount = list.length;
+      this.cdr.detectChanges();
+    });
+
+    this.api.getAllDistributions().subscribe((allDist: any[]) => {
+      this.totalNetworkDistributionsCount = allDist.length;
+      this.cdr.detectChanges();
     });
   }
 

@@ -1,4 +1,74 @@
 {
+  "charities": [
+    {
+      "id": "c1",
+      "name": "جمعية أبواب الخير",
+      "roleDesc": "رعاية عامة وإطعام ومساعدات للأسر الأكثر احتياجاً",
+      "logo": "",
+      "color": "#004d40",
+      "icon": "🏢",
+      "phone": "01012345678",
+      "address": "الجيزة، العمرانية",
+      "license": "مشهرة برقم 1234 لسنة 2015"
+    },
+    {
+      "id": "c2",
+      "name": "جمعية الأمل لرعاية الأيتام",
+      "roleDesc": "كفالة الأيتام والإعانات النقدية وتجهيز العرائس",
+      "logo": "",
+      "color": "#1565c0",
+      "icon": "🤝",
+      "phone": "01122334455",
+      "address": "القاهرة، المعادي",
+      "license": "مشهرة برقم 5678 لسنة 2018"
+    },
+    {
+      "id": "c3",
+      "name": "جمعية رسالة الصداقة",
+      "roleDesc": "رعاية طبية وقوافل علاجية وكراسي متحركة",
+      "logo": "",
+      "color": "#6a1b9a",
+      "icon": "🏥",
+      "phone": "01233445566",
+      "address": "الإسكندرية، سموحة",
+      "license": "مشهرة برقم 9012 لسنة 2020"
+    }
+  ],
+  "activeCharityId": "c1",
+  "users": [
+    {
+      "id": "u1",
+      "username": "admin",
+      "password": "admin",
+      "role": "مدير النظام",
+      "charityId": "c1",
+      "charityName": "جمعية أبواب الخير"
+    },
+    {
+      "id": "u2",
+      "username": "abwab",
+      "password": "1234",
+      "role": "مدير الجمعية",
+      "charityId": "c1",
+      "charityName": "جمعية أبواب الخير"
+    },
+    {
+      "id": "u3",
+      "username": "amal",
+      "password": "amal",
+      "role": "مدير الجمعية",
+      "charityId": "c2",
+      "charityName": "جمعية الأمل لرعاية الأيتام"
+    },
+    {
+      "id": "u4",
+      "username": "sedaka",
+      "password": "sedaka",
+      "role": "مدير الجمعية",
+      "charityId": "c3",
+      "charityName": "جمعية رسالة الصداقة"
+    }
+  ],
   "beneficiaries": [
     {
       "id": "b1",
@@ -7,12 +77,14 @@
       "category": "أرامل وأيتام",
       "address": "الجيزة، العمرانية",
       "status": "مستحق فعال",
-      "phone": "غير مسجل",
-      "maritalStatus": "غير محدد",
-      "familyCount": 0,
-      "housing": "غير مسجل",
-      "healthIssues": "لا يوجد",
-      "researchNotes": ""
+      "phone": "01098765432",
+      "maritalStatus": "متزوج",
+      "familyCount": 4,
+      "housing": "إيجار قديم",
+      "healthIssues": "ضعف إبصار ومشاكل بالرمد",
+      "researchNotes": "أسرة تعول 3 أطفال، عائل الأسرة باليومية وبحاجة لمساعدات غذائية ونقدية دورية.",
+      "registeredByCharityId": "c1",
+      "registeredByCharityName": "جمعية أبواب الخير"
     },
     {
       "id": "b2",
@@ -21,12 +93,14 @@
       "category": "مرضى ومسنين",
       "address": "القاهرة، المطرية",
       "status": "مستحق فعال",
-      "phone": "غير مسجل",
-      "maritalStatus": "غير محدد",
-      "familyCount": 0,
-      "housing": "غير مسجل",
-      "healthIssues": "لا يوجد",
-      "researchNotes": ""
+      "phone": "01187654321",
+      "maritalStatus": "أرمل",
+      "familyCount": 2,
+      "housing": "سكن مشترك",
+      "healthIssues": "مريضة سكر وتحتاج أدوية شهرية وكرسي متحرك",
+      "researchNotes": "مسنة تعيش مع ابنتها، لا يوجد دخل ثابت سوى معاش تكافل وكرامة.",
+      "registeredByCharityId": "c1",
+      "registeredByCharityName": "جمعية أبواب الخير"
     },
     {
       "id": "b3",
@@ -35,12 +109,14 @@
       "category": "غارمين",
       "address": "المعادي، القاهرة",
       "status": "مستحق فعال",
-      "phone": "غير مسجل",
-      "maritalStatus": "غير محدد",
-      "familyCount": 0,
-      "housing": "غير مسجل",
-      "healthIssues": "لا يوجد",
-      "researchNotes": ""
+      "phone": "01234567890",
+      "maritalStatus": "متزوج",
+      "familyCount": 5,
+      "housing": "إيجار جديد",
+      "healthIssues": "سليم طبياً",
+      "researchNotes": "عليه ديون متراكمة بسبب جهاز ابنته الكبرى وإيصالات أمانة.",
+      "registeredByCharityId": "c2",
+      "registeredByCharityName": "جمعية الأمل لرعاية الأيتام"
     },
     {
       "id": "b4",
@@ -49,12 +125,14 @@
       "category": "حالات طوارئ",
       "address": "الإسكندرية، العصافرة",
       "status": "مستحق مؤقت",
-      "phone": "غير مسجل",
-      "maritalStatus": "غير محدد",
-      "familyCount": 0,
-      "housing": "غير مسجل",
-      "healthIssues": "لا يوجد",
-      "researchNotes": ""
+      "phone": "01511223344",
+      "maritalStatus": "مطلق",
+      "familyCount": 3,
+      "housing": "سكن متهالك/يحتاج ترميم",
+      "healthIssues": "روماتويد والتهاب مفاصل",
+      "researchNotes": "تحتاج مساعدة شتاء وبطاطين وأدوات مدرسية لأطفالها.",
+      "registeredByCharityId": "c3",
+      "registeredByCharityName": "جمعية رسالة الصداقة"
     },
     {
       "id": "b5",
@@ -63,124 +141,53 @@
       "category": "مرضى ومسنين",
       "address": "القليوبية، بنها",
       "status": "مستحق فعال",
-      "phone": "غير مسجل",
-      "maritalStatus": "غير محدد",
-      "familyCount": 0,
-      "housing": "غير مسجل",
-      "healthIssues": "لا يوجد",
-      "researchNotes": ""
+      "phone": "01022334455",
+      "maritalStatus": "متزوج",
+      "familyCount": 2,
+      "housing": "ملك قديم",
+      "healthIssues": "بتر جزئي بالقدم ويحتاج كرسي متحرك",
+      "researchNotes": "يحتاج رعاية صحية ودواء دوري.",
+      "registeredByCharityId": "c3",
+      "registeredByCharityName": "جمعية رسالة الصداقة"
     },
     {
       "id": "b6",
       "nationalId": "29505051234567",
       "name": "عائلة محمود المنسي",
       "category": "حالات طوارئ",
-      "address": "الإسكندرية",
+      "address": "الإسكندرية، المنتزه",
       "status": "مستحق",
-      "phone": "غير مسجل",
-      "maritalStatus": "غير محدد",
-      "familyCount": 0,
-      "housing": "غير مسجل",
-      "healthIssues": "لا يوجد",
-      "researchNotes": ""
+      "phone": "01288997766",
+      "maritalStatus": "متزوج",
+      "familyCount": 6,
+      "housing": "إيجار جديد",
+      "healthIssues": "أطفال في سن المدارس",
+      "researchNotes": "تعطل عائل الأسرة عن العمل في ورشة.",
+      "registeredByCharityId": "c1",
+      "registeredByCharityName": "جمعية أبواب الخير"
     },
     {
       "id": "b7",
       "nationalId": "28811223344556",
-      "name": "هبة كمال الدين",
+      "name": "هبة ككمال الدين",
       "category": "أرامل وأيتام",
       "address": "القاهرة، السيدة زينب",
       "status": "مستحق فعال",
-      "phone": "غير مسجل",
-      "maritalStatus": "غير محدد",
-      "familyCount": 0,
-      "housing": "غير مسجل",
+      "phone": "01033445566",
+      "maritalStatus": "أرمل",
+      "familyCount": 3,
+      "housing": "إيجار قديم",
       "healthIssues": "لا يوجد",
-      "researchNotes": ""
-    }
-  ],
-  "donations": [
-    {
-      "id": "d_inkind_1",
-      "donorName": "م. حسام الدين",
-      "donorPhone": "01011223344",
-      "donationKind": "عيني",
-      "inventoryId": "i1",
-      "itemName": "أرز مصري",
-      "quantity": 20,
-      "unit": "كيلو",
-      "amount": 600,
-      "type": "تبرع عيني (أغذية للمخزن)",
-      "date": "2026-10-12",
-      "notes": "تم توريد 20 كيلو أرز إلى المخزن"
-    },
-    {
-      "id": "d_service_1",
-      "donorName": "د. شريف عيون",
-      "donorPhone": "01122334455",
-      "donationKind": "خدمة",
-      "inventoryId": "s1",
-      "itemName": "كشف طبي تخصصي (باطنة/عيون)",
-      "quantity": 10,
-      "unit": "كشف",
-      "amount": 0,
-      "type": "رعاية وتبرع بكشوفات طبية",
-      "date": "2026-10-13",
-      "notes": "كشوفات مجانية لمرضى الجمعية"
-    },
-    {
-      "id": "d1",
-      "donorName": "فاعل خير",
-      "amount": 5000,
-      "type": "زكاة مال",
-      "date": "2026-09-15",
-      "donationKind": "نقدي"
-    },
-    {
-      "id": "d2",
-      "donorName": "محمد علي",
-      "amount": 1000,
-      "type": "صدقة جارية",
-      "date": "2026-10-05",
-      "donationKind": "نقدي"
-    },
-    {
-      "id": "d3",
-      "donorName": "شركة الأمل للتجارة",
-      "amount": 15000,
-      "type": "زكاة مال",
-      "date": "2026-10-08",
-      "donationKind": "نقدي"
-    },
-    {
-      "id": "d4",
-      "donorName": "سارة أحمد",
-      "amount": 300,
-      "type": "كفارة يمين",
-      "date": "2026-10-09",
-      "donationKind": "نقدي"
-    },
-    {
-      "id": "d5",
-      "donorName": "فاعل خير",
-      "amount": 2500,
-      "type": "كفالة يتيم",
-      "date": "2026-10-10",
-      "donationKind": "نقدي"
-    },
-    {
-      "id": "d6",
-      "donorName": "الحاج إبراهيم الدسوقي",
-      "amount": 10000,
-      "type": "صدقة جارية",
-      "date": "2026-10-10",
-      "donationKind": "نقدي"
+      "researchNotes": "أرملة تعول يتيمين ومقيدة في برامج كفالة الأيتام.",
+      "registeredByCharityId": "c2",
+      "registeredByCharityName": "جمعية الأمل لرعاية الأيتام"
     }
   ],
   "inventory": [
     {
       "id": "i1",
-      "itemName": "أرز مصري",
+      "charityId": "c1",
+      "itemName": "أرز مصري ممتاز",
       "quantity": 450,
       "unit": "كيلو",
       "type": "أغذية جافة",
@@ -189,7 +196,8 @@
     },
     {
       "id": "i2",
-      "itemName": "سكر أبيض",
+      "charityId": "c1",
+      "itemName": "سكر أبيض نقي",
       "quantity": 300,
       "unit": "كيلو",
       "type": "أغذية جافة",
@@ -198,7 +206,8 @@
     },
     {
       "id": "i3",
-      "itemName": "لحوم مفرومة",
+      "charityId": "c1",
+      "itemName": "لحوم بلدية مجمدة",
       "quantity": 120,
       "unit": "كيلو",
       "type": "لحوم ومجمدات",
@@ -206,35 +215,9 @@
       "code": "ITM-003"
     },
     {
-      "id": "i4",
-      "itemName": "أدوية سكر (ميكستارد)",
-      "quantity": 45,
-      "unit": "علبة",
-      "type": "طبي",
-      "kind": "صنف ملموس",
-      "code": "ITM-004"
-    },
-    {
-      "id": "i5",
-      "itemName": "أكفان شرعية",
-      "quantity": 10,
-      "unit": "قطعة",
-      "type": "متنوع",
-      "kind": "صنف ملموس",
-      "code": "ITM-005"
-    },
-    {
-      "id": "i6",
-      "itemName": "كرسي متحرك",
-      "quantity": 5,
-      "unit": "قطعة",
-      "type": "طبي",
-      "kind": "صنف ملموس",
-      "code": "ITM-006"
-    },
-    {
       "id": "i7",
-      "itemName": "زيت طعام",
+      "charityId": "c1",
+      "itemName": "زيت طعام ممتاز",
       "quantity": 95,
       "unit": "زجاجة",
       "type": "أغذية جافة",
@@ -242,17 +225,9 @@
       "code": "ITM-007"
     },
     {
-      "id": "i8",
-      "itemName": "بطاطين شتوية",
-      "quantity": 150,
-      "unit": "قطعة",
-      "type": "متنوع",
-      "kind": "صنف ملموس",
-      "code": "ITM-008"
-    },
-    {
       "id": "i9",
-      "itemName": "شنط رمضان/إطعام",
+      "charityId": "c1",
+      "itemName": "كرتونة إطعام وشنط رمضان",
       "quantity": 50,
       "unit": "كرتونة",
       "type": "أغذية جافة",
@@ -260,145 +235,384 @@
       "code": "ITM-009"
     },
     {
-      "id": "s1",
-      "itemName": "كشف طبي تخصصي (باطنة/عيون)",
-      "kind": "خدمة",
-      "quantity": 0,
-      "unit": "كشف",
-      "type": "خدمات طبية",
-      "code": "SRV-010"
-    },
-    {
-      "id": "s2",
-      "itemName": "عملية جراحية (مياه بيضاء)",
-      "kind": "خدمة",
-      "quantity": 0,
-      "unit": "عملية",
-      "type": "خدمات طبية",
-      "code": "SRV-011"
-    },
-    {
-      "id": "s3",
-      "itemName": "تجهيز عرائس (أجهزة كهربائية)",
-      "kind": "خدمة",
-      "quantity": 0,
-      "unit": "حالة",
-      "type": "خدمات اجتماعية",
-      "code": "SRV-012"
-    },
-    {
-      "id": "s4",
-      "itemName": "ترميم سقف وبناء منزل",
-      "kind": "خدمة",
-      "quantity": 0,
-      "unit": "منزل",
-      "type": "خدمات إيواء وتعمير",
-      "code": "SRV-013"
-    },
-    {
-      "id": "s5",
+      "id": "s_abwab_1",
+      "charityId": "c1",
       "itemName": "سداد ديون غارم/غارمة",
       "kind": "خدمة",
       "quantity": 0,
       "unit": "حالة",
       "type": "خدمات اجتماعية",
       "code": "SRV-014"
+    },
+    {
+      "id": "i_amal_1",
+      "charityId": "c2",
+      "itemName": "بطاطين شتوية مبطنة",
+      "quantity": 180,
+      "unit": "قطعة",
+      "type": "ملابس وبطاطين",
+      "kind": "صنف ملموس",
+      "code": "ITM-201"
+    },
+    {
+      "id": "i_amal_2",
+      "charityId": "c2",
+      "itemName": "شنطة أدوات مدرسية للأيتام",
+      "quantity": 75,
+      "unit": "شنطة",
+      "type": "متنوع",
+      "kind": "صنف ملموس",
+      "code": "ITM-202"
+    },
+    {
+      "id": "i_amal_3",
+      "charityId": "c2",
+      "itemName": "أجهزة كهربائية (تجهيز عرائس)",
+      "quantity": 12,
+      "unit": "طقم",
+      "type": "متنوع",
+      "kind": "صنف ملموس",
+      "code": "ITM-203"
+    },
+    {
+      "id": "s_amal_1",
+      "charityId": "c2",
+      "itemName": "إعانة مالية نقدية عاجلة",
+      "kind": "خدمة",
+      "quantity": 0,
+      "unit": "دفعة نقدية",
+      "type": "خدمات اجتماعية وتجهيز",
+      "code": "SRV-201"
+    },
+    {
+      "id": "s_amal_2",
+      "charityId": "c2",
+      "itemName": "كفالة يتيم شهرية",
+      "kind": "خدمة",
+      "quantity": 0,
+      "unit": "كفالة",
+      "type": "خدمات تعليمية وكفالات",
+      "code": "SRV-202"
+    },
+    {
+      "id": "i_sedaka_1",
+      "charityId": "c3",
+      "itemName": "كرسي متحرك لكبار السن والمرضى",
+      "quantity": 8,
+      "unit": "قطعة",
+      "type": "أجهزة تعويضية وكراسي",
+      "kind": "صنف ملموس",
+      "code": "ITM-301"
+    },
+    {
+      "id": "i_sedaka_2",
+      "charityId": "c3",
+      "itemName": "أدوية سكر وضغط (ميكستارد/كونكور)",
+      "quantity": 60,
+      "unit": "علبة",
+      "type": "أدوية ومستلزمات طبية",
+      "kind": "صنف ملموس",
+      "code": "ITM-302"
+    },
+    {
+      "id": "s_sedaka_1",
+      "charityId": "c3",
+      "itemName": "كشف رمد وعيون ونظارة طبية",
+      "kind": "خدمة",
+      "quantity": 0,
+      "unit": "كشف ونظارة",
+      "type": "خدمات طبية وعلاجية",
+      "code": "SRV-301"
+    },
+    {
+      "id": "s_sedaka_2",
+      "charityId": "c3",
+      "itemName": "كشف باطنة وقافلة علاجية",
+      "kind": "خدمة",
+      "quantity": 0,
+      "unit": "كشف",
+      "type": "خدمات طبية وعلاجية",
+      "code": "SRV-302"
+    }
+  ],
+  "donations": [
+    {
+      "id": "d1",
+      "charityId": "c1",
+      "donorName": "فاعل خير",
+      "amount": 5000,
+      "type": "زكاة مال",
+      "date": "2026-09-15",
+      "donationKind": "نقدي"
+    },
+    {
+      "id": "d2",
+      "charityId": "c1",
+      "donorName": "محمد علي",
+      "amount": 1000,
+      "type": "صدقة جارية",
+      "date": "2026-10-05",
+      "donationKind": "نقدي"
+    },
+    {
+      "id": "d_inkind_1",
+      "charityId": "c1",
+      "donorName": "م. حسام الدين",
+      "donorPhone": "01011223344",
+      "donationKind": "عيني",
+      "inventoryId": "i1",
+      "itemName": "أرز مصري ممتاز",
+      "quantity": 50,
+      "unit": "كيلو",
+      "amount": 1500,
+      "type": "تبرع عيني (أغذية للمخزن)",
+      "date": "2026-10-12",
+      "notes": "تم توريد 50 كيلو أرز إلى مخزن الجمعية"
+    },
+    {
+      "id": "d_amal_1",
+      "charityId": "c2",
+      "donorName": "شركة الأمل للتجارة والاستثمار",
+      "donorPhone": "01099887766",
+      "donationKind": "نقدي",
+      "amount": 25000,
+      "type": "كفالات أيتام وزكاة مال",
+      "date": "2026-10-02",
+      "notes": "مخصصة للمساعدات المالية العاجلة للأسر المتعففة"
+    },
+    {
+      "id": "d_amal_2",
+      "charityId": "c2",
+      "donorName": "أهل الخير بالمعادي",
+      "donorPhone": "01144556677",
+      "donationKind": "عيني",
+      "inventoryId": "i_amal_1",
+      "itemName": "بطاطين شتوية مبطنة",
+      "quantity": 40,
+      "unit": "قطعة",
+      "amount": 8000,
+      "type": "كساء شتاء",
+      "date": "2026-10-04",
+      "notes": "بطاطين لمشروع دفء الشتاء للأيتام"
+    },
+    {
+      "id": "d_sedaka_1",
+      "charityId": "c3",
+      "donorName": "د. أحمد خليل - استشاري جراحة",
+      "donorPhone": "01222334455",
+      "donationKind": "نقدي",
+      "amount": 12000,
+      "type": "دعم القوافل الطبية والأدوية",
+      "date": "2026-10-06",
+      "notes": "لشراء أدوية سكر وضغط وكراسي متحركة"
+    },
+    {
+      "id": "d_sedaka_2",
+      "charityId": "c3",
+      "donorName": "مركز النور للبصريات",
+      "donorPhone": "01055667788",
+      "donationKind": "خدمة",
+      "inventoryId": "s_sedaka_1",
+      "itemName": "كشف رمد وعيون ونظارة طبية",
+      "quantity": 15,
+      "unit": "كشف ونظارة",
+      "amount": 0,
+      "type": "رعاية طبية خيرية",
+      "date": "2026-10-08",
+      "notes": "15 كشف ونظارة طبية مجانية لمرضى الشبكة"
     }
   ],
   "distributions": [
     {
       "id": "dist1",
+      "charityId": "c1",
+      "charityName": "جمعية أبواب الخير",
       "beneficiaryId": "b1",
       "inventoryId": "i1",
+      "itemName": "أرز مصري ممتاز",
+      "kind": "صنف ملموس",
       "quantity": 5,
+      "unit": "كيلو",
+      "amount": 150,
       "date": "2026-10-01",
-      "notes": "شنطة إطعام شهرية"
+      "notes": "صرف دعم تمويني شهري للأسر المتعففة"
+    },
+    {
+      "id": "dist_amal_user_example",
+      "charityId": "c2",
+      "charityName": "جمعية الأمل لرعاية الأيتام",
+      "beneficiaryId": "b1",
+      "inventoryId": "s_amal_1",
+      "itemName": "إعانة مالية نقدية عاجلة",
+      "kind": "إعانة نقدية",
+      "quantity": 1,
+      "unit": "دفعة نقدية",
+      "amount": 1000,
+      "date": "2026-10-05",
+      "notes": "تم صرف 1,000 ج.م إعانة نقدية طارئة نظراً لمرض عائل الأسرة"
+    },
+    {
+      "id": "dist_sedaka_medical",
+      "charityId": "c3",
+      "charityName": "جمعية رسالة الصداقة",
+      "beneficiaryId": "b1",
+      "inventoryId": "s_sedaka_1",
+      "itemName": "كشف رمد وعيون ونظارة طبية",
+      "kind": "خدمة",
+      "quantity": 1,
+      "unit": "كشف ونظارة",
+      "amount": 350,
+      "date": "2026-10-09",
+      "notes": "كشف بالقافلة الطبية وتسليم نظارة قراءة"
     },
     {
       "id": "dist2",
+      "charityId": "c1",
+      "charityName": "جمعية أبواب الخير",
       "beneficiaryId": "b1",
       "inventoryId": "i7",
+      "itemName": "زيت طعام ممتاز",
+      "kind": "صنف ملموس",
       "quantity": 2,
+      "unit": "زجاجة",
+      "amount": 120,
       "date": "2026-10-01",
-      "notes": "شنطة إطعام شهرية"
+      "notes": "معونة إطعام شهرية"
     },
     {
       "id": "dist3",
+      "charityId": "c1",
+      "charityName": "جمعية أبواب الخير",
       "beneficiaryId": "b2",
-      "inventoryId": "i4",
-      "quantity": 1,
+      "inventoryId": "i1",
+      "itemName": "أرز مصري ممتاز",
+      "kind": "صنف ملموس",
+      "quantity": 10,
+      "unit": "كيلو",
+      "amount": 300,
       "date": "2026-10-03",
-      "notes": "روشتة علاج مزمن"
+      "notes": "إعانة كبار السن"
     },
     {
-      "id": "dist4",
+      "id": "dist_sedaka_suad",
+      "charityId": "c3",
+      "charityName": "جمعية رسالة الصداقة",
+      "beneficiaryId": "b2",
+      "inventoryId": "i_sedaka_1",
+      "itemName": "كرسي متحرك لكبار السن والمرضى",
+      "kind": "صنف ملموس",
+      "quantity": 1,
+      "unit": "قطعة",
+      "amount": 2500,
+      "date": "2026-10-10",
+      "notes": "تسليم كرسي متحرك كعهدة مستديمة للحالة"
+    },
+    {
+      "id": "dist_amal_fatma",
+      "charityId": "c2",
+      "charityName": "جمعية الأمل لرعاية الأيتام",
       "beneficiaryId": "b4",
-      "inventoryId": "i8",
+      "inventoryId": "i_amal_1",
+      "itemName": "بطاطين شتوية مبطنة",
+      "kind": "صنف ملموس",
       "quantity": 3,
+      "unit": "قطعة",
+      "amount": 600,
       "date": "2026-10-08",
-      "notes": "مساعدة شتاء طارئة"
-    },
-    {
-      "id": "dist5",
-      "beneficiaryId": "b5",
-      "inventoryId": "i6",
-      "quantity": 1,
-      "date": "2026-10-09",
-      "notes": "استلام عهدة (كرسي متحرك)"
-    },
-    {
-      "id": "dist6",
-      "beneficiaryId": "b3",
-      "inventoryId": "i3",
-      "quantity": 2,
-      "date": "2026-10-10",
-      "notes": "توزيع لحوم أسبوعي"
-    },
-    {
-      "id": "dist7",
-      "beneficiaryId": "b7",
-      "inventoryId": "i9",
-      "quantity": 1,
-      "date": "2026-10-10",
-      "notes": "كفالة أرملة"
-    },
-    {
-      "id": "dist8",
-      "beneficiaryId": "b6",
-      "inventoryId": "i7",
-      "quantity": 3,
-      "date": "2026-10-10",
-      "notes": "تم التسليم يدويا"
-    }
-  ],
-  "settings": [
-    {
-      "id": "1",
-      "charityName": "جمعية أبواب الخير الشهيرة",
-      "logo": "",
-      "details": "جمعية خيرية مشهرة برقم 1234، تهدف لخدمة الأسر المحتاجة وتوزيع التبرعات.",
-      "phone": "01012345678"
-    }
-  ],
-  "$schema": "./node_modules/json-server/schema.json",
-  "users": [
-    {
-      "id": "1",
-      "username": "admin",
-      "password": "admin",
-      "role": "Administrator"
+      "notes": "مساعدة شتاء وكسوة أيتام"
     }
   ],
   "staff": [
     {
       "id": "s1",
+      "charityId": "c1",
       "nationalId": "29000000000000",
       "name": "أحمد المتطوع",
       "phone": "01000000000",
       "type": "متطوع",
-      "role": "باحث اجتماعي",
+      "role": "باحث اجتماعي ميداني",
       "salary": null,
-      "joinDate": "2026-01-01"
+      "joinDate": "2026-01-01",
+      "address": "الجيزة، فيصل",
+      "tasks": "إجراء البحوث الميدانية للحالات وزيارة المنازل والتأكد من الاستحقاق."
+    },
+    {
+      "id": "s2",
+      "charityId": "c1",
+      "nationalId": "28811223344551",
+      "name": "م. طارق عبد الحميد",
+      "phone": "01122334411",
+      "type": "موظف براتب",
+      "role": "أمين المخازن ومسؤول اللوجستيات",
+      "salary": 5500,
+      "joinDate": "2025-06-01",
+      "address": "القاهرة، المعادي",
+      "tasks": "إدارة الوارد والمنصرف من المخزن، والجرد الدوري، وإعداد تقارير الأرصدة."
+    },
+    {
+      "id": "s_amal_1",
+      "charityId": "c2",
+      "nationalId": "28509091122334",
+      "name": "د. سمير عبد الله",
+      "phone": "01099881122",
+      "type": "موظف براتب",
+      "role": "مدير دار الأيتام والبرامج التنموية",
+      "salary": 7000,
+      "joinDate": "2024-03-01",
+      "address": "المعادي، دجلة",
+      "tasks": "الإشراف على دور رعاية الأيتام، وبرامج الكفالة الشهرية والتأهيل التعليمي."
+    },
+    {
+      "id": "s_amal_2",
+      "charityId": "c2",
+      "nationalId": "29603034455667",
+      "name": "رانيا كمال الدين",
+      "phone": "01155667788",
+      "type": "متطوع",
+      "role": "منسقة كفالات الأيتام",
+      "salary": null,
+      "joinDate": "2026-02-15",
+      "address": "حلوان، القاهرة",
+      "tasks": "التواصل مع الكفلاء والمتبرعين ومتابعة تقارير التحصيل والزيارات."
+    },
+    {
+      "id": "s_sedaka_1",
+      "charityId": "c3",
+      "nationalId": "28104047788990",
+      "name": "د. شريف عيون",
+      "phone": "01233441122",
+      "type": "متطوع",
+      "role": "طبيب منسق القوافل الطبية",
+      "salary": null,
+      "joinDate": "2025-01-10",
+      "address": "الإسكندرية، رشدي",
+      "tasks": "تنظيم القوافل العلاجية، فحص الحالات، والتنسيق مع المراكز الطبية الشريكة."
+    }
+  ],
+  "settings": [
+    {
+      "id": "1",
+      "charityId": "c1",
+      "charityName": "جمعية أبواب الخير",
+      "logo": "",
+      "details": "جمعية خيرية مشهرة برقم 1234، تهدف لخدمة الأسر المحتاجة وتوزيع الإطعام والتبرعات.",
+      "phone": "01012345678"
+    },
+    {
+      "id": "2",
+      "charityId": "c2",
+      "charityName": "جمعية الأمل لرعاية الأيتام",
+      "logo": "",
+      "details": "جمعية رائدة في كفالة الأيتام والرعاية التنموية والإعانات النقدية مشهرة برقم 5678.",
+      "phone": "01122334455"
+    },
+    {
+      "id": "3",
+      "charityId": "c3",
+      "charityName": "جمعية رسالة الصداقة",
+      "logo": "",
+      "details": "جمعية متخصصة في الخدمات الطبية والعلاجية وتوفير الأجهزة التعويضية مشهرة برقم 9012.",
+      "phone": "01233445566"
     }
   ]
 }
