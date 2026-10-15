@@ -1,0 +1,392 @@
+<div dir="rtl" class="bi-container" style="text-align: right;">
+
+  <!-- رأس شاشة ذكاء الأعمال والتحليلات التنفيذية -->
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 25px; border-bottom: 2px solid #004d40; padding-bottom: 15px;">
+    <div>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 28px;">📈</span>
+        <h2 style="color: #004d40; margin: 0; font-size: 22px;">
+          مركز ذكاء الأعمال والتحليلات الاستراتيجية (Executive BI Hub)
+        </h2>
+      </div>
+      <p style="color: #666; margin: 6px 0 0 0; font-size: 14px;">
+        قراءة متقدمة في مؤشرات الأداء والأثر الميداني وقاعدة البيانات الخاصة بـ: 
+        <strong [style.color]="activeCharity?.color || '#004d40'">{{ biData?.charityName || activeCharity?.name }}</strong>
+      </p>
+    </div>
+
+    <!-- أزرار التصفية والطباعة التنفيذية -->
+    <div class="no-print" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+      <div style="background: white; border: 1px solid #ccc; border-radius: 20px; padding: 3px 6px; display: flex; gap: 4px;">
+        <button type="button" (click)="setTimeframe('all')" 
+                [style.background]="selectedTimeframe === 'all' ? '#004d40' : 'transparent'"
+                [style.color]="selectedTimeframe === 'all' ? 'white' : '#555'"
+                style="border: none; padding: 6px 12px; border-radius: 15px; cursor: pointer; font-size: 12px; font-weight: bold;">
+          الكل
+        </button>
+        <button type="button" (click)="setTimeframe('year')" 
+                [style.background]="selectedTimeframe === 'year' ? '#004d40' : 'transparent'"
+                [style.color]="selectedTimeframe === 'year' ? 'white' : '#555'"
+                style="border: none; padding: 6px 12px; border-radius: 15px; cursor: pointer; font-size: 12px; font-weight: bold;">
+          هذا العام
+        </button>
+        <button type="button" (click)="setTimeframe('half')" 
+                [style.background]="selectedTimeframe === 'half' ? '#004d40' : 'transparent'"
+                [style.color]="selectedTimeframe === 'half' ? 'white' : '#555'"
+                style="border: none; padding: 6px 12px; border-radius: 15px; cursor: pointer; font-size: 12px; font-weight: bold;">
+          آخر 6 أشهر
+        </button>
+      </div>
+
+      <button type="button" (click)="printReport()" 
+              style="background-color: #37474f; color: white; border: none; padding: 9px 18px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+        🖨️ طباعة تقرير الأداء التنفيذي
+      </button>
+    </div>
+  </div>
+
+  <!-- حالة التحميل -->
+  <div *ngIf="isLoading" style="text-align: center; padding: 60px 20px; color: #004d40; font-size: 16px; font-weight: bold;">
+    ⏳ جارٍ تحليل ومعالجة مؤشرات ذكاء الأعمال الميدانية...
+  </div>
+
+  <div *ngIf="!isLoading && biData">
+
+    <!-- ========================================== -->
+    <!-- 1. شريط بطاقات مؤشرات الأداء الاستراتيجية (Executive KPIs) -->
+    <!-- ========================================== -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 25px;">
+      
+      <!-- الأثر الأسري الممتد -->
+      <div class="kpi-card card-teal">
+        <div style="display: flex; justify-content: space-between; align-items: center; color: #004d40;">
+          <span style="font-size: 13px; font-weight: bold;">👥 بصمة الرعاية الأسرية</span>
+          <span style="font-size: 20px;">🏡</span>
+        </div>
+        <div style="font-size: 28px; font-weight: bold; color: #004d40; margin: 10px 0 4px 0;">
+          {{ biData.totalDirectFamilyReach }} <span style="font-size: 14px; font-weight: normal; color: #666;">فرد</span>
+        </div>
+        <div style="font-size: 12px; color: #555;">
+          ضمن <strong>{{ biData.registeredBeneficiariesCount }}</strong> أسرة مسجلة لجمعيتكم (تمثل <strong>{{ biData.registeredSharePercentage }}%</strong> من الشبكة).
+        </div>
+      </div>
+
+      <!-- مؤشر الأثر التشاركي والتشبيك -->
+      <div class="kpi-card card-blue">
+        <div style="display: flex; justify-content: space-between; align-items: center; color: #1565c0;">
+          <span style="font-size: 13px; font-weight: bold;">🤝 مؤشر الأثر التشاركي</span>
+          <span style="font-size: 20px;">🌐</span>
+        </div>
+        <div style="font-size: 28px; font-weight: bold; color: #1565c0; margin: 10px 0 4px 0;">
+          {{ biData.partnerCasesServedCount }} <span style="font-size: 14px; font-weight: normal; color: #666;">حالة شقيقة</span>
+        </div>
+        <div style="font-size: 12px; color: #555;">
+          حالات لجمعيات شريكة صُرف لها من مخازنكم (نسبة تشبيك <strong>{{ biData.federatedCooperationIndex }}%</strong>).
+        </div>
+      </div>
+
+      <!-- معدل الفعالية والاستحقاق -->
+      <div class="kpi-card card-green">
+        <div style="display: flex; justify-content: space-between; align-items: center; color: #2e7d32;">
+          <span style="font-size: 13px; font-weight: bold;">🛡️ الفعالية والاستحقاق</span>
+          <span style="font-size: 20px;">✓</span>
+        </div>
+        <div style="font-size: 28px; font-weight: bold; color: #2e7d32; margin: 10px 0 4px 0;">
+          {{ biData.activeRatio }}% <span style="font-size: 14px; font-weight: normal; color: #666;">فعال</span>
+        </div>
+        <div style="font-size: 12px; color: #555;">
+          <strong>{{ biData.activeBeneficiariesCount }}</strong> مستحق نشط | <strong>{{ biData.suspendedBeneficiariesCount }}</strong> موقوف/مستغنٍ.
+        </div>
+      </div>
+
+      <!-- وتيرة التدخلات وحركات الصرف -->
+      <div class="kpi-card card-amber">
+        <div style="display: flex; justify-content: space-between; align-items: center; color: #e65100;">
+          <span style="font-size: 13px; font-weight: bold;">📦 حجم التدخلات المنصرفة</span>
+          <span style="font-size: 20px;">🚚</span>
+        </div>
+        <div style="font-size: 28px; font-weight: bold; color: #e65100; margin: 10px 0 4px 0;">
+          {{ biData.totalUnitsDistributed | number:'1.0-0' }} <span style="font-size: 14px; font-weight: normal; color: #666;">وحدة/خدمة</span>
+        </div>
+        <div style="font-size: 12px; color: #555;">
+          نُفذت عبر <strong>{{ biData.totalDistributionsCount }}</strong> حركة صرف معتمدة من مخازنكم.
+        </div>
+      </div>
+
+      <!-- السيولة والتبرعات -->
+      <div class="kpi-card card-purple">
+        <div style="display: flex; justify-content: space-between; align-items: center; color: #6a1b9a;">
+          <span style="font-size: 13px; font-weight: bold;">💵 تدفقات الخزينة والتبرعات</span>
+          <span style="font-size: 20px;">💰</span>
+        </div>
+        <div style="font-size: 26px; font-weight: bold; color: #6a1b9a; margin: 10px 0 4px 0;">
+          {{ biData.totalCashDonations | number:'1.0-0' }} <span style="font-size: 14px; font-weight: normal; color: #666;">ج.م</span>
+        </div>
+        <div style="font-size: 12px; color: #555;">
+          + <strong>{{ biData.inKindDonationsCount }}</strong> تبرع عيني | متوسط التبرع: <strong>{{ biData.averageCashDonation | number:'1.0-0' }} ج.م</strong>.
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ========================================== -->
+    <!-- 2. شبكة التحليلات والرسوم البيانية المعبرة (Visual Analytics Grid) -->
+    <!-- ========================================== -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 20px; margin-bottom: 25px;">
+
+      <!-- 1. جراف الفئات الاجتماعية الأكثر احتياجاً -->
+      <div class="analytics-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+          <h3 style="margin: 0; font-size: 16px; color: #004d40; display: flex; align-items: center; gap: 8px;">
+            <span>📊</span> تصنيف الفئات الاجتماعية الأكثر احتياجاً
+          </h3>
+          <span style="background: #e0f2f1; color: #00695c; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">
+            {{ biData.registeredBeneficiariesCount }} ملف مسجل
+          </span>
+        </div>
+
+        <div class="chart-bar-container" style="flex: 1;">
+          <div *ngFor="let c of biData.categoryBreakdown" class="bar-row">
+            <div class="bar-label" [title]="c.category">{{ c.category }}</div>
+            <div class="bar-track">
+              <div class="bar-fill" [style.width.%]="c.percentage" style="background: linear-gradient(90deg, #00897b, #004d40);"></div>
+            </div>
+            <div class="bar-value">{{ c.count }} ({{ c.percentage }}%)</div>
+          </div>
+        </div>
+
+        <!-- مصفوفة الدخل السريعة في الأسفل -->
+        <div style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed #e0e0e0;">
+          <div style="font-size: 12px; font-weight: bold; color: #555; margin-bottom: 8px;">
+            💼 مصفوفة الدخل الشهري للحالات:
+          </div>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+            <span *ngFor="let inc of biData.incomeBreakdown" 
+                  style="background: #f5f5f5; border: 1px solid #ddd; padding: 4px 10px; border-radius: 12px; font-size: 11px; color: #333;">
+              <strong>{{ inc.bracket }}:</strong> {{ inc.count }} ({{ inc.percentage }}%)
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. المرصد الصحي وخريطة التنبؤ الدوائي -->
+      <div class="analytics-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+          <h3 style="margin: 0; font-size: 16px; color: #c2185b; display: flex; align-items: center; gap: 8px;">
+            <span>🩺</span> المرصد الصحي والتنبؤ الدوائي الميداني
+          </h3>
+          <span style="background: #fce4ec; color: #c2185b; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">
+            {{ biData.chronicDiseasePercentage }}% مرضى مزمنين
+          </span>
+        </div>
+
+        <div style="background: #fff0f5; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <div style="font-size: 13px; font-weight: bold; color: #880e4f;">إجمالي حالات الأمراض المزمنة</div>
+            <div style="font-size: 11px; color: #ad1457; margin-top: 2px;">تتطلب رعاية وقوافل علاجية مستمرة</div>
+          </div>
+          <div style="font-size: 24px; font-weight: bold; color: #c2185b;">{{ biData.chronicDiseaseCount }} حالة</div>
+        </div>
+
+        <div style="font-size: 13px; font-weight: bold; color: #333; margin-bottom: 10px;">
+          💊 جدول تدفق وصرف العلاج الدوري المجدول:
+        </div>
+        <div class="chart-bar-container" style="flex: 1;">
+          <div *ngFor="let m of biData.medicationFrequencies" class="bar-row">
+            <div class="bar-label">{{ m.frequency }}</div>
+            <div class="bar-track">
+              <div class="bar-fill" [style.width.%]="(m.count / (biData.periodicMedicationCount || 1)) * 100" style="background: linear-gradient(90deg, #f06292, #c2185b);"></div>
+            </div>
+            <div class="bar-value">{{ m.count }} حالة</div>
+          </div>
+        </div>
+
+        <div style="margin-top: 15px; background: #fafafa; border: 1px solid #eee; padding: 10px; border-radius: 6px; font-size: 12px; color: #555;">
+          💡 <strong>توصية التنبؤ الدوائي:</strong> يلزم مستودع الجمعية تأمين ما لا يقل عن <strong>{{ biData.periodicMedicationCount }}</strong> حصة دوائية معتمدة لتغطية الاستحقاقات القادمة.
+        </div>
+      </div>
+
+      <!-- 3. هرم التبعية والإعالة الأسرية -->
+      <div class="analytics-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+          <h3 style="margin: 0; font-size: 16px; color: #1565c0; display: flex; align-items: center; gap: 8px;">
+            <span>👨‍👩‍👧‍👦</span> مؤشر التبعية وهيكل الأسر المسجلة
+          </h3>
+          <span style="background: #e3f2fd; color: #0d47a1; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">
+            متوسط الأسرة: {{ biData.averageFamilySize }} أفراد
+          </span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+          <div style="background: #fff8e1; border: 1px solid #ffe082; padding: 12px; border-radius: 8px; text-align: center;">
+            <div style="font-size: 12px; color: #e65100; font-weight: bold;">إجمالي المعالين (بدون دخل)</div>
+            <div style="font-size: 22px; font-weight: bold; color: #bf360c; margin-top: 4px;">{{ biData.totalDependentsCount }}</div>
+          </div>
+          <div style="background: #e8f5e9; border: 1px solid #c8e6c9; padding: 12px; border-radius: 8px; text-align: center;">
+            <div style="font-size: 12px; color: #2e7d32; font-weight: bold;">إجمالي المعيلين</div>
+            <div style="font-size: 22px; font-weight: bold; color: #1b5e20; margin-top: 4px;">{{ biData.totalSupportersCount }}</div>
+          </div>
+        </div>
+
+        <div style="font-size: 13px; font-weight: bold; color: #333; margin-bottom: 10px;">
+          🎯 توزيع نوع الاحتياج والدعم لأفراد الأسر:
+        </div>
+        <div class="chart-bar-container" style="flex: 1;">
+          <div *ngFor="let s of biData.familySupportTypes" class="bar-row">
+            <div class="bar-label">{{ s.supportType }}</div>
+            <div class="bar-track">
+              <div class="bar-fill" [style.width.%]="(s.count / (biData.totalDependentsCount + biData.totalSupportersCount || 1)) * 100" style="background: linear-gradient(90deg, #42a5f5, #1565c0);"></div>
+            </div>
+            <div class="bar-value">{{ s.count }} فرد</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. رادار حركة المخزون والأصناف الأكثر صرفاً -->
+      <div class="analytics-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+          <h3 style="margin: 0; font-size: 16px; color: #2e7d32; display: flex; align-items: center; gap: 8px;">
+            <span>📦</span> رادار استهلاك المخزن وتدفق الأصناف
+          </h3>
+          <span style="background: #e8f5e9; color: #2e7d32; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">
+            أعلى 6 أصناف طلباً
+          </span>
+        </div>
+
+        <div *ngIf="biData.topDistributedItems.length === 0" style="text-align: center; padding: 30px; color: #888;">
+          لم تسجل حركات صرف في الفترة المحددة.
+        </div>
+
+        <div *ngIf="biData.topDistributedItems.length > 0" style="overflow-x: auto; flex: 1;">
+          <table border="1" cellpadding="8" cellspacing="0" style="width: 100%; border-collapse: collapse; font-size: 13px; text-align: right;">
+            <thead>
+              <tr style="background: #f1f8e9; color: #33691e;">
+                <th>الصنف / المساعدة</th>
+                <th style="text-align: center;">النوع</th>
+                <th style="text-align: center;">الكمية المنصرفة</th>
+                <th style="text-align: center;">الرصيد المتبقي</th>
+                <th style="text-align: center;">حالة التغطية</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of biData.topDistributedItems" style="border-bottom: 1px solid #eee;">
+                <td><strong>{{ item.ItemName || item.itemName }}</strong></td>
+                <td style="text-align: center;">
+                  <span [style.background]="(item.Kind || item.kind) === 'صنف ملموس' ? '#e8f5e9' : '#e0f7fa'"
+                        [style.color]="(item.Kind || item.kind) === 'صنف ملموس' ? '#2e7d32' : '#006064'"
+                        style="padding: 2px 6px; border-radius: 4px; font-size: 11px;">
+                    {{ item.Kind || item.kind }}
+                  </span>
+                </td>
+                <td style="text-align: center; font-weight: bold; color: #c62828;">
+                  {{ (item.QuantityDistributed || item.quantityDistributed) | number:'1.0-0' }} {{ item.Unit || item.unit }}
+                </td>
+                <td style="text-align: center; font-weight: bold; color: #2e7d32;">
+                  {{ (item.CurrentStock || item.currentStock) | number:'1.0-0' }} {{ item.Unit || item.unit }}
+                </td>
+                <td style="text-align: center;">
+                  <span *ngIf="(item.CurrentStock || item.currentStock) > 20" style="background: #e8f5e9; color: #2e7d32; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold;">
+                    ✓ متوفر
+                  </span>
+                  <span *ngIf="(item.CurrentStock || item.currentStock) <= 20 && (item.CurrentStock || item.currentStock) > 0" style="background: #fff3e0; color: #e65100; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold;">
+                    ⚠️ منخفض
+                  </span>
+                  <span *ngIf="(item.CurrentStock || item.currentStock) === 0" style="background: #ffebee; color: #c62828; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold;">
+                    ⛔ نفد
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 5. مصفوفة أسباب إيقاف الحالات وتحليل التعافي -->
+      <div class="analytics-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+          <h3 style="margin: 0; font-size: 16px; color: #c62828; display: flex; align-items: center; gap: 8px;">
+            <span>⛔</span> مصفوفة أسباب الإيقاف ومؤشر التعافي
+          </h3>
+          <span style="background: #ffebee; color: #c62828; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">
+            {{ biData.suspendedBeneficiariesCount }} حالة موقوفة
+          </span>
+        </div>
+
+        <div *ngIf="biData.suspensionReasonsBreakdown.length === 0" style="text-align: center; padding: 30px; color: #888;">
+          لا توجد حالات موقوفة حالياً لدى جمعيتكم.
+        </div>
+
+        <div *ngIf="biData.suspensionReasonsBreakdown.length > 0" class="chart-bar-container" style="flex: 1;">
+          <div *ngFor="let s of biData.suspensionReasonsBreakdown" class="bar-row">
+            <div class="bar-label" [title]="s.reasonTitle">{{ s.reasonTitle }}</div>
+            <div class="bar-track">
+              <div class="bar-fill" [style.width.%]="s.percentage" style="background: linear-gradient(90deg, #ef5350, #b71c1c);"></div>
+            </div>
+            <div class="bar-value">{{ s.count }} ({{ s.percentage }}%)</div>
+          </div>
+        </div>
+
+        <div style="margin-top: 15px; background: #e8f5e9; border: 1px solid #c8e6c9; padding: 10px 14px; border-radius: 6px; font-size: 12px; color: #1b5e20;">
+          🌱 <strong>مؤشر التعافي والتمكين:</strong> الحالات الموقوفة بسبب <u>"تحسن الدخل والاستغناء"</u> تمثل دليلاً على نجاح تدخلات الجمعية في نقل الأسر من دائرة العوز إلى الاستقلال.
+        </div>
+      </div>
+
+      <!-- 6. منحنى التدفقات وحركات الصرف الزمنية -->
+      <div class="analytics-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+          <h3 style="margin: 0; font-size: 16px; color: #004d40; display: flex; align-items: center; gap: 8px;">
+            <span>📅</span> منحنى التطور الزمني والموسمية
+          </h3>
+          <span style="background: #e0f2f1; color: #004d40; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">
+            آخر الفترات
+          </span>
+        </div>
+
+        <div class="trend-bars-wrapper" *ngIf="biData.monthlyTrends?.length > 0">
+          <div *ngFor="let m of biData.monthlyTrends" class="trend-col">
+            <div style="font-size: 10px; font-weight: bold; color: #004d40;">{{ m.distributionsCount }} حركات</div>
+            <div class="trend-bar" 
+                 [style.height.%]="(m.distributionsCount / getMaxMonthlyDist()) * 85 + 15" 
+                 style="background: linear-gradient(180deg, #00897b, #004d40);"></div>
+            <div class="trend-month-label">{{ m.monthName }}</div>
+          </div>
+        </div>
+
+        <div *ngIf="!biData.monthlyTrends || biData.monthlyTrends.length === 0" style="text-align: center; padding: 30px; color: #888;">
+          لا توجد بيانات زمنية كافية للرسم البياني.
+        </div>
+
+        <div style="margin-top: 15px; display: flex; justify-content: space-between; font-size: 12px; color: #666; border-top: 1px solid #eee; padding-top: 10px;">
+          <span>🟢 كثافة الصرف وتدخلات المخزن</span>
+          <span>💼 مؤشر قوة الاستجابة الميدانية</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ========================================== -->
+    <!-- 3. التقرير الاستراتيجي لمتخذ القرار (Executive Insights & Recommendations) -->
+    <!-- ========================================== -->
+    <div style="background: linear-gradient(135deg, #f9fbe7 0%, #f1f8e9 100%); border: 1px solid #c5e1a5; border-radius: 10px; padding: 22px; margin-bottom: 25px;">
+      <h3 style="margin: 0 0 12px 0; color: #33691e; font-size: 17px; display: flex; align-items: center; gap: 8px;">
+        <span>🎯</span> الرؤية التنفيذية وتوصيات محلل البيانات (Data-Driven Decisions)
+      </h3>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; font-size: 13px; color: #2e7d32; line-height: 1.6;">
+        <div style="background: white; border: 1px solid #dcedc8; padding: 14px; border-radius: 8px;">
+          <strong>1. التوسع في الكفالة الطبية:</strong>
+          وجود {{ biData.chronicDiseaseCount }} حالة مرض مزمن بجمعيتكم يتطلب تدشين صندوق علاج دوري شهري مستدام لتجنب التوزيع العشوائي.
+        </div>
+        <div style="background: white; border: 1px solid #dcedc8; padding: 14px; border-radius: 8px;">
+          <strong>2. تمكين الأسر الأكثر إعالة:</strong>
+          معدل التبعية البالغ ({{ biData.dependencyRatio }} معال لكل معيل) يوصي بضرورة توجيه التبرعات نحو مشروعات متناهية الصغر للمعيلين لرفع الدخل.
+        </div>
+        <div style="background: white; border: 1px solid #dcedc8; padding: 14px; border-radius: 8px;">
+          <strong>3. قوة التطوع والموارد البشرية:</strong>
+          نسبة التطوع بالجمعية ({{ biData.volunteerismRatio }}%) تشير إلى ثقة مجتمعية مرتفعة، يُنصح باستثمارها في فرق البحث الميداني المستمر.
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>

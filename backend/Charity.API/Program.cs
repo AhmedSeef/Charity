@@ -83,6 +83,7 @@ builder.Services.AddScoped<IStaffService, StaffService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<ICharityService, CharityService>();
 builder.Services.AddScoped<ISuspensionReasonService, SuspensionReasonService>();
+builder.Services.AddScoped<IBiAnalyticsService, BiAnalyticsService>();
 
 // 5. CORS for Angular Frontend
 builder.Services.AddCors(options =>

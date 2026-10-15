@@ -1356,4 +1356,244 @@ export class Api {
     this.save();
     return of(data);
   }
+
+  // ==========================================
+  // 7. Business Intelligence & Analytics (BI)
+  // ==========================================
+  getBiAnalytics(charityId?: string): Observable<any> {
+    const targetId = charityId || this.getActiveCharityId();
+    const activeCharity = (this.db.charities || []).find((c: any) => c.id === targetId) || this.getActiveCharity();
+    const charityName = activeCharity ? activeCharity.name : 'جمعيتكم';
+
+    const allBeneficiaries = this.db.beneficiaries || [];
+    const allDistributions = this.db.distributions || [];
+
+    const myRegisteredBen = allBeneficiaries.filter((b: any) => 
+      !b.registeredByCharityId || b.registeredByCharityId === targetId
+    );
+
+    const myDistributions = allDistributions.filter((d: any) => d.charityId === targetId);
+    const myDonations = (this.db.donations || []).filter((d: any) => d.charityId === targetId);
+    const myInventory = (this.db.inventory || []).filter((i: any) => i.charityId === targetId);
+    const myStaff = (this.db.staff || []).filter((s: any) => s.charityId === targetId);
+
+    // 1. Executive KPIs
+    const registeredCount = myRegisteredBen.length;
+    const totalNetworkCount = allBeneficiaries.length;
+    const registeredShare = totalNetworkCount > 0 ? Math.round((registeredCount / totalNetworkCount) * 100) : 0;
+
+    const activeCount = myRegisteredBen.filter((b: any) => !b.isSuspended && b.status !== 'موقوف').length;
+    const suspendedCount = myRegisteredBen.filter((b: any) => b.isSuspended || b.status === 'موقوف').length;
+    const activeRatio = registeredCount > 0 ? Math.round((activeCount / registeredCount) * 100) : 0;
+
+    // Total Family Reach (Principal + Family Members)
+    const totalFamilyReach = myRegisteredBen.reduce((sum: number, b: any) => {
+      const memCount = (b.familyMembers && b.familyMembers.length) || (b.familyCount ? b.familyCount - 1 : 0);
+      return sum + 1 + memCount;
+    }, 0);
+
+    // Federated Cooperation: distributions given to beneficiaries registered by partner charities
+    const partnerBenIds = new Set<string>();
+    myDistributions.forEach((d: any) => {
+      const ben = allBeneficiaries.find((b: any) => String(b.id) === String(d.beneficiaryId));
+      if (ben && ben.registeredByCharityId && ben.registeredByCharityId !== targetId) {
+        partnerBenIds.add(String(ben.id));
+      }
+    });
+    const partnerCasesServed = partnerBenIds.size;
+    const totalDistCount = myDistributions.length;
+    const totalUnitsDistributed = myDistributions.reduce((sum: number, d: any) => sum + Number(d.quantity || 1), 0);
+    const federatedCooperationIndex = totalDistCount > 0 ? Math.round((partnerCasesServed / totalDistCount) * 100) : 0;
+
+    // Cash and In-Kind donations
+    const cashDonations = myDonations.filter((d: any) => d.donationKind === 'نقدي' || !d.donationKind);
+    const totalCash = cashDonations.reduce((sum: number, d: any) => sum + Number(d.amount || 0), 0);
+    const inKindCount = myDonations.filter((d: any) => d.donationKind === 'عيني').length;
+    const avgDonation = cashDonations.length > 0 ? Math.round(totalCash / cashDonations.length) : 0;
+
+    // HR & Volunteerism
+    const totalStaff = myStaff.length;
+    const volunteers = myStaff.filter((s: any) => 
+      (s.role && s.role.includes('متطوع')) || !s.salary || Number(s.salary) === 0
+    ).length;
+    const salaried = totalStaff - volunteers;
+    const volunteerRatio = totalStaff > 0 ? Math.round((volunteers / totalStaff) * 100) : 0;
+
+    // 2. Categories Breakdown
+    const catMap: { [key: string]: number } = {};
+    myRegisteredBen.forEach((b: any) => {
+      const c = b.category || 'أخرى';
+      catMap[c] = (catMap[c] || 0) + 1;
+    });
+    const categoryBreakdown = Object.keys(catMap).map(k => ({
+      category: k,
+      count: catMap[k],
+      percentage: registeredCount > 0 ? Math.round((catMap[k] / registeredCount) * 100) : 0
+    })).sort((a, b) => b.count - a.count);
+
+    // Income Breakdown
+    const incMap: { [key: string]: number } = {
+      'بدون دخل ثابت (يومية/حرج)': 0,
+      'أقل من 2000 ج.م': 0,
+      '2000 - 4000 ج.م': 0,
+      'أكثر من 4000 ج.م': 0
+    };
+    myRegisteredBen.forEach((b: any) => {
+      const inc = Number(b.monthlyIncome || 0);
+      if (!inc) incMap['بدون دخل ثابت (يومية/حرج)']++;
+      else if (inc <= 2000) incMap['أقل من 2000 ج.م']++;
+      else if (inc <= 4000) incMap['2000 - 4000 ج.م']++;
+      else incMap['أكثر من 4000 ج.م']++;
+    });
+    const incomeBreakdown = Object.keys(incMap).map(k => ({
+      bracket: k,
+      count: incMap[k],
+      percentage: registeredCount > 0 ? Math.round((incMap[k] / registeredCount) * 100) : 0
+    }));
+
+    // Housing Breakdown
+    const houseMap: { [key: string]: number } = {};
+    myRegisteredBen.forEach((b: any) => {
+      const h = b.housing || 'إيجار جديد';
+      houseMap[h] = (houseMap[h] || 0) + 1;
+    });
+    const housingBreakdown = Object.keys(houseMap).map(k => ({
+      housingType: k,
+      count: houseMap[k],
+      percentage: registeredCount > 0 ? Math.round((houseMap[k] / registeredCount) * 100) : 0
+    })).sort((a, b) => b.count - a.count);
+
+    // 3. Health & Medical Observatory
+    const chronicCount = myRegisteredBen.filter((b: any) => b.hasChronicDisease).length;
+    const chronicPercentage = registeredCount > 0 ? Math.round((chronicCount / registeredCount) * 100) : 0;
+    const periodicMedCount = myRegisteredBen.filter((b: any) => b.needsPeriodicMedication).length;
+
+    const medMap: { [key: string]: number } = {};
+    myRegisteredBen.filter((b: any) => b.needsPeriodicMedication && b.medicationFrequency).forEach((b: any) => {
+      const f = b.medicationFrequency;
+      medMap[f] = (medMap[f] || 0) + 1;
+    });
+    const medicationFrequencies = Object.keys(medMap).map(k => ({
+      frequency: k,
+      count: medMap[k]
+    })).sort((a, b) => b.count - a.count);
+
+    // 4. Family Structure & Dependency
+    let totalDependents = 0;
+    let totalSupporters = 0;
+    const supportTypeMap: { [key: string]: number } = {};
+
+    myRegisteredBen.forEach((b: any) => {
+      (b.familyMembers || []).forEach((m: any) => {
+        if (m.memberType === 'معيل') totalSupporters++;
+        else totalDependents++;
+
+        const st = m.supportType || 'أخرى';
+        supportTypeMap[st] = (supportTypeMap[st] || 0) + 1;
+      });
+    });
+
+    const dependencyRatio = totalSupporters > 0 
+      ? Math.round((totalDependents / totalSupporters) * 10) / 10 
+      : totalDependents;
+    const avgFamilySize = registeredCount > 0
+      ? Math.round((myRegisteredBen.reduce((sum: number, b: any) => sum + (Number(b.familyCount) || 1), 0) / registeredCount) * 10) / 10
+      : 0;
+
+    const familySupportTypes = Object.keys(supportTypeMap).map(k => ({
+      supportType: k,
+      count: supportTypeMap[k]
+    })).sort((a, b) => b.count - a.count);
+
+    // 5. Inventory & Distribution Velocity
+    const distItemMap: { [key: string]: { qty: number, unit: string, kind: string } } = {};
+    myDistributions.forEach((d: any) => {
+      const name = d.itemName || 'مساعدة معتمدة';
+      if (!distItemMap[name]) {
+        distItemMap[name] = { qty: 0, unit: d.unit || '', kind: d.kind || 'صنف ملموس' };
+      }
+      distItemMap[name].qty += Number(d.quantity || 1);
+    });
+
+    const topDistributedItems = Object.keys(distItemMap).map(name => {
+      const invItem = myInventory.find((i: any) => i.itemName === name);
+      return {
+        itemName: name,
+        unit: distItemMap[name].unit,
+        kind: distItemMap[name].kind,
+        quantityDistributed: distItemMap[name].qty,
+        currentStock: invItem ? Number(invItem.quantity || 0) : 0
+      };
+    }).sort((a, b) => b.quantityDistributed - a.quantityDistributed).slice(0, 6);
+
+    // Monthly Trends (computed over past dates)
+    const monthMap: { [key: string]: { distCount: number, donationsTotal: number } } = {};
+    myDistributions.forEach((d: any) => {
+      const m = d.date ? d.date.substring(0, 7) : '2026-10';
+      if (!monthMap[m]) monthMap[m] = { distCount: 0, donationsTotal: 0 };
+      monthMap[m].distCount++;
+    });
+    myDonations.forEach((d: any) => {
+      const m = d.date ? d.date.substring(0, 7) : '2026-10';
+      if (!monthMap[m]) monthMap[m] = { distCount: 0, donationsTotal: 0 };
+      if (d.amount) monthMap[m].donationsTotal += Number(d.amount);
+    });
+
+    const monthlyTrends = Object.keys(monthMap).sort().slice(-6).map(m => ({
+      monthName: m,
+      distributionsCount: monthMap[m].distCount,
+      donationsTotal: monthMap[m].donationsTotal
+    }));
+
+    // 6. Suspension Reasons Breakdown
+    const suspMap: { [key: string]: number } = {};
+    myRegisteredBen.filter((b: any) => (b.isSuspended || b.status === 'موقوف') && b.suspensionReasonTitle).forEach((b: any) => {
+      const r = b.suspensionReasonTitle;
+      suspMap[r] = (suspMap[r] || 0) + 1;
+    });
+
+    const suspensionReasonsBreakdown = Object.keys(suspMap).map(k => ({
+      reasonTitle: k,
+      count: suspMap[k],
+      percentage: suspendedCount > 0 ? Math.round((suspMap[k] / suspendedCount) * 100) : 0
+    })).sort((a, b) => b.count - a.count);
+
+    return of({
+      charityId: targetId,
+      charityName,
+      registeredBeneficiariesCount: registeredCount,
+      totalBeneficiariesInNetwork: totalNetworkCount,
+      registeredSharePercentage: registeredShare,
+      totalDirectFamilyReach: totalFamilyReach,
+      activeBeneficiariesCount: activeCount,
+      suspendedBeneficiariesCount: suspendedCount,
+      activeRatio,
+      totalDistributionsCount: totalDistCount,
+      totalUnitsDistributed,
+      partnerCasesServedCount: partnerCasesServed,
+      federatedCooperationIndex,
+      totalCashDonations: totalCash,
+      inKindDonationsCount: inKindCount,
+      averageCashDonation: avgDonation,
+      totalStaffCount: totalStaff,
+      volunteersCount: volunteers,
+      salariedStaffCount: salaried,
+      volunteerismRatio: volunteerRatio,
+      categoryBreakdown,
+      incomeBreakdown,
+      housingBreakdown,
+      chronicDiseaseCount: chronicCount,
+      chronicDiseasePercentage: chronicPercentage,
+      periodicMedicationCount: periodicMedCount,
+      medicationFrequencies,
+      totalDependentsCount: totalDependents,
+      totalSupportersCount: totalSupporters,
+      dependencyRatio,
+      averageFamilySize: avgFamilySize,
+      familySupportTypes,
+      topDistributedItems,
+      monthlyTrends,
+      suspensionReasonsBreakdown
+    });
+  }
 }
