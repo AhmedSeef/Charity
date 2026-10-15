@@ -1,49 +1,57 @@
 import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { tap, map, catchError } from 'rxjs/operators';
 import { Api } from './api';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  constructor(private router: Router, private api: Api) {}
+  private apiUrl = 'http://localhost:5072/api';
+
+  constructor(
+    private router: Router, 
+    private http: HttpClient, 
+    private api: Api
+  ) {}
 
   login(user: string, pass: string): Observable<any> {
-    const localDb = localStorage.getItem('charity_db');
-    let users = [];
-    if (localDb) {
-      try {
-        const db = JSON.parse(localDb);
-        users = db.users || [];
-      } catch (e) {
-        users = [];
-      }
-    }
-
-    const matchedUser = users.find((u: any) => u.username === user && u.password === pass);
-    
-    return of(matchedUser ? [matchedUser] : []).pipe(
-      tap((result: any) => {
-        if (result && result.length > 0) {
-          const userObj = result[0];
+    return this.http.post<any>(`${this.apiUrl}/auth/login`, { username: user, password: pass }).pipe(
+      tap((res: any) => {
+        if (res && res.token) {
+          localStorage.setItem('token', res.token);
+          const userObj = {
+            id: res.userId,
+            username: res.username,
+            fullName: res.fullName,
+            role: res.role,
+            charityId: res.charityId,
+            charityName: res.charityName
+          };
           localStorage.setItem('currentUser', JSON.stringify(userObj));
-          if (userObj.charityId) {
-            this.api.setActiveCharityId(userObj.charityId);
+          if (res.charityId) {
+            this.api.setActiveCharityId(res.charityId);
           }
         }
+      }),
+      map((res: any) => res ? [res] : []),
+      catchError((err) => {
+        console.error('Backend login failed:', err);
+        return of([]);
       })
     );
   }
 
   logout() {
+    localStorage.removeItem('token');
     localStorage.removeItem('currentUser');
     this.router.navigate(['/login']).then(() => window.location.reload());
   }
 
   isLoggedIn(): boolean {
-    return !!localStorage.getItem('currentUser');
+    return !!localStorage.getItem('token') && !!localStorage.getItem('currentUser');
   }
 
   getCurrentUser() {
