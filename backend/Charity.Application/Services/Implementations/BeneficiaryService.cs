@@ -117,6 +117,29 @@ public class BeneficiaryService : IBeneficiaryService
         existing.ResearchNotes = dto.ResearchNotes;
         existing.Status = dto.Status;
 
+        // البيانات الجغرافية ودرجة الاستحقاق
+        existing.VillageOrDistrict = dto.VillageOrDistrict ?? string.Empty;
+        existing.PriorityTier = dto.PriorityTier ?? "أ - أولوية قصوى ومعدم";
+
+        // مواصفات السكن والأسقف والمرافق
+        existing.RoofType = dto.RoofType ?? "خرساني مسلح";
+        existing.WallType = dto.WallType ?? "طوب أحمر";
+        existing.WaterSource = dto.WaterSource ?? "عداد مياه رسمي";
+        existing.SanitationType = dto.SanitationType ?? "شبكة صرف عمومية";
+        existing.ElectricitySource = dto.ElectricitySource ?? "عداد رسمي";
+        existing.AppliancesSummary = dto.AppliancesSummary ?? string.Empty;
+
+        // ملف الديون وإيصالات الأمانة وخطر الحبس (الغارمين)
+        existing.HasDebts = dto.HasDebts;
+        existing.TotalDebtAmount = dto.TotalDebtAmount;
+        existing.DebtCreditor = dto.DebtCreditor ?? string.Empty;
+        existing.IsThreatenedWithImprisonment = dto.IsThreatenedWithImprisonment;
+        existing.DebtNotes = dto.DebtNotes ?? string.Empty;
+
+        // التمكين الاقتصادي والمشروعات متناهية الصغر
+        existing.IsCandidateForMicroProject = dto.IsCandidateForMicroProject;
+        existing.SuggestedMicroProject = dto.SuggestedMicroProject ?? string.Empty;
+
         // البيانات المالية والصحية الجديدة
         existing.IncomeSource = dto.IncomeSource ?? string.Empty;
         existing.MonthlyIncome = dto.MonthlyIncome;

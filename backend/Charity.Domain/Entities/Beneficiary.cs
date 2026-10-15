@@ -38,6 +38,29 @@ public class Beneficiary : BaseEntity
     public string? SuspendedByCharityId { get; set; }
     public string? SuspendedByCharityName { get; set; }
 
+    // 4. أبعاد البحث الاجتماعي الميداني والقرية (Field Research & Multidimensional Poverty)
+    public string VillageOrDistrict { get; set; } = string.Empty; // القرية / العزبة / النجع / الحي
+    public string PriorityTier { get; set; } = "أ - أولوية قصوى ومعدم"; // أ - أولوية قصوى ومعدم | ب - متوسط الاحتياج | ج - طوارئ وظرف مؤقت
+
+    // مواصفات السكن والبيئة التحتية (تسقيف البيوت والمرافق)
+    public string RoofType { get; set; } = "خرساني مسلح"; // خرساني مسلح، خشب وألواح، جريد وقش وبوص، صاج وزينك، بدون سقف/مكشوف
+    public string WallType { get; set; } = "طوب أحمر ومحارة"; // طوب أحمر، طوب لبن/طيني، صاج وخشب
+    public string WaterSource { get; set; } = "عداد مياه رسمي"; // عداد مياه رسمي، طلمبة حبشية، ملء من الجيران، بدون مياه
+    public string SanitationType { get; set; } = "شبكة صرف صحي عمومية"; // شبكة صرف عمومية، بيارة/طرنش، بدون صرف
+    public string ElectricitySource { get; set; } = "عداد قانوني"; // عداد قانوني، عداد كودي/ممارسة، وصلة جيران، بدون كهرباء
+    public string AppliancesSummary { get; set; } = string.Empty; // نواقص الأجهزة أو المتوفر (ثلاجة، غسالة، بوتاجاز...)
+
+    // ملف الديون وإيصالات الأمانة (ملف الغارمين)
+    public bool HasDebts { get; set; } = false; // هل على الأسرة ديون أو كمبيالات؟
+    public decimal? TotalDebtAmount { get; set; } // إجمالي قيمة الدين
+    public string DebtCreditor { get; set; } = string.Empty; // تاجر أجهزة وتجهيز عرائس، شركة تمويل متناهي صغر، أفراد
+    public bool IsThreatenedWithImprisonment { get; set; } = false; // هل مهدد بالحبس أو عليه قضايا؟
+    public string DebtNotes { get; set; } = string.Empty; // تفاصيل الديون والأحكام
+
+    // التمكين الاقتصادي والمشروعات متناهية الصغر
+    public bool IsCandidateForMicroProject { get; set; } = false; // هل مرشح لمشروع تمكين؟
+    public string SuggestedMicroProject { get; set; } = string.Empty; // ماكينة خياطة، تروسيكل، تربية مواشي/دواجن، كشك...
+
     // Data Ownership & Governance: ONLY this charity can edit!
     public string RegisteredByCharityId { get; set; } = string.Empty;
     public string RegisteredByCharityName { get; set; } = string.Empty;

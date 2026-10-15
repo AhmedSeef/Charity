@@ -106,6 +106,21 @@ export class Api {
       "needsPeriodicMedication": true,
       "periodicMedicationDetails": "قطرات ترطيب وحفظ ضغط العين وعلاج ضغط",
       "medicationFrequency": "شهرياً",
+      "villageOrDistrict": "العمرانية الغربية",
+      "priorityTier": "أ - أولوية قصوى ومعدم",
+      "roofType": "خشب وألواح",
+      "wallType": "طوب أحمر",
+      "waterSource": "وصلة مياه من الجيران",
+      "sanitationType": "بيارة / طرنش",
+      "electricitySource": "عداد رسمي (كارت/قديم)",
+      "appliancesSummary": "ثلاجة قديمة وغسالة عادية متهالكة",
+      "hasDebts": true,
+      "totalDebtAmount": 15000,
+      "debtCreditor": "تاجر أجهزة وسوبرماركت",
+      "isThreatenedWithImprisonment": true,
+      "debtNotes": "إيصالات أمانة مستحقة الدفع وتهديد قضائي",
+      "isCandidateForMicroProject": true,
+      "suggestedMicroProject": "تربية دواجن أو ماكينة خياطة",
       "familyMembers": [
         {
           "id": "fm_b1_1",
@@ -118,6 +133,9 @@ export class Api {
           "incomeSource": "",
           "supportType": "ربة منزل",
           "healthStatus": "جيدة",
+          "educationStage": "أمي / بدون دراسة",
+          "isSchoolDropout": false,
+          "isChildLabor": false,
           "notes": "ربة منزل ترعى الأطفال"
         },
         {
@@ -131,6 +149,9 @@ export class Api {
           "incomeSource": "",
           "supportType": "طالب",
           "healthStatus": "جيدة",
+          "educationStage": "تعليم أساسي (ابتدائي)",
+          "isSchoolDropout": false,
+          "isChildLabor": false,
           "notes": "طالب بالمرحلة الابتدائية"
         },
         {
@@ -144,6 +165,9 @@ export class Api {
           "incomeSource": "",
           "supportType": "طفل",
           "healthStatus": "جيدة",
+          "educationStage": "دون سن التعليم",
+          "isSchoolDropout": false,
+          "isChildLabor": false,
           "notes": "طفلة في سن الحضانة"
         }
       ],
@@ -174,6 +198,21 @@ export class Api {
       "needsPeriodicMedication": true,
       "periodicMedicationDetails": "أنسولين ومسكنات وأدوية ضبط السكر",
       "medicationFrequency": "شهرياً",
+      "villageOrDistrict": "المطرية - عزبة النخل",
+      "priorityTier": "أ - أولوية قصوى ومعدم",
+      "roofType": "جريد وقش وطين",
+      "wallType": "طوب لبن / طين",
+      "waterSource": "طلمبة حبشية / مياه جوفية",
+      "sanitationType": "بدون دورة مياه / محروم",
+      "electricitySource": "ممارسة / وصلة",
+      "appliancesSummary": "بوتاجاز شعلتين فقط بدون غسالة",
+      "hasDebts": false,
+      "totalDebtAmount": 0,
+      "debtCreditor": "",
+      "isThreatenedWithImprisonment": false,
+      "debtNotes": "",
+      "isCandidateForMicroProject": true,
+      "suggestedMicroProject": "تطوير مشغل خياطة منزلي لابنتها",
       "familyMembers": [
         {
           "id": "fm_b2_1",
@@ -186,6 +225,9 @@ export class Api {
           "incomeSource": "خياطة وتطريز منزلي",
           "supportType": "أخرى",
           "healthStatus": "سليمة",
+          "educationStage": "ثانوي / فني",
+          "isSchoolDropout": false,
+          "isChildLabor": false,
           "notes": "ابنتها المعيلة وتساعد في مصاريف البيت والأدوية"
         }
       ],
@@ -205,6 +247,21 @@ export class Api {
       "housing": "إيجار جديد",
       "healthIssues": "سليم طبياً",
       "researchNotes": "عليه ديون متراكمة بسبب جهاز ابنته الكبرى وإيصالات أمانة.",
+      "villageOrDistrict": "عزبة خير الله - المعادي",
+      "priorityTier": "أ - أولوية قصوى ومعدم",
+      "roofType": "صاج زنك",
+      "wallType": "طوب أحمر",
+      "waterSource": "عداد مياه رسمي",
+      "sanitationType": "شبكة صرف عمومية",
+      "electricitySource": "عداد رسمي (كارت/قديم)",
+      "appliancesSummary": "أجهزة أساسية متهالكة",
+      "hasDebts": true,
+      "totalDebtAmount": 38000,
+      "debtCreditor": "معرض أجهزة منزلية وتجار تجزئة",
+      "isThreatenedWithImprisonment": true,
+      "debtNotes": "صدر ضده حكم حبس غيابي بسبب إيصال أمانة بقيمة 18000 ج.م",
+      "isCandidateForMicroProject": false,
+      "suggestedMicroProject": "",
       "registeredByCharityId": "c2",
       "registeredByCharityName": "جمعية الأمل لرعاية الأيتام"
     },
@@ -221,6 +278,21 @@ export class Api {
       "housing": "سكن متهالك/يحتاج ترميم",
       "healthIssues": "روماتويد والتهاب مفاصل",
       "researchNotes": "تحتاج مساعدة شتاء وبطاطين وأدوات مدرسية لأطفالها.",
+      "villageOrDistrict": "العصافرة قبلي",
+      "priorityTier": "ج - طوارئ وظرف مؤقت",
+      "roofType": "خشب وألواح",
+      "wallType": "طوب أحمر",
+      "waterSource": "عداد مياه رسمي",
+      "sanitationType": "شبكة صرف عمومية",
+      "electricitySource": "عداد رسمي (كارت/قديم)",
+      "appliancesSummary": "ثلاجة وتلفزيون",
+      "hasDebts": false,
+      "totalDebtAmount": 0,
+      "debtCreditor": "",
+      "isThreatenedWithImprisonment": false,
+      "debtNotes": "",
+      "isCandidateForMicroProject": true,
+      "suggestedMicroProject": "كشك خضار وفواكه",
       "registeredByCharityId": "c3",
       "registeredByCharityName": "جمعية رسالة الصداقة"
     },
@@ -237,6 +309,21 @@ export class Api {
       "housing": "ملك قديم",
       "healthIssues": "بتر جزئي بالقدم ويحتاج كرسي متحرك",
       "researchNotes": "يحتاج رعاية صحية ودواء دوري.",
+      "villageOrDistrict": "قرية كفر الجزار - بنها",
+      "priorityTier": "ب - متوسط الاحتياج",
+      "roofType": "خرساني مسلح",
+      "wallType": "طوب أحمر",
+      "waterSource": "عداد مياه رسمي",
+      "sanitationType": "شبكة صرف عمومية",
+      "electricitySource": "عداد رسمي (كارت/قديم)",
+      "appliancesSummary": "أجهزة كهربائية متوفرة",
+      "hasDebts": false,
+      "totalDebtAmount": 0,
+      "debtCreditor": "",
+      "isThreatenedWithImprisonment": false,
+      "debtNotes": "",
+      "isCandidateForMicroProject": false,
+      "suggestedMicroProject": "",
       "registeredByCharityId": "c3",
       "registeredByCharityName": "جمعية رسالة الصداقة"
     },
@@ -253,6 +340,55 @@ export class Api {
       "housing": "إيجار جديد",
       "healthIssues": "أطفال في سن المدارس",
       "researchNotes": "تعطل عائل الأسرة عن العمل في ورشة.",
+      "villageOrDistrict": "خورشيد - المنتزه",
+      "priorityTier": "أ - أولوية قصوى ومعدم",
+      "roofType": "جريد وقش وطين",
+      "wallType": "طوب لبن / طين",
+      "waterSource": "ملء من فناطيس / سبيل خارجي",
+      "sanitationType": "بيارة / طرنش",
+      "electricitySource": "وصلة من الجيران",
+      "appliancesSummary": "بدون أجهزة كهربائية تذكر",
+      "hasDebts": true,
+      "totalDebtAmount": 12000,
+      "debtCreditor": "ديون إيجار ودكان البقالة",
+      "isThreatenedWithImprisonment": false,
+      "debtNotes": "إنذار بالطرد من المسكن لعدم سداد الإيجار المتراكم",
+      "isCandidateForMicroProject": true,
+      "suggestedMicroProject": "عربة مأكولات سريعة وشاي",
+      "familyMembers": [
+        {
+          "id": "fm_b6_1",
+          "nationalId": "29811111234567",
+          "name": "سناء جابر خليل",
+          "relationship": "زوجة",
+          "memberType": "معال",
+          "hasIncome": false,
+          "incomeAmount": null,
+          "incomeSource": "",
+          "supportType": "ربة منزل",
+          "healthStatus": "سليمة",
+          "educationStage": "أمي / بدون دراسة",
+          "isSchoolDropout": false,
+          "isChildLabor": false,
+          "notes": ""
+        },
+        {
+          "id": "fm_b6_2",
+          "nationalId": "31405051234568",
+          "name": "إسلام محمود المنسي",
+          "relationship": "ابن",
+          "memberType": "معيل",
+          "hasIncome": true,
+          "incomeAmount": 900,
+          "incomeSource": "ورشة ميكانيكا",
+          "supportType": "عاطل عن العمل",
+          "healthStatus": "إجهاد عضلي",
+          "educationStage": "تعليم أساسي (ابتدائي)",
+          "isSchoolDropout": true,
+          "isChildLabor": true,
+          "notes": "تسرب من التعليم بالصف الخامس لمساعدة والده بالعمل في ورشة"
+        }
+      ],
       "registeredByCharityId": "c1",
       "registeredByCharityName": "جمعية أبواب الخير"
     },
@@ -269,6 +405,21 @@ export class Api {
       "housing": "إيجار قديم",
       "healthIssues": "لا يوجد",
       "researchNotes": "أرملة تعول يتيمين ومقيدة في برامج كفالة الأيتام.",
+      "villageOrDistrict": "زينهم - السيدة زينب",
+      "priorityTier": "أ - أولوية قصوى ومعدم",
+      "roofType": "خرساني مسلح",
+      "wallType": "طوب أحمر",
+      "waterSource": "عداد مياه رسمي",
+      "sanitationType": "شبكة صرف عمومية",
+      "electricitySource": "عداد رسمي (كارت/قديم)",
+      "appliancesSummary": "ثلاجة وغسالة نصف أوتوماتيك",
+      "hasDebts": false,
+      "totalDebtAmount": 0,
+      "debtCreditor": "",
+      "isThreatenedWithImprisonment": false,
+      "debtNotes": "",
+      "isCandidateForMicroProject": true,
+      "suggestedMicroProject": "مشروع كروشيه ومشغولات يدوية",
       "registeredByCharityId": "c2",
       "registeredByCharityName": "جمعية الأمل لرعاية الأيتام"
     }
@@ -1558,6 +1709,84 @@ export class Api {
       percentage: suspendedCount > 0 ? Math.round((suspMap[k] / suspendedCount) * 100) : 0
     })).sort((a, b) => b.count - a.count);
 
+    // 7. Field Social Research & Multidimensional Poverty Observatory
+    const villageMap: { [key: string]: { count: number, urgent: number } } = {};
+    myRegisteredBen.forEach((b: any) => {
+      const v = (b.villageOrDistrict || 'المركز / غير محدد').trim();
+      if (!villageMap[v]) villageMap[v] = { count: 0, urgent: 0 };
+      villageMap[v].count++;
+      if (b.priorityTier && b.priorityTier.startsWith('أ')) {
+        villageMap[v].urgent++;
+      }
+    });
+    const villageHotspots = Object.keys(villageMap).map(k => ({
+      village: k,
+      beneficiaryCount: villageMap[k].count,
+      urgentPriorityCount: villageMap[k].urgent,
+      percentage: registeredCount > 0 ? Math.round((villageMap[k].count / registeredCount) * 100) : 0
+    })).sort((a, b) => b.urgentPriorityCount - a.urgentPriorityCount || b.beneficiaryCount - a.beneficiaryCount);
+
+    const tierMap: { [key: string]: number } = {};
+    myRegisteredBen.forEach((b: any) => {
+      const t = (b.priorityTier || 'أ - أولوية قصوى ومعدم').trim();
+      tierMap[t] = (tierMap[t] || 0) + 1;
+    });
+    const priorityTiersBreakdown = Object.keys(tierMap).map(k => ({
+      tier: k,
+      count: tierMap[k],
+      percentage: registeredCount > 0 ? Math.round((tierMap[k] / registeredCount) * 100) : 0
+    })).sort((a, b) => a.tier.localeCompare(b.tier));
+
+    const roofMap: { [key: string]: number } = {};
+    myRegisteredBen.forEach((b: any) => {
+      const r = (b.roofType || 'خرساني مسلح').trim();
+      roofMap[r] = (roofMap[r] || 0) + 1;
+    });
+    const roofTypeBreakdown = Object.keys(roofMap).map(k => ({
+      roofType: k,
+      count: roofMap[k],
+      percentage: registeredCount > 0 ? Math.round((roofMap[k] / registeredCount) * 100) : 0
+    })).sort((a, b) => b.count - a.count);
+
+    const infrastructureDeficits = [];
+    const noWaterCount = myRegisteredBen.filter((b: any) => b.waterSource && !b.waterSource.includes('رسمي')).length;
+    const noSanitationCount = myRegisteredBen.filter((b: any) => b.sanitationType && !b.sanitationType.includes('عمومية')).length;
+    const unsafeRoofCount = myRegisteredBen.filter((b: any) => b.roofType && (b.roofType.includes('قش') || b.roofType.includes('جريد') || b.roofType.includes('مكشوف') || b.roofType.includes('صاج'))).length;
+    const mudWallsCount = myRegisteredBen.filter((b: any) => b.wallType && (b.wallType.includes('لبن') || b.wallType.includes('طين') || b.wallType.includes('صاج'))).length;
+    const noElecCount = myRegisteredBen.filter((b: any) => b.electricitySource && !b.electricitySource.includes('رسمي')).length;
+
+    if (registeredCount > 0) {
+      infrastructureDeficits.push({ deficitType: 'محروم من مياه شرب نظيفة / عداد', affectedCount: noWaterCount, percentage: Math.round((noWaterCount / registeredCount) * 100) });
+      infrastructureDeficits.push({ deficitType: 'محروم من الصرف الصحي العمومي (بيارة/بدون)', affectedCount: noSanitationCount, percentage: Math.round((noSanitationCount / registeredCount) * 100) });
+      infrastructureDeficits.push({ deficitType: 'سكن بدون سقف آمن (جريد/قش/صاج/مكشوف)', affectedCount: unsafeRoofCount, percentage: Math.round((unsafeRoofCount / registeredCount) * 100) });
+      infrastructureDeficits.push({ deficitType: 'جدران متهالكة (طوب لبن/طين/صاج)', affectedCount: mudWallsCount, percentage: Math.round((mudWallsCount / registeredCount) * 100) });
+      infrastructureDeficits.push({ deficitType: 'محروم من عداد كهرباء رسمي', affectedCount: noElecCount, percentage: Math.round((noElecCount / registeredCount) * 100) });
+    }
+
+    const totalInDebtCount = myRegisteredBen.filter((b: any) => b.hasDebts).length;
+    const totalDebtBurden = myRegisteredBen.filter((b: any) => b.hasDebts).reduce((sum: number, b: any) => sum + (Number(b.totalDebtAmount) || 0), 0);
+    const threatenedWithPrisonCount = myRegisteredBen.filter((b: any) => b.isThreatenedWithImprisonment).length;
+
+    let schoolDropoutsCount = 0;
+    let childLaborCount = 0;
+    myRegisteredBen.forEach((b: any) => {
+      (b.familyMembers || []).forEach((m: any) => {
+        if (m.isSchoolDropout) schoolDropoutsCount++;
+        if (m.isChildLabor) childLaborCount++;
+      });
+    });
+
+    const microProjectCandidatesCount = myRegisteredBen.filter((b: any) => b.isCandidateForMicroProject).length;
+    const projMap: { [key: string]: number } = {};
+    myRegisteredBen.filter((b: any) => b.isCandidateForMicroProject && b.suggestedMicroProject).forEach((b: any) => {
+      const p = b.suggestedMicroProject.trim();
+      projMap[p] = (projMap[p] || 0) + 1;
+    });
+    const topSuggestedMicroProjects = Object.keys(projMap).map(k => ({
+      projectType: k,
+      candidatesCount: projMap[k]
+    })).sort((a, b) => b.candidatesCount - a.candidatesCount).slice(0, 5);
+
     return of({
       charityId: targetId,
       charityName,
@@ -1593,7 +1822,18 @@ export class Api {
       familySupportTypes,
       topDistributedItems,
       monthlyTrends,
-      suspensionReasonsBreakdown
+      suspensionReasonsBreakdown,
+      villageHotspots,
+      priorityTiersBreakdown,
+      roofTypeBreakdown,
+      infrastructureDeficits,
+      totalInDebtCount,
+      totalDebtBurden,
+      threatenedWithPrisonCount,
+      schoolDropoutsCount,
+      childLaborCount,
+      microProjectCandidatesCount,
+      topSuggestedMicroProjects
     });
   }
 }

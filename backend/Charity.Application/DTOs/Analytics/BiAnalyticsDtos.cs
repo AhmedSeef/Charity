@@ -52,6 +52,54 @@ public class BiAnalyticsDto
 
     // 6. Suspension & Attrition Reasons
     public List<SuspensionReasonMetricDto> SuspensionReasonsBreakdown { get; set; } = new();
+
+    // 7. Field Social Research & Multidimensional Poverty Observatory
+    public List<VillageMetricDto> VillageHotspots { get; set; } = new();
+    public List<PriorityTierMetricDto> PriorityTiersBreakdown { get; set; } = new();
+    public List<RoofTypeMetricDto> RoofTypeBreakdown { get; set; } = new();
+    public List<InfrastructureDeficitDto> InfrastructureDeficits { get; set; } = new();
+    public int TotalInDebtCount { get; set; }
+    public decimal TotalDebtBurden { get; set; }
+    public int ThreatenedWithPrisonCount { get; set; }
+    public int SchoolDropoutsCount { get; set; }
+    public int ChildLaborCount { get; set; }
+    public int MicroProjectCandidatesCount { get; set; }
+    public List<MicroProjectSuggestionDto> TopSuggestedMicroProjects { get; set; } = new();
+}
+
+public class VillageMetricDto
+{
+    public string Village { get; set; } = string.Empty;
+    public int BeneficiaryCount { get; set; }
+    public int UrgentPriorityCount { get; set; } // أولوية قصوى أ
+    public double Percentage { get; set; }
+}
+
+public class PriorityTierMetricDto
+{
+    public string Tier { get; set; } = string.Empty;
+    public int Count { get; set; }
+    public double Percentage { get; set; }
+}
+
+public class RoofTypeMetricDto
+{
+    public string RoofType { get; set; } = string.Empty;
+    public int Count { get; set; }
+    public double Percentage { get; set; }
+}
+
+public class InfrastructureDeficitDto
+{
+    public string DeficitType { get; set; } = string.Empty;
+    public int AffectedCount { get; set; }
+    public double Percentage { get; set; }
+}
+
+public class MicroProjectSuggestionDto
+{
+    public string ProjectType { get; set; } = string.Empty;
+    public int CandidatesCount { get; set; }
 }
 
 public class CategoryMetricDto

@@ -45,6 +45,21 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
     familyCount: 1,
     address: '', 
     housing: 'إيجار جديد',
+    villageOrDistrict: '',
+    priorityTier: 'أ - أولوية قصوى ومعدم',
+    roofType: 'خرساني مسلح',
+    wallType: 'طوب أحمر',
+    waterSource: 'عداد مياه رسمي',
+    sanitationType: 'شبكة صرف عمومية',
+    electricitySource: 'عداد رسمي (كارت/قديم)',
+    appliancesSummary: '',
+    hasDebts: false,
+    totalDebtAmount: null,
+    debtCreditor: '',
+    isThreatenedWithImprisonment: false,
+    debtNotes: '',
+    isCandidateForMicroProject: false,
+    suggestedMicroProject: '',
     healthIssues: '',
     researchNotes: '',
     status: 'مستحق فعال',
@@ -69,6 +84,54 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
   memberTypes = ['معال', 'معيل'];
   supportTypes = ['طالب', 'مريض', 'طفل رضيع', 'مسن', 'عاطل عن العمل', 'من ذوي الهمم', 'ربة منزل', 'أخرى'];
   medicationFrequencies = ['أسبوعياً', 'كل أسبوعين', 'شهرياً', 'كل شهرين', 'كل 3 أشهر', 'حسب الحاجة / عند اللزوم'];
+
+  priorityTiers = [
+    'أ - أولوية قصوى ومعدم',
+    'ب - متوسط الاحتياج',
+    'ج - طوارئ وظرف مؤقت'
+  ];
+  roofTypes = [
+    'خرساني مسلح',
+    'خشب وألواح',
+    'جريد وقش وطين',
+    'صاج زنك',
+    'بدون سقف / مكشوف'
+  ];
+  wallTypes = [
+    'طوب أحمر',
+    'طوب لبن / طين',
+    'دبش / حجر',
+    'صاج وألواح',
+    'بدون جدران كاملة'
+  ];
+  waterSources = [
+    'عداد مياه رسمي',
+    'طلمبة حبشية / مياه جوفية',
+    'وصلة مياه من الجيران',
+    'ملء من فناطيس / سبيل خارجي',
+    'بدون مصدر مياه'
+  ];
+  sanitationTypes = [
+    'شبكة صرف عمومية',
+    'بيارة / طرنش',
+    'صرف على مصرف زراعي',
+    'بدون دورة مياه / محروم'
+  ];
+  electricitySources = [
+    'عداد رسمي (كارت/قديم)',
+    'ممارسة / وصلة',
+    'وصلة من الجيران',
+    'بدون كهرباء'
+  ];
+  educationStages = [
+    'منتظم بالتعليم',
+    'تعليم أساسي (ابتدائي)',
+    'إعدادي',
+    'ثانوي / فني',
+    'جامعي',
+    'أمي / بدون دراسة',
+    'دون سن التعليم'
+  ];
 
   // إيقاف الملف وحظر الصرف
   suspensionReasons: any[] = [];
@@ -255,6 +318,9 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
       incomeSource: '',
       supportType: 'طالب',
       healthStatus: '',
+      educationStage: 'منتظم بالتعليم',
+      isSchoolDropout: false,
+      isChildLabor: false,
       notes: ''
     });
     this.syncFamilyCount();
@@ -292,7 +358,22 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
       maritalStatus: 'متزوج',
       familyCount: 1, 
       address: '', 
-      housing: 'إيجار جديد', 
+      housing: 'إيجار جديد',
+      villageOrDistrict: '',
+      priorityTier: 'أ - أولوية قصوى ومعدم',
+      roofType: 'خرساني مسلح',
+      wallType: 'طوب أحمر',
+      waterSource: 'عداد مياه رسمي',
+      sanitationType: 'شبكة صرف عمومية',
+      electricitySource: 'عداد رسمي (كارت/قديم)',
+      appliancesSummary: '',
+      hasDebts: false,
+      totalDebtAmount: null,
+      debtCreditor: '',
+      isThreatenedWithImprisonment: false,
+      debtNotes: '',
+      isCandidateForMicroProject: false,
+      suggestedMicroProject: '',
       healthIssues: '', 
       researchNotes: '', 
       status: 'مستحق فعال',

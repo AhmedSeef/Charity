@@ -14,6 +14,9 @@ public class FamilyMemberDto
     public string SupportType { get; set; } = "طالب"; // طالب، مريض، طفل، مسن، عاطل، ذوي همم، أخرى
     public string HealthStatus { get; set; } = string.Empty;
     public string Notes { get; set; } = string.Empty;
+    public string EducationStage { get; set; } = "منتظم بالتعليم";
+    public bool IsSchoolDropout { get; set; }
+    public bool IsChildLabor { get; set; }
 
     // حالة الفصل من الملف
     public bool IsSeparated { get; set; }
@@ -35,6 +38,9 @@ public class CreateFamilyMemberDto
     public string SupportType { get; set; } = "طالب";
     public string HealthStatus { get; set; } = string.Empty;
     public string Notes { get; set; } = string.Empty;
+    public string EducationStage { get; set; } = "منتظم بالتعليم";
+    public bool IsSchoolDropout { get; set; }
+    public bool IsChildLabor { get; set; }
 }
 
 public class BeneficiaryDto
@@ -66,6 +72,23 @@ public class BeneficiaryDto
     public bool NeedsPeriodicMedication { get; set; }
     public string PeriodicMedicationDetails { get; set; } = string.Empty;
     public string MedicationFrequency { get; set; } = string.Empty;
+
+    // 4. أبعاد البحث الاجتماعي الميداني والقرية
+    public string VillageOrDistrict { get; set; } = string.Empty;
+    public string PriorityTier { get; set; } = "أ - أولوية قصوى ومعدم";
+    public string RoofType { get; set; } = "خرساني مسلح";
+    public string WallType { get; set; } = "طوب أحمر ومحارة";
+    public string WaterSource { get; set; } = "عداد مياه رسمي";
+    public string SanitationType { get; set; } = "شبكة صرف صحي عمومية";
+    public string ElectricitySource { get; set; } = "عداد قانوني";
+    public string AppliancesSummary { get; set; } = string.Empty;
+    public bool HasDebts { get; set; }
+    public decimal? TotalDebtAmount { get; set; }
+    public string DebtCreditor { get; set; } = string.Empty;
+    public bool IsThreatenedWithImprisonment { get; set; }
+    public string DebtNotes { get; set; } = string.Empty;
+    public bool IsCandidateForMicroProject { get; set; }
+    public string SuggestedMicroProject { get; set; } = string.Empty;
 
     // حالة الإيقاف ومنع الصرف
     public bool IsSuspended { get; set; }
@@ -114,6 +137,23 @@ public class CreateBeneficiaryDto
     public string PeriodicMedicationDetails { get; set; } = string.Empty;
     public string MedicationFrequency { get; set; } = string.Empty;
 
+    // 4. أبعاد البحث الاجتماعي الميداني والقرية
+    public string VillageOrDistrict { get; set; } = string.Empty;
+    public string PriorityTier { get; set; } = "أ - أولوية قصوى ومعدم";
+    public string RoofType { get; set; } = "خرساني مسلح";
+    public string WallType { get; set; } = "طوب أحمر ومحارة";
+    public string WaterSource { get; set; } = "عداد مياه رسمي";
+    public string SanitationType { get; set; } = "شبكة صرف صحي عمومية";
+    public string ElectricitySource { get; set; } = "عداد قانوني";
+    public string AppliancesSummary { get; set; } = string.Empty;
+    public bool HasDebts { get; set; } = false;
+    public decimal? TotalDebtAmount { get; set; }
+    public string DebtCreditor { get; set; } = string.Empty;
+    public bool IsThreatenedWithImprisonment { get; set; } = false;
+    public string DebtNotes { get; set; } = string.Empty;
+    public bool IsCandidateForMicroProject { get; set; } = false;
+    public string SuggestedMicroProject { get; set; } = string.Empty;
+
     // أفراد الأسرة
     public List<CreateFamilyMemberDto> FamilyMembers { get; set; } = new();
 }
@@ -146,6 +186,23 @@ public class UpdateBeneficiaryDto
     public bool NeedsPeriodicMedication { get; set; }
     public string PeriodicMedicationDetails { get; set; } = string.Empty;
     public string MedicationFrequency { get; set; } = string.Empty;
+
+    // 4. أبعاد البحث الاجتماعي الميداني والقرية
+    public string VillageOrDistrict { get; set; } = string.Empty;
+    public string PriorityTier { get; set; } = "أ - أولوية قصوى ومعدم";
+    public string RoofType { get; set; } = "خرساني مسلح";
+    public string WallType { get; set; } = "طوب أحمر ومحارة";
+    public string WaterSource { get; set; } = "عداد مياه رسمي";
+    public string SanitationType { get; set; } = "شبكة صرف صحي عمومية";
+    public string ElectricitySource { get; set; } = "عداد قانوني";
+    public string AppliancesSummary { get; set; } = string.Empty;
+    public bool HasDebts { get; set; } = false;
+    public decimal? TotalDebtAmount { get; set; }
+    public string DebtCreditor { get; set; } = string.Empty;
+    public bool IsThreatenedWithImprisonment { get; set; } = false;
+    public string DebtNotes { get; set; } = string.Empty;
+    public bool IsCandidateForMicroProject { get; set; } = false;
+    public string SuggestedMicroProject { get; set; } = string.Empty;
 
     // أفراد الأسرة
     public List<CreateFamilyMemberDto> FamilyMembers { get; set; } = new();

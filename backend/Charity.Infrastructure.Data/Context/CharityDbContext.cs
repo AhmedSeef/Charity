@@ -61,6 +61,7 @@ public class CharityDbContext : IdentityDbContext<ApplicationUser, IdentityRole,
             b.HasIndex(x => x.NationalId).IsUnique();
             b.Property(x => x.Name).IsRequired().HasMaxLength(200);
             b.Property(x => x.MonthlyIncome).HasPrecision(18, 2);
+            b.Property(x => x.TotalDebtAmount).HasPrecision(18, 2);
             
             // RegisteredByCharity relation (Stewardship ownership)
             b.HasOne(x => x.RegisteredByCharity)

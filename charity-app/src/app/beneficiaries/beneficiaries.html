@@ -110,6 +110,12 @@
       <div style="flex: 1; min-width: 250px;">
         <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
           <h2 style="margin: 0; color: #004d40; font-size: 24px;">{{ selectedBen.name }}</h2>
+          <span [style.background]="selectedBen.priorityTier?.startsWith('أ') ? '#ffebee' : (selectedBen.priorityTier?.startsWith('ب') ? '#fff3e0' : '#e8f5e9')"
+                [style.color]="selectedBen.priorityTier?.startsWith('أ') ? '#c62828' : (selectedBen.priorityTier?.startsWith('ب') ? '#e65100' : '#2e7d32')"
+                [style.border]="selectedBen.priorityTier?.startsWith('أ') ? '1px solid #ef9a9a' : '1px solid #ffe082'"
+                style="padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: bold;">
+            ⭐ {{ selectedBen.priorityTier || 'أ - أولوية قصوى ومعدم' }}
+          </span>
           <span style="background-color: #ffe0b2; color: #e65100; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: bold;">
             {{ selectedBen.category }}
           </span>
@@ -127,6 +133,12 @@
           <span *ngIf="selectedBen.needsPeriodicMedication" style="background-color: #e1f5fe; color: #0288d1; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; border: 1px solid #b3e5fc;">
             💊 علاج دوري ({{ selectedBen.medicationFrequency || 'شهرياً' }})
           </span>
+          <span *ngIf="selectedBen.isThreatenedWithImprisonment" style="background-color: #ffebee; color: #b71c1c; border: 1px solid #f44336; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold;">
+            ⚖️ مهدد بالحبس (غارم)
+          </span>
+          <span *ngIf="selectedBen.isCandidateForMicroProject" style="background-color: #e0f2f1; color: #004d40; border: 1px solid #80cbc4; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold;">
+            💼 مرشح تمكين اقتصادي
+          </span>
           <span *ngIf="selectedBen.registeredByCharityName" 
                 style="background-color: #ede7f6; color: #4527a0; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; border: 1px solid #d1c4e9;">
             🏢 مسجل لدى: {{ selectedBen.registeredByCharityName }}
@@ -136,6 +148,7 @@
         <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 10px; color: #555; font-size: 14px;">
           <span><strong>الرقم القومي:</strong> <code style="font-size: 14px; background: #f5f5f5; padding: 2px 6px; border-radius: 4px;">{{ selectedBen.nationalId }}</code></span>
           <span><strong>الهاتف:</strong> {{ selectedBen.phone }}</span>
+          <span><strong>القرية / المنطقة:</strong> <strong style="color: #004d40;">{{ selectedBen.villageOrDistrict || 'المركز / غير محدد' }}</strong></span>
           <span><strong>العنوان:</strong> {{ selectedBen.address }}</span>
         </div>
       </div>
@@ -147,11 +160,19 @@
       <!-- بطاقة الحالة الأسرية والمعيشية -->
       <div style="background: white; border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.04);">
         <h3 style="margin: 0 0 15px 0; color: #00695c; border-bottom: 2px solid #b2dfdb; padding-bottom: 8px; font-size: 16px;">
-          🏠 الجانب الأسري والسكن
+          🏠 الجانب الأسري والقرية
         </h3>
         <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
           <tr style="border-bottom: 1px solid #eee;">
-            <td style="padding: 8px 0; color: #666; width: 140px;">الحالة الاجتماعية:</td>
+            <td style="padding: 8px 0; color: #666; width: 140px;">القرية / المنطقة:</td>
+            <td style="padding: 8px 0; font-weight: bold; color: #004d40;">{{ selectedBen.villageOrDistrict || 'المركز / غير محدد' }}</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #eee;">
+            <td style="padding: 8px 0; color: #666;">درجة الاستحقاق:</td>
+            <td style="padding: 8px 0; font-weight: bold; color: #d32f2f;">{{ selectedBen.priorityTier || 'أ - أولوية قصوى ومعدم' }}</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #eee;">
+            <td style="padding: 8px 0; color: #666;">الحالة الاجتماعية:</td>
             <td style="padding: 8px 0; font-weight: bold; color: #333;">{{ selectedBen.maritalStatus }}</td>
           </tr>
           <tr style="border-bottom: 1px solid #eee;">
@@ -170,6 +191,54 @@
           <tr>
             <td style="padding: 8px 0; color: #666;">العنوان التفصيلي:</td>
             <td style="padding: 8px 0; font-weight: bold; color: #333;">{{ selectedBen.address }}</td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- بطاقة مواصفات السكن والمرافق والأسقف (تسقيف البيوت) -->
+      <div style="background: white; border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.04);">
+        <h3 style="margin: 0 0 15px 0; color: #00695c; border-bottom: 2px solid #b2dfdb; padding-bottom: 8px; font-size: 16px;">
+          🏡 مواصفات السكن والأسقف والمرافق
+        </h3>
+        <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+          <tr style="border-bottom: 1px solid #eee;">
+            <td style="padding: 8px 0; color: #666; width: 140px;">نوع السقف (المأوى):</td>
+            <td style="padding: 8px 0; font-weight: bold;">
+              <span [style.color]="(selectedBen.roofType?.includes('قش') || selectedBen.roofType?.includes('مكشوف') || selectedBen.roofType?.includes('صاج')) ? '#c62828' : '#2e7d32'">
+                {{ selectedBen.roofType || 'خرساني مسلح' }}
+              </span>
+              <span *ngIf="selectedBen.roofType?.includes('قش') || selectedBen.roofType?.includes('مكشوف')" style="background: #ffebee; color: #c62828; font-size: 11px; padding: 1px 6px; border-radius: 4px; margin-right: 5px;">
+                ⚠️ بحاجة لتسقيف عاجل
+              </span>
+            </td>
+          </tr>
+          <tr style="border-bottom: 1px solid #eee;">
+            <td style="padding: 8px 0; color: #666;">طبيعة الجدران:</td>
+            <td style="padding: 8px 0; font-weight: bold; color: #333;">{{ selectedBen.wallType || 'طوب أحمر' }}</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #eee;">
+            <td style="padding: 8px 0; color: #666;">مصدر مياه الشرب:</td>
+            <td style="padding: 8px 0; font-weight: bold;">
+              <span [style.color]="!selectedBen.waterSource || selectedBen.waterSource.includes('رسمي') ? '#2e7d32' : '#e65100'">
+                {{ selectedBen.waterSource || 'عداد مياه رسمي' }}
+              </span>
+            </td>
+          </tr>
+          <tr style="border-bottom: 1px solid #eee;">
+            <td style="padding: 8px 0; color: #666;">الصرف الصحي:</td>
+            <td style="padding: 8px 0; font-weight: bold;">
+              <span [style.color]="!selectedBen.sanitationType || selectedBen.sanitationType.includes('عمومية') ? '#2e7d32' : '#e65100'">
+                {{ selectedBen.sanitationType || 'شبكة صرف عمومية' }}
+              </span>
+            </td>
+          </tr>
+          <tr style="border-bottom: 1px solid #eee;">
+            <td style="padding: 8px 0; color: #666;">مصدر الكهرباء:</td>
+            <td style="padding: 8px 0; font-weight: bold; color: #333;">{{ selectedBen.electricitySource || 'عداد رسمي' }}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; color: #666;">الأجهزة المتوفرة:</td>
+            <td style="padding: 8px 0; color: #555;">{{ selectedBen.appliancesSummary || 'أجهزة منزلية أساسية' }}</td>
           </tr>
         </table>
       </div>
@@ -203,6 +272,54 @@
               <span *ngIf="selectedBen.hasGovernmentPension" style="color: #0288d1;">نعم ({{ selectedBen.governmentPensionDetails || 'معاش حكومي/تكافل' }})</span>
               <span *ngIf="!selectedBen.hasGovernmentPension" style="color: #757575;">لا يتقاضى أي معاش</span>
             </td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- بطاقة ملف الديون وإيصالات الأمانة وخطر الحبس (الغارمين) & التمكين -->
+      <div style="background: white; border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.04);">
+        <h3 style="margin: 0 0 15px 0; color: #00695c; border-bottom: 2px solid #b2dfdb; padding-bottom: 8px; font-size: 16px;">
+          ⚖️ ملف الغارمين والتمكين الاقتصادي
+        </h3>
+        <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+          <tr style="border-bottom: 1px solid #eee;">
+            <td style="padding: 8px 0; color: #666; width: 140px;">ديون والتزامات مالية:</td>
+            <td style="padding: 8px 0; font-weight: bold;">
+              <span *ngIf="selectedBen.hasDebts" style="color: #c62828;">
+                نعم ({{ (selectedBen.totalDebtAmount | number:'1.0-0') || 0 }} ج.م)
+              </span>
+              <span *ngIf="!selectedBen.hasDebts" style="color: #2e7d32;">لا توجد ديون</span>
+            </td>
+          </tr>
+          <tr *ngIf="selectedBen.hasDebts" style="border-bottom: 1px solid #eee;">
+            <td style="padding: 8px 0; color: #666;">الجهة الدائنة:</td>
+            <td style="padding: 8px 0; font-weight: bold; color: #333;">{{ selectedBen.debtCreditor || 'غير محدد' }}</td>
+          </tr>
+          <tr *ngIf="selectedBen.hasDebts" style="border-bottom: 1px solid #eee;">
+            <td style="padding: 8px 0; color: #666;">خطر الحبس والقضايا:</td>
+            <td style="padding: 8px 0; font-weight: bold;">
+              <span *ngIf="selectedBen.isThreatenedWithImprisonment" style="background: #ffebee; color: #b71c1c; padding: 2px 8px; border-radius: 4px; font-size: 12px; border: 1px solid #f44336;">
+                ⚠️ مهدد بالحبس وإيصالات أمانة
+              </span>
+              <span *ngIf="!selectedBen.isThreatenedWithImprisonment" style="color: #555;">لا يوجد تهديد قضائي بالحبس</span>
+            </td>
+          </tr>
+          <tr *ngIf="selectedBen.hasDebts && selectedBen.debtNotes" style="border-bottom: 1px solid #eee;">
+            <td style="padding: 8px 0; color: #666;">ملاحظات الديون:</td>
+            <td style="padding: 8px 0; color: #555; font-size: 13px;">{{ selectedBen.debtNotes }}</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #eee;">
+            <td style="padding: 8px 0; color: #666;">مرشح لمشروع تمكين:</td>
+            <td style="padding: 8px 0; font-weight: bold;">
+              <span *ngIf="selectedBen.isCandidateForMicroProject" style="color: #00796b;">
+                نعم مرشح لمشروع متناهي الصغر
+              </span>
+              <span *ngIf="!selectedBen.isCandidateForMicroProject" style="color: #757575;">غير مرشح حالياً</span>
+            </td>
+          </tr>
+          <tr *ngIf="selectedBen.isCandidateForMicroProject">
+            <td style="padding: 8px 0; color: #666;">المشروع المقترح:</td>
+            <td style="padding: 8px 0; font-weight: bold; color: #004d40;">{{ selectedBen.suggestedMicroProject || 'حسب دراسة الجدوى' }}</td>
           </tr>
         </table>
       </div>
@@ -284,6 +401,7 @@
               <th>الرقم القومي (14 رقم)</th>
               <th>صلة القرابة</th>
               <th style="text-align: center;">التصنيف</th>
+              <th style="text-align: center;">التعليم وحماية الأطفال</th>
               <th style="text-align: center;">نوع الاحتياج/الدعم</th>
               <th>الدخل ومصدره</th>
               <th>ملاحظات</th>
@@ -301,6 +419,15 @@
                       [style.color]="m.memberType === 'معيل' ? '#2e7d32' : '#e65100'" 
                       style="padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: bold;">
                   {{ m.memberType }}
+                </span>
+              </td>
+              <td style="text-align: center;">
+                <span style="font-size: 12px; color: #333;">{{ m.educationStage || 'منتظم بالتعليم' }}</span>
+                <span *ngIf="m.isSchoolDropout" style="background: #ffebee; color: #c62828; font-size: 11px; padding: 1px 5px; border-radius: 4px; font-weight: bold; display: block; margin-top: 2px;">
+                  ⚠️ تسرب مدرسي
+                </span>
+                <span *ngIf="m.isChildLabor" style="background: #fff3e0; color: #e65100; font-size: 11px; padding: 1px 5px; border-radius: 4px; font-weight: bold; display: block; margin-top: 2px;">
+                  ⚠️ عمالة أطفال
                 </span>
               </td>
               <td style="text-align: center;">
@@ -437,7 +564,7 @@
         
         <!-- القسم الأول: البيانات الأساسية -->
         <h4 style="color: #00695c; margin: 0 0 15px 0; font-size: 16px; border-bottom: 2px solid #b2dfdb; padding-bottom: 6px;">
-          1. البيانات الشخصية والاتصال
+          1. البيانات الشخصية والاتصال والتوزيع الجغرافي
         </h4>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 25px;">
           <div>
@@ -463,6 +590,20 @@
             <select [(ngModel)]="currentBen.category" name="category" 
                     style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; font-weight: bold;">
               <option *ngFor="let c of categories" [value]="c">{{ c }}</option>
+            </select>
+          </div>
+
+          <div>
+            <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">القرية / العزبة / الحي (المنطقة الجغرافية) *</label>
+            <input type="text" [(ngModel)]="currentBen.villageOrDistrict" name="villageOrDistrict" placeholder="مثال: كفر الجزار، خورشيد، عزبة خير الله..." required 
+                   style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; font-weight: bold;">
+          </div>
+
+          <div>
+            <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">درجة الاستحقاق والأولوية *</label>
+            <select [(ngModel)]="currentBen.priorityTier" name="priorityTier" 
+                    style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; font-weight: bold;">
+              <option *ngFor="let pt of priorityTiers" [value]="pt">{{ pt }}</option>
             </select>
           </div>
         </div>
@@ -512,9 +653,61 @@
           </div>
         </div>
 
-        <!-- القسم الثالث: الوضع المالي والممتلكات والمعاش الحكومي -->
+        <!-- القسم الثالث: مواصفات السكن والأسقف والمرافق (تسقيف البيوت والمأوى) -->
         <h4 style="color: #00695c; margin: 0 0 15px 0; font-size: 16px; border-bottom: 2px solid #b2dfdb; padding-bottom: 6px;">
-          3. الوضع المالي والممتلكات والمعاش الحكومي
+          3. مواصفات السكن والأسقف والمرافق (تسقيف البيوت والمأوى الآمن)
+        </h4>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 25px;">
+          <div>
+            <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">نوع السقف (المأوى)</label>
+            <select [(ngModel)]="currentBen.roofType" name="roofType" 
+                    style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; font-weight: bold;">
+              <option *ngFor="let r of roofTypes" [value]="r">{{ r }}</option>
+            </select>
+          </div>
+
+          <div>
+            <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">طبيعة الجدران</label>
+            <select [(ngModel)]="currentBen.wallType" name="wallType" 
+                    style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box;">
+              <option *ngFor="let w of wallTypes" [value]="w">{{ w }}</option>
+            </select>
+          </div>
+
+          <div>
+            <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">مصدر مياه الشرب</label>
+            <select [(ngModel)]="currentBen.waterSource" name="waterSource" 
+                    style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box;">
+              <option *ngFor="let ws of waterSources" [value]="ws">{{ ws }}</option>
+            </select>
+          </div>
+
+          <div>
+            <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">شبكة الصرف الصحي</label>
+            <select [(ngModel)]="currentBen.sanitationType" name="sanitationType" 
+                    style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box;">
+              <option *ngFor="let st of sanitationTypes" [value]="st">{{ st }}</option>
+            </select>
+          </div>
+
+          <div>
+            <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">مصدر الكهرباء</label>
+            <select [(ngModel)]="currentBen.electricitySource" name="electricitySource" 
+                    style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box;">
+              <option *ngFor="let es of electricitySources" [value]="es">{{ es }}</option>
+            </select>
+          </div>
+
+          <div>
+            <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">حصر الأجهزة الكهربائية المتوفرة</label>
+            <input type="text" [(ngModel)]="currentBen.appliancesSummary" name="appliancesSummary" placeholder="مثال: ثلاجة قديمة، بدون غسالة، بوتاجاز شعلتين..." 
+                   style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box;">
+          </div>
+        </div>
+
+        <!-- القسم الرابع: الوضع المالي والممتلكات والمعاش الحكومي والغارمين والتمكين -->
+        <h4 style="color: #00695c; margin: 0 0 15px 0; font-size: 16px; border-bottom: 2px solid #b2dfdb; padding-bottom: 6px;">
+          4. الوضع المالي والديون (الغارمين) والتمكين الاقتصادي والمعاش الحكومي
         </h4>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 25px;">
           <div>
@@ -558,11 +751,64 @@
             <input type="text" [(ngModel)]="currentBen.governmentPensionDetails" name="governmentPensionDetails" placeholder="مثال: تكافل وكرامة 700 ج.م، معاش والده 900 ج.م..." 
                    style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box;">
           </div>
+
+          <!-- ملف الديون وإيصالات الأمانة (الغارمين) -->
+          <div>
+            <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">هل على الأسرة ديون / إيصالات أمانة (غارمين)؟</label>
+            <select [(ngModel)]="currentBen.hasDebts" name="hasDebts" 
+                    style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; font-weight: bold;">
+              <option [ngValue]="false">لا توجد ديون</option>
+              <option [ngValue]="true">نعم توجد ديون والتزامات</option>
+            </select>
+          </div>
+
+          <div *ngIf="currentBen.hasDebts">
+            <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">إجمالي حجم الديون بالجنيه (ج.م) *</label>
+            <input type="number" [(ngModel)]="currentBen.totalDebtAmount" name="totalDebtAmount" placeholder="مثال: 25000" min="0" 
+                   style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; font-weight: bold; color: #c62828;">
+          </div>
+
+          <div *ngIf="currentBen.hasDebts">
+            <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">الجهة الدائنة / التاجر</label>
+            <input type="text" [(ngModel)]="currentBen.debtCreditor" name="debtCreditor" placeholder="مثال: معرض أجهزة منزلية، سوبرماركت، أفراد..." 
+                   style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box;">
+          </div>
+
+          <div *ngIf="currentBen.hasDebts">
+            <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">هل مهدد بالحبس أو صدرت ضده أحكام؟ *</label>
+            <select [(ngModel)]="currentBen.isThreatenedWithImprisonment" name="isThreatenedWithImprisonment" 
+                    style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; font-weight: bold; color: #b71c1c;">
+              <option [ngValue]="false">لا يوجد تهديد قضائي بالحبس</option>
+              <option [ngValue]="true">⚠️ نعم مهدد بالحبس / صدرت أحكام</option>
+            </select>
+          </div>
+
+          <div *ngIf="currentBen.hasDebts" style="grid-column: 1 / -1;">
+            <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">تفاصيل الديون وإيصالات الأمانة والقضايا</label>
+            <input type="text" [(ngModel)]="currentBen.debtNotes" name="debtNotes" placeholder="أرقام الجنح والمحاضر أو أسماء الدائنين وتواريخ السداد..." 
+                   style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box;">
+          </div>
+
+          <!-- التمكين الاقتصادي والمشروعات -->
+          <div>
+            <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">ترشيح لمشروع تمكين اقتصادي متناهي الصغر؟</label>
+            <select [(ngModel)]="currentBen.isCandidateForMicroProject" name="isCandidateForMicroProject" 
+                    style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; font-weight: bold; color: #00796b;">
+              <option [ngValue]="false">غير مرشح حالياً</option>
+              <option [ngValue]="true">✅ نعم مرشح لتمكين اقتصادي</option>
+            </select>
+          </div>
+
+          <div *ngIf="currentBen.isCandidateForMicroProject">
+            <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">نوع المشروع المقترح للحالة</label>
+            <input type="text" [(ngModel)]="currentBen.suggestedMicroProject" name="suggestedMicroProject" placeholder="مثال: ماكينة خياطة، عربة فول، كشك بقالة..." 
+                   style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; font-weight: bold;">
+          </div>
         </div>
 
-        <!-- القسم الرابع: الملف الصحي والأمراض المزمنة والعلاج الدوري -->
+        <!-- القسم الخامس: الملف الصحي والأمراض المزمنة والعلاج الدوري -->
         <h4 style="color: #00695c; margin: 0 0 15px 0; font-size: 16px; border-bottom: 2px solid #b2dfdb; padding-bottom: 6px;">
-          4. الملف الصحي والأمراض المزمنة والعلاج الدوري
+          5. الملف الصحي والأمراض المزمنة والعلاج الدوري
         </h4>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 25px;">
           <div>
@@ -610,15 +856,15 @@
           </div>
         </div>
 
-        <!-- القسم الخامس: أفراد الأسرة والمعالين والمعيلين -->
+        <!-- القسم السادس: أفراد الأسرة والمعالين والمعيلين -->
         <div style="margin-bottom: 30px;">
           <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #00695c; padding-bottom: 8px; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
             <div>
               <h4 style="color: #00695c; margin: 0; font-size: 16px;">
-                5. أفراد الأسرة، المعالين والمعيلين (تدقيق الرقم القومي)
+                6. أفراد الأسرة، المعالين والمعيلين (تدقيق الرقم القومي والتعليم)
               </h4>
               <p style="margin: 3px 0 0 0; color: #666; font-size: 13px;">
-                أدخل أفراد الأسرة بأرقامهم القومية؛ لن يقبل النظام تكرار أي رقم قومي مسجل مسبقاً في ملف آخر.
+                أدخل أفراد الأسرة بأرقامهم القومية ومراحلهم التعليمية؛ لن يقبل النظام تكرار أي رقم قومي مسجل مسبقاً في ملف آخر.
               </p>
             </div>
 
@@ -674,6 +920,14 @@
               </div>
 
               <div>
+                <label style="font-size: 12px; color: #666; display: block; margin-bottom: 3px;">المرحلة التعليمية</label>
+                <select [(ngModel)]="member.educationStage" [name]="'fm_edustg_' + i" 
+                        style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc; box-sizing: border-box; font-size: 13px;">
+                  <option *ngFor="let es of educationStages" [value]="es">{{ es }}</option>
+                </select>
+              </div>
+
+              <div>
                 <label style="font-size: 12px; color: #666; display: block; margin-bottom: 3px;">نوع الدعم / الاحتياج</label>
                 <select [(ngModel)]="member.supportType" [name]="'fm_sup_' + i" 
                         style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc; box-sizing: border-box; font-size: 13px;">
@@ -700,6 +954,18 @@
                 <label style="font-size: 12px; color: #666; display: block; margin-bottom: 3px;">مصدر دخل الفرد</label>
                 <input type="text" [(ngModel)]="member.incomeSource" [name]="'fm_incsrc_' + i" placeholder="مثال: عمل ورشة، خياطة..." 
                        style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc; box-sizing: border-box; font-size: 13px;">
+              </div>
+
+              <!-- مؤشرات حماية الأطفال: التسرب الدراسي وعمالة الأطفال -->
+              <div style="display: flex; gap: 15px; align-items: center; margin-top: 10px;">
+                <label style="font-size: 12px; color: #c62828; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; font-weight: bold;">
+                  <input type="checkbox" [(ngModel)]="member.isSchoolDropout" [name]="'fm_dropout_' + i">
+                  تسرب من التعليم
+                </label>
+                <label style="font-size: 12px; color: #e65100; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; font-weight: bold;">
+                  <input type="checkbox" [(ngModel)]="member.isChildLabor" [name]="'fm_chldlbr_' + i">
+                  عمالة أطفال (أقل من 15 سنة)
+                </label>
               </div>
 
               <div style="grid-column: 1 / -1;">
@@ -795,7 +1061,16 @@
               <span style="background-color: #ffe0b2; color: #e65100; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold;">
                 {{ b.category }}
               </span>
-              <span *ngIf="b.registeredByCharityName" style="display: block; font-size: 11px; color: #5c6bc0; margin-top: 3px; font-weight: 500;">
+              <span *ngIf="b.priorityTier" 
+                    [style.background]="b.priorityTier.startsWith('أ') ? '#ffebee' : (b.priorityTier.startsWith('ب') ? '#fff3e0' : '#e8f5e9')"
+                    [style.color]="b.priorityTier.startsWith('أ') ? '#c62828' : (b.priorityTier.startsWith('ب') ? '#e65100' : '#2e7d32')"
+                    style="padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-right: 3px;">
+                ⭐ {{ b.priorityTier.startsWith('أ') ? 'أولوية أ' : (b.priorityTier.startsWith('ب') ? 'أولوية ب' : 'أولوية ج') }}
+              </span>
+              <div *ngIf="b.villageOrDistrict" style="font-size: 11px; color: #00695c; font-weight: bold; margin-top: 3px;">
+                📍 {{ b.villageOrDistrict }}
+              </div>
+              <span *ngIf="b.registeredByCharityName" style="display: block; font-size: 11px; color: #5c6bc0; margin-top: 2px; font-weight: 500;">
                 🏢 {{ b.registeredByCharityName }}
               </span>
             </td>
@@ -808,6 +1083,9 @@
             <td>
               {{ b.maritalStatus }} ({{ b.familyCount }} أفراد)<br>
               <span style="color: #555; font-size: 12px;">🏠 {{ b.housing }}</span>
+              <div *ngIf="b.roofType && (b.roofType.includes('قش') || b.roofType.includes('مكشوف') || b.roofType.includes('صاج'))" style="font-size: 11px; color: #c62828; font-weight: bold; margin-top: 2px;">
+                ⚠️ سقف: {{ b.roofType }}
+              </div>
               <div *ngIf="b.familyMembers?.length" style="font-size: 11px; color: #00796b; margin-top: 2px;">
                 👥 {{ b.familyMembers.length }} فرد مسجل بالملف
               </div>
@@ -825,6 +1103,15 @@
               </span>
               <span *ngIf="b.hasLandOrProperty" style="background: #fff3e0; color: #e65100; font-size: 10px; padding: 1px 5px; border-radius: 3px; display: inline-block; margin-top: 2px; margin-right: 2px;">
                 أراضي/أملاك
+              </span>
+              <span *ngIf="b.hasDebts" style="background: #ffebee; color: #c62828; font-size: 10px; padding: 1px 5px; border-radius: 3px; display: inline-block; margin-top: 2px; font-weight: bold;">
+                غارم ({{ (b.totalDebtAmount | number:'1.0-0') || 0 }} ج.م)
+              </span>
+              <span *ngIf="b.isThreatenedWithImprisonment" style="background: #b71c1c; color: white; font-size: 10px; padding: 1px 5px; border-radius: 3px; display: inline-block; margin-top: 2px; margin-right: 2px; font-weight: bold;">
+                ⚠️ مهدد بالحبس
+              </span>
+              <span *ngIf="b.isCandidateForMicroProject" style="background: #e0f2f1; color: #004d40; font-size: 10px; padding: 1px 5px; border-radius: 3px; display: inline-block; margin-top: 2px; font-weight: bold;">
+                💼 مرشح تمكين
               </span>
             </td>
 

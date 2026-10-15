@@ -8,6 +8,7 @@ namespace Charity.Application.Services.Implementations;
 public class BiAnalyticsService : IBiAnalyticsService
 {
     private readonly IRepository<Beneficiary> _beneficiaryRepo;
+    private readonly IRepository<BeneficiaryFamilyMember> _familyMemberRepo;
     private readonly IRepository<Distribution> _distributionRepo;
     private readonly IRepository<Donation> _donationRepo;
     private readonly IRepository<InventoryItem> _inventoryRepo;
@@ -17,6 +18,7 @@ public class BiAnalyticsService : IBiAnalyticsService
 
     public BiAnalyticsService(
         IRepository<Beneficiary> beneficiaryRepo,
+        IRepository<BeneficiaryFamilyMember> familyMemberRepo,
         IRepository<Distribution> distributionRepo,
         IRepository<Donation> donationRepo,
         IRepository<InventoryItem> inventoryRepo,
@@ -25,6 +27,7 @@ public class BiAnalyticsService : IBiAnalyticsService
         ICurrentUserService currentUserService)
     {
         _beneficiaryRepo = beneficiaryRepo;
+        _familyMemberRepo = familyMemberRepo;
         _distributionRepo = distributionRepo;
         _donationRepo = donationRepo;
         _inventoryRepo = inventoryRepo;
@@ -51,6 +54,11 @@ public class BiAnalyticsService : IBiAnalyticsService
             .Where(b => b.RegisteredByCharityId == charityId || string.IsNullOrEmpty(b.RegisteredByCharityId))
             .ToList();
 
+        var myBeneficiaryIds = myRegisteredBeneficiaries.Select(b => b.Id).ToHashSet();
+        var allFamilyMembers = myBeneficiaryIds.Count > 0
+            ? (await _familyMemberRepo.FindAsync(m => myBeneficiaryIds.Contains(m.BeneficiaryId))).ToList()
+            : new List<BeneficiaryFamilyMember>();
+
         var myDistributions = allDistributions
             .Where(d => d.CharityId == charityId)
             .ToList();
@@ -74,7 +82,7 @@ public class BiAnalyticsService : IBiAnalyticsService
 
         // Family Reach: Principal + Dependents/Supporters in FamilyMembers
         var totalFamilyReach = myRegisteredBeneficiaries.Sum(b => 
-            Math.Max(1, (b.FamilyMembers?.Count ?? 0) + 1));
+            Math.Max(b.FamilyCount > 0 ? b.FamilyCount : 1, allFamilyMembers.Count(m => m.BeneficiaryId == b.Id) + 1));
 
         // Federated Collaboration: Distributions delivered by this charity to beneficiaries registered by other charities!
         var partnerCasesServed = myDistributions
@@ -160,10 +168,6 @@ public class BiAnalyticsService : IBiAnalyticsService
             .ToList();
 
         // 4. Family Structure & Support Types
-        var allFamilyMembers = myRegisteredBeneficiaries
-            .SelectMany(b => b.FamilyMembers ?? new List<BeneficiaryFamilyMember>())
-            .ToList();
-
         var dependents = allFamilyMembers.Count(m => m.MemberType == "معال" || string.IsNullOrEmpty(m.MemberType));
         var supporters = allFamilyMembers.Count(m => m.MemberType == "معيل");
         var depRatio = supporters > 0 ? Math.Round((double)dependents / supporters, 1) : dependents;
@@ -231,6 +235,78 @@ public class BiAnalyticsService : IBiAnalyticsService
             .OrderByDescending(s => s.Count)
             .ToList();
 
+        // 7. Field Social Research & Multidimensional Poverty Observatory
+        var villageHotspots = myRegisteredBeneficiaries
+            .GroupBy(b => string.IsNullOrWhiteSpace(b.VillageOrDistrict) ? "المركز / غير محدد" : b.VillageOrDistrict.Trim())
+            .Select(g => new VillageMetricDto
+            {
+                Village = g.Key,
+                BeneficiaryCount = g.Count(),
+                UrgentPriorityCount = g.Count(b => (b.PriorityTier ?? "").StartsWith("أ")),
+                Percentage = registeredCount > 0 ? Math.Round((double)g.Count() / registeredCount * 100, 1) : 0
+            })
+            .OrderByDescending(v => v.UrgentPriorityCount)
+            .ThenByDescending(v => v.BeneficiaryCount)
+            .ToList();
+
+        var priorityTiers = myRegisteredBeneficiaries
+            .GroupBy(b => string.IsNullOrWhiteSpace(b.PriorityTier) ? "أ - أولوية قصوى ومعدم" : b.PriorityTier.Trim())
+            .Select(g => new PriorityTierMetricDto
+            {
+                Tier = g.Key,
+                Count = g.Count(),
+                Percentage = registeredCount > 0 ? Math.Round((double)g.Count() / registeredCount * 100, 1) : 0
+            })
+            .OrderBy(p => p.Tier)
+            .ToList();
+
+        var roofTypes = myRegisteredBeneficiaries
+            .GroupBy(b => string.IsNullOrWhiteSpace(b.RoofType) ? "خرساني مسلح" : b.RoofType.Trim())
+            .Select(g => new RoofTypeMetricDto
+            {
+                RoofType = g.Key,
+                Count = g.Count(),
+                Percentage = registeredCount > 0 ? Math.Round((double)g.Count() / registeredCount * 100, 1) : 0
+            })
+            .OrderByDescending(r => r.Count)
+            .ToList();
+
+        var infraDeficits = new List<InfrastructureDeficitDto>();
+        var noWaterCount = myRegisteredBeneficiaries.Count(b => !string.IsNullOrEmpty(b.WaterSource) && !b.WaterSource.Contains("رسمي"));
+        var noSanitationCount = myRegisteredBeneficiaries.Count(b => !string.IsNullOrEmpty(b.SanitationType) && !b.SanitationType.Contains("عمومية"));
+        var unsafeRoofCount = myRegisteredBeneficiaries.Count(b => !string.IsNullOrEmpty(b.RoofType) && (b.RoofType.Contains("قش") || b.RoofType.Contains("جريد") || b.RoofType.Contains("مكشوف") || b.RoofType.Contains("صاج")));
+        var mudWallsCount = myRegisteredBeneficiaries.Count(b => !string.IsNullOrEmpty(b.WallType) && (b.WallType.Contains("لبن") || b.WallType.Contains("طين") || b.WallType.Contains("صاج")));
+        var noElecCount = myRegisteredBeneficiaries.Count(b => !string.IsNullOrEmpty(b.ElectricitySource) && !b.ElectricitySource.Contains("رسمي"));
+
+        if (registeredCount > 0)
+        {
+            infraDeficits.Add(new InfrastructureDeficitDto { DeficitType = "محروم من مياه شرب نظيفة / عداد", AffectedCount = noWaterCount, Percentage = Math.Round((double)noWaterCount / registeredCount * 100, 1) });
+            infraDeficits.Add(new InfrastructureDeficitDto { DeficitType = "محروم من الصرف الصحي العمومي (بيارة/بدون)", AffectedCount = noSanitationCount, Percentage = Math.Round((double)noSanitationCount / registeredCount * 100, 1) });
+            infraDeficits.Add(new InfrastructureDeficitDto { DeficitType = "سكن بدون سقف آمن (جريد/قش/صاج/مكشوف)", AffectedCount = unsafeRoofCount, Percentage = Math.Round((double)unsafeRoofCount / registeredCount * 100, 1) });
+            infraDeficits.Add(new InfrastructureDeficitDto { DeficitType = "جدران متهالكة (طوب لبن/طين/صاج)", AffectedCount = mudWallsCount, Percentage = Math.Round((double)mudWallsCount / registeredCount * 100, 1) });
+            infraDeficits.Add(new InfrastructureDeficitDto { DeficitType = "محروم من عداد كهرباء رسمي", AffectedCount = noElecCount, Percentage = Math.Round((double)noElecCount / registeredCount * 100, 1) });
+        }
+
+        var totalInDebt = myRegisteredBeneficiaries.Count(b => b.HasDebts);
+        var totalDebtBurden = myRegisteredBeneficiaries.Where(b => b.HasDebts).Sum(b => b.TotalDebtAmount ?? 0);
+        var threatenedPrisonCount = myRegisteredBeneficiaries.Count(b => b.IsThreatenedWithImprisonment);
+
+        var schoolDropouts = allFamilyMembers.Count(m => m.IsSchoolDropout);
+        var childLabor = allFamilyMembers.Count(m => m.IsChildLabor);
+
+        var microCandidates = myRegisteredBeneficiaries.Count(b => b.IsCandidateForMicroProject);
+        var topProjects = myRegisteredBeneficiaries
+            .Where(b => b.IsCandidateForMicroProject && !string.IsNullOrWhiteSpace(b.SuggestedMicroProject))
+            .GroupBy(b => b.SuggestedMicroProject!.Trim())
+            .Select(g => new MicroProjectSuggestionDto
+            {
+                ProjectType = g.Key,
+                CandidatesCount = g.Count()
+            })
+            .OrderByDescending(p => p.CandidatesCount)
+            .Take(5)
+            .ToList();
+
         return new BiAnalyticsDto
         {
             CharityId = charityId,
@@ -267,7 +343,18 @@ public class BiAnalyticsService : IBiAnalyticsService
             FamilySupportTypes = supportTypes,
             TopDistributedItems = topItems,
             MonthlyTrends = monthlyTrends,
-            SuspensionReasonsBreakdown = suspensionReasons
+            SuspensionReasonsBreakdown = suspensionReasons,
+            VillageHotspots = villageHotspots,
+            PriorityTiersBreakdown = priorityTiers,
+            RoofTypeBreakdown = roofTypes,
+            InfrastructureDeficits = infraDeficits,
+            TotalInDebtCount = totalInDebt,
+            TotalDebtBurden = totalDebtBurden,
+            ThreatenedWithPrisonCount = threatenedPrisonCount,
+            SchoolDropoutsCount = schoolDropouts,
+            ChildLaborCount = childLabor,
+            MicroProjectCandidatesCount = microCandidates,
+            TopSuggestedMicroProjects = topProjects
         };
     }
 }

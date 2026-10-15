@@ -74,4 +74,14 @@ export class BiAnalyticsComponent implements OnInit, OnDestroy {
     const max = Math.max(...this.biData.monthlyTrends.map((m: any) => m.distributionsCount || 0));
     return max > 0 ? max : 10;
   }
+
+  getUnsafeRoofCount(): number {
+    const list = this.biData?.roofTypeBreakdown || this.biData?.RoofTypeBreakdown || [];
+    return list
+      .filter((r: any) => {
+        const type = (r.roofType || r.RoofType || '');
+        return type.includes('قش') || type.includes('جريد') || type.includes('مكشوف') || type.includes('صاج');
+      })
+      .reduce((sum: number, r: any) => sum + (r.count || r.Count || 0), 0);
+  }
 }

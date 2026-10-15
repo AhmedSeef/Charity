@@ -20,6 +20,11 @@ public class BeneficiaryFamilyMember : BaseEntity
     public string HealthStatus { get; set; } = string.Empty; // الحالة الصحية للفرد إن وجدت
     public string Notes { get; set; } = string.Empty;
 
+    // التعليم والتسرب الدراسي وعمالة الأطفال
+    public string EducationStage { get; set; } = "منتظم بالتعليم"; // ابتدائي، إعدادي، ثانوي، جامعي، متسرب من التعليم، لم يلتحق / أمي
+    public bool IsSchoolDropout { get; set; } = false; // هل متسرب من التعليم؟
+    public bool IsChildLabor { get; set; } = false; // هل طفل عامل دون السن القانوني؟
+
     // حالة الفصل من الملف
     public bool IsSeparated { get; set; } = false;
     public DateTime? SeparatedAt { get; set; }

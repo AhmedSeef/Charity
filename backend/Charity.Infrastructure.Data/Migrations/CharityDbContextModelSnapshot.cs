@@ -109,6 +109,10 @@ namespace Charity.Infrastructure.Data.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("AppliancesSummary")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Category")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -120,6 +124,18 @@ namespace Charity.Infrastructure.Data.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("DebtCreditor")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DebtNotes")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ElectricitySource")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("FamilyCount")
                         .HasColumnType("int");
 
@@ -128,6 +144,9 @@ namespace Charity.Infrastructure.Data.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("HasChronicDisease")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("HasDebts")
                         .HasColumnType("bit");
 
                     b.Property<bool>("HasGovernmentPension")
@@ -148,7 +167,13 @@ namespace Charity.Infrastructure.Data.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<bool>("IsCandidateForMicroProject")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("IsSuspended")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsThreatenedWithImprisonment")
                         .HasColumnType("bit");
 
                     b.Property<string>("LandOrPropertyDetails")
@@ -188,6 +213,10 @@ namespace Charity.Infrastructure.Data.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("PriorityTier")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("RegisteredByCharityId")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
@@ -200,7 +229,19 @@ namespace Charity.Infrastructure.Data.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("RoofType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SanitationType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SuggestedMicroProject")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -220,6 +261,22 @@ namespace Charity.Infrastructure.Data.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("SuspensionReasonTitle")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal?>("TotalDebtAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("VillageOrDistrict")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("WallType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("WaterSource")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
@@ -244,6 +301,10 @@ namespace Charity.Infrastructure.Data.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("EducationStage")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<bool>("HasIncome")
                         .HasColumnType("bit");
 
@@ -258,6 +319,12 @@ namespace Charity.Infrastructure.Data.Migrations
                     b.Property<string>("IncomeSource")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsChildLabor")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsSchoolDropout")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("IsSeparated")
                         .HasColumnType("bit");

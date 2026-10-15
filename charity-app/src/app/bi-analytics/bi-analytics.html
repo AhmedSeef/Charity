@@ -365,11 +365,209 @@
     </div>
 
     <!-- ========================================== -->
-    <!-- 3. التقرير الاستراتيجي لمتخذ القرار (Executive Insights & Recommendations) -->
+    <!-- 3. مرصد البحث الاجتماعي الميداني والفقر متعدد الأبعاد (Social Research & Multidimensional Poverty Hub) -->
+    <!-- ========================================== -->
+    <div style="margin-bottom: 30px;">
+      <div style="background: linear-gradient(135deg, #e8f5e9 0%, #e0f2f1 100%); border: 1px solid #80cbc4; border-radius: 10px; padding: 18px 22px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+        <div>
+          <h3 style="margin: 0; color: #004d40; font-size: 18px; display: flex; align-items: center; gap: 8px;">
+            <span>🔍</span> مرصد البحث الاجتماعي الميداني والفقر متعدد الأبعاد
+          </h3>
+          <p style="margin: 4px 0 0 0; color: #00695c; font-size: 13px;">
+            أدوات متقدمة للباحث الاجتماعي: خريطة القرى الأكثر فقراً، تسقيف البيوت والمأوى، ملف الغارمين، حماية الأطفال والتمكين الاقتصادي.
+          </p>
+        </div>
+        <span style="background: #004d40; color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold;">
+          مؤشرات ميدانية دقيقة
+        </span>
+      </div>
+
+      <!-- شبكة بطاقات الأرقام السريعة للمرصد الميداني -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 22px;">
+        <!-- الغارمين وخطر الحبس -->
+        <div style="background: white; border: 1px solid #ffcdd2; border-right: 5px solid #c62828; border-radius: 8px; padding: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+          <div style="display: flex; justify-content: space-between; align-items: center; color: #c62828; font-size: 13px; font-weight: bold;">
+            <span>⚖️ قضايا الغارمين والحبس</span>
+            <span>🚨</span>
+          </div>
+          <div style="font-size: 24px; font-weight: bold; color: #b71c1c; margin: 8px 0 4px 0;">
+            {{ (biData.threatenedWithPrisonCount || biData.ThreatenedWithPrisonCount) || 0 }} <span style="font-size: 13px; font-weight: normal; color: #666;">مهدد بالحبس</span>
+          </div>
+          <div style="font-size: 12px; color: #666;">
+            من أصل <strong>{{ (biData.totalInDebtCount || biData.TotalInDebtCount) || 0 }}</strong> حالة مدينة بديون تبلغ <strong>{{ ((biData.totalDebtBurden || biData.TotalDebtBurden) | number:'1.0-0') || 0 }} ج.م</strong>.
+          </div>
+        </div>
+
+        <!-- تسقيف البيوت والمأوى غير الآمن -->
+        <div style="background: white; border: 1px solid #ffe0b2; border-right: 5px solid #e65100; border-radius: 8px; padding: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+          <div style="display: flex; justify-content: space-between; align-items: center; color: #e65100; font-size: 13px; font-weight: bold;">
+            <span>🏡 سكن بحاجة لتسقيف عاجل</span>
+            <span>🪵</span>
+          </div>
+          <div style="font-size: 24px; font-weight: bold; color: #e65100; margin: 8px 0 4px 0;">
+            {{ getUnsafeRoofCount() }} <span style="font-size: 13px; font-weight: normal; color: #666;">منزل غير مسقوف</span>
+          </div>
+          <div style="font-size: 12px; color: #666;">
+            أسقف جريد/قش/صاج/مكشوفة معرضة للسيول والشتاء وتحتاج تدخل فوري.
+          </div>
+        </div>
+
+        <!-- التسرب من التعليم وحماية الأطفال -->
+        <div style="background: white; border: 1px solid #e1bee7; border-right: 5px solid #8e24aa; border-radius: 8px; padding: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+          <div style="display: flex; justify-content: space-between; align-items: center; color: #8e24aa; font-size: 13px; font-weight: bold;">
+            <span>🎒 التسرب وعمالة الأطفال</span>
+            <span>⚠️</span>
+          </div>
+          <div style="font-size: 24px; font-weight: bold; color: #6a1b9a; margin: 8px 0 4px 0;">
+            {{ (biData.schoolDropoutsCount || biData.SchoolDropoutsCount) || 0 }} <span style="font-size: 13px; font-weight: normal; color: #666;">تسرب دراسي</span>
+          </div>
+          <div style="font-size: 12px; color: #666;">
+            وعدد <strong>{{ (biData.childLaborCount || biData.ChildLaborCount) || 0 }}</strong> حالة عمالة أطفال بحاجة لبرامج رعاية وإعادة للتعليم.
+          </div>
+        </div>
+
+        <!-- التمكين الاقتصادي والمشروعات -->
+        <div style="background: white; border: 1px solid #b2dfdb; border-right: 5px solid #00796b; border-radius: 8px; padding: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+          <div style="display: flex; justify-content: space-between; align-items: center; color: #00796b; font-size: 13px; font-weight: bold;">
+            <span>💼 مشروعات التمكين الاقتصادي</span>
+            <span>🌱</span>
+          </div>
+          <div style="font-size: 24px; font-weight: bold; color: #004d40; margin: 8px 0 4px 0;">
+            {{ (biData.microProjectCandidatesCount || biData.MicroProjectCandidatesCount) || 0 }} <span style="font-size: 13px; font-weight: normal; color: #666;">مرشح لمشروع</span>
+          </div>
+          <div style="font-size: 12px; color: #666;">
+            أسر قادرة على العمل والتحول من المساعدات الاستهلاكية إلى الإنتاج.
+          </div>
+        </div>
+      </div>
+
+      <!-- مصفوفة المخططات الميدانية التفصيلية -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 20px; margin-bottom: 25px;">
+        
+        <!-- 1. خريطة القرى والنجوع الأكثر فقراً واحتياجاً -->
+        <div class="analytics-card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+            <h3 style="margin: 0; font-size: 16px; color: #004d40; display: flex; align-items: center; gap: 8px;">
+              <span>📍</span> خريطة القرى والعزب الأكثر احتياجاً
+            </h3>
+            <span style="background: #e0f2f1; color: #004d40; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">
+              التوزيع الجغرافي
+            </span>
+          </div>
+
+          <div *ngIf="!biData.villageHotspots || biData.villageHotspots.length === 0" style="text-align: center; padding: 30px; color: #888;">
+            لم تسجل عناوين قرى تفصيلية بعد.
+          </div>
+
+          <div *ngIf="biData.villageHotspots && biData.villageHotspots.length > 0" class="chart-bar-container" style="flex: 1;">
+            <div *ngFor="let v of biData.villageHotspots" class="bar-row">
+              <div class="bar-label" [title]="v.village || v.Village">{{ v.village || v.Village }}</div>
+              <div class="bar-track">
+                <div class="bar-fill" [style.width.%]="v.percentage || v.Percentage" style="background: linear-gradient(90deg, #00897b, #004d40);"></div>
+              </div>
+              <div class="bar-value">
+                <strong>{{ v.beneficiaryCount || v.BeneficiaryCount }}</strong> أسرة 
+                <span *ngIf="(v.urgentPriorityCount || v.UrgentPriorityCount) > 0" style="color: #c62828; font-size: 11px;">
+                  ({{ v.urgentPriorityCount || v.UrgentPriorityCount }} أولوية قصوى)
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. توزيع درجات الاستحقاق والأولوية (أ / ب / ج) -->
+        <div class="analytics-card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+            <h3 style="margin: 0; font-size: 16px; color: #004d40; display: flex; align-items: center; gap: 8px;">
+              <span>⭐</span> تصنيف درجات الاستحقاق والأولوية
+            </h3>
+            <span style="background: #fff3e0; color: #e65100; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">
+              ترتيب التدخلات
+            </span>
+          </div>
+
+          <div *ngIf="!biData.priorityTiersBreakdown || biData.priorityTiersBreakdown.length === 0" style="text-align: center; padding: 30px; color: #888;">
+            لا توجد بيانات متاحة.
+          </div>
+
+          <div *ngIf="biData.priorityTiersBreakdown && biData.priorityTiersBreakdown.length > 0" class="chart-bar-container" style="flex: 1;">
+            <div *ngFor="let t of biData.priorityTiersBreakdown" class="bar-row">
+              <div class="bar-label" [title]="t.tier || t.Tier">{{ t.tier || t.Tier }}</div>
+              <div class="bar-track">
+                <div class="bar-fill" [style.width.%]="t.percentage || t.Percentage" 
+                     [style.background]="(t.tier || t.Tier).startsWith('أ') ? 'linear-gradient(90deg, #ef5350, #b71c1c)' : ((t.tier || t.Tier).startsWith('ب') ? 'linear-gradient(90deg, #ffa726, #f57c00)' : 'linear-gradient(90deg, #66bb6a, #2e7d32)')"></div>
+              </div>
+              <div class="bar-value">{{ t.count || t.Count }} ({{ t.percentage || t.Percentage }}%)</div>
+            </div>
+          </div>
+
+          <div style="margin-top: 15px; background: #fafafa; border: 1px solid #eee; padding: 10px 14px; border-radius: 6px; font-size: 12px; color: #555;">
+            💡 <strong>معيار الباحث:</strong> فئة (أ) تشمل الأسر المعدمة والأرامل بلا عائل وتمنح الأسبقية في قوافل الإطعام والمساعدات النقدية.
+          </div>
+        </div>
+
+        <!-- 3. مؤشر تسقيف البيوت والمأوى -->
+        <div class="analytics-card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+            <h3 style="margin: 0; font-size: 16px; color: #004d40; display: flex; align-items: center; gap: 8px;">
+              <span>🪵</span> مواصفات المأوى ونوع الأسقف
+            </h3>
+            <span style="background: #ffebee; color: #c62828; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">
+              حملات التسقيف
+            </span>
+          </div>
+
+          <div *ngIf="!biData.roofTypeBreakdown || biData.roofTypeBreakdown.length === 0" style="text-align: center; padding: 30px; color: #888;">
+            لا توجد بيانات متاحة.
+          </div>
+
+          <div *ngIf="biData.roofTypeBreakdown && biData.roofTypeBreakdown.length > 0" class="chart-bar-container" style="flex: 1;">
+            <div *ngFor="let r of biData.roofTypeBreakdown" class="bar-row">
+              <div class="bar-label" [title]="r.roofType || r.RoofType">{{ r.roofType || r.RoofType }}</div>
+              <div class="bar-track">
+                <div class="bar-fill" [style.width.%]="r.percentage || r.Percentage"
+                     [style.background]="(r.roofType || r.RoofType).includes('خرساني') ? 'linear-gradient(90deg, #66bb6a, #2e7d32)' : 'linear-gradient(90deg, #ff7043, #d84315)'"></div>
+              </div>
+              <div class="bar-value">{{ r.count || r.Count }} ({{ r.percentage || r.Percentage }}%)</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. مؤشر الحرمان من المرافق الأساسية -->
+        <div class="analytics-card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+            <h3 style="margin: 0; font-size: 16px; color: #004d40; display: flex; align-items: center; gap: 8px;">
+              <span>🚰</span> مؤشر فقر المرافق الأساسية (البنية التحتية)
+            </h3>
+            <span style="background: #e0f7fa; color: #006064; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">
+              وصلات المياه والصرف
+            </span>
+          </div>
+
+          <div *ngIf="!biData.infrastructureDeficits || biData.infrastructureDeficits.length === 0" style="text-align: center; padding: 30px; color: #888;">
+            لا توجد بيانات مسجلة.
+          </div>
+
+          <div *ngIf="biData.infrastructureDeficits && biData.infrastructureDeficits.length > 0" class="chart-bar-container" style="flex: 1;">
+            <div *ngFor="let def of biData.infrastructureDeficits" class="bar-row">
+              <div class="bar-label" [title]="def.deficitType || def.DeficitType">{{ def.deficitType || def.DeficitType }}</div>
+              <div class="bar-track">
+                <div class="bar-fill" [style.width.%]="def.percentage || def.Percentage" style="background: linear-gradient(90deg, #ab47bc, #6a1b9a);"></div>
+              </div>
+              <div class="bar-value">{{ def.affectedCount || def.AffectedCount }} حالة ({{ def.percentage || def.Percentage }}%)</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- 4. التقرير الاستراتيجي لمتخذ القرار (Executive Insights & Recommendations) -->
     <!-- ========================================== -->
     <div style="background: linear-gradient(135deg, #f9fbe7 0%, #f1f8e9 100%); border: 1px solid #c5e1a5; border-radius: 10px; padding: 22px; margin-bottom: 25px;">
       <h3 style="margin: 0 0 12px 0; color: #33691e; font-size: 17px; display: flex; align-items: center; gap: 8px;">
-        <span>🎯</span> الرؤية التنفيذية وتوصيات محلل البيانات (Data-Driven Decisions)
+        <span>🎯</span> الرؤية التنفيذية وتوصيات محلل البيانات والباحث الاجتماعي (Data-Driven Decisions)
       </h3>
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; font-size: 13px; color: #2e7d32; line-height: 1.6;">
         <div style="background: white; border: 1px solid #dcedc8; padding: 14px; border-radius: 8px;">
@@ -381,7 +579,19 @@
           معدل التبعية البالغ ({{ biData.dependencyRatio }} معال لكل معيل) يوصي بضرورة توجيه التبرعات نحو مشروعات متناهية الصغر للمعيلين لرفع الدخل.
         </div>
         <div style="background: white; border: 1px solid #dcedc8; padding: 14px; border-radius: 8px;">
-          <strong>3. قوة التطوع والموارد البشرية:</strong>
+          <strong>3. التدخل العاجل لتسقيف المنازل قبل الشتاء:</strong>
+          وجود {{ getUnsafeRoofCount() }} منازل بأسقف غير آمنة يفرض إطلاق حملة تسقيف عاجلة بالتعاون مع الجمعيات الشريكة والمانحين.
+        </div>
+        <div style="background: white; border: 1px solid #dcedc8; padding: 14px; border-radius: 8px;">
+          <strong>4. سداد ديون الغارمين المهددين بالحبس:</strong>
+          حصر {{ (biData.threatenedWithPrisonCount || biData.ThreatenedWithPrisonCount) || 0 }} حالة مهددة بالحبس بسبب إيصالات الأمانة يستوجب إنشاء لجنة تصالح قضائي وسداد لحماية تماسك الأسر.
+        </div>
+        <div style="background: white; border: 1px solid #dcedc8; padding: 14px; border-radius: 8px;">
+          <strong>5. مكافحة التسرب الدراسي وعمالة الأطفال:</strong>
+          تسجيل {{ (biData.schoolDropoutsCount || biData.SchoolDropoutsCount) || 0 }} حالة تسرب يستدعي كفالة تعليمية وحوافز دراسية شهرية للأسر لإعادة الأطفال للمدارس.
+        </div>
+        <div style="background: white; border: 1px solid #dcedc8; padding: 14px; border-radius: 8px;">
+          <strong>6. قوة التطوع والموارد البشرية:</strong>
           نسبة التطوع بالجمعية ({{ biData.volunteerismRatio }}%) تشير إلى ثقة مجتمعية مرتفعة، يُنصح باستثمارها في فرق البحث الميداني المستمر.
         </div>
       </div>
