@@ -8,6 +8,8 @@ public class SuspensionReasonDto
     public bool IsActive { get; set; } = true;
     public string CharityId { get; set; } = string.Empty;
     public string CharityName { get; set; } = string.Empty;
+    public int LinkedSuspendedBeneficiariesCount { get; set; } = 0;
+    public bool CanDelete { get; set; } = true;
 }
 
 public class CreateSuspensionReasonDto

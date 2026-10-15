@@ -80,6 +80,10 @@
             <span *ngIf="r.charityName" style="background: #ede7f6; color: #4527a0; font-size: 11px; padding: 2px 8px; border-radius: 10px;">
               {{ r.charityName }}
             </span>
+            <span *ngIf="r.linkedSuspendedBeneficiariesCount > 0" 
+                  style="background: #fff3e0; color: #e65100; border: 1px solid #ffe0b2; font-size: 11px; font-weight: bold; padding: 2px 8px; border-radius: 10px; display: inline-flex; align-items: center; gap: 4px;">
+              ⚠️ مرتبط بـ {{ r.linkedSuspendedBeneficiariesCount }} حالة موقوفة
+            </span>
           </div>
 
           <p *ngIf="r.description" style="color: #555; font-size: 13px; margin: 6px 0 0 32px; line-height: 1.4;">
@@ -87,10 +91,17 @@
           </p>
         </div>
 
-        <button type="button" (click)="deleteReason(r.id, r.title)" 
-                style="background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold;">
+        <button *ngIf="!r.linkedSuspendedBeneficiariesCount || r.linkedSuspendedBeneficiariesCount === 0" 
+                type="button" (click)="deleteReason(r.id, r.title)" 
+                style="background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold;">
           🗑️ حذف
         </button>
+
+        <span *ngIf="r.linkedSuspendedBeneficiariesCount > 0" 
+              [title]="'لا يمكن حذف هذا السبب لوجود ' + r.linkedSuspendedBeneficiariesCount + ' حالة موقوفة مرتبطة به حالياً'" 
+              style="background: #f5f5f5; color: #9e9e9e; border: 1px dashed #bdbdbd; padding: 6px 10px; border-radius: 4px; font-size: 12px; cursor: not-allowed; display: inline-flex; align-items: center; gap: 4px;">
+          🔒 محمي من الحذف
+        </span>
       </div>
     </div>
 

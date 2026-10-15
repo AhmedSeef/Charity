@@ -74,10 +74,18 @@ export class SuspensionReasonsComponent implements OnInit {
   }
 
   deleteReason(id: string, title: string): void {
+    const target = this.reasons.find(r => String(r.id) === String(id));
+    if (target && target.linkedSuspendedBeneficiariesCount > 0) {
+      this.errorMessage = `⛔ لا يمكن حذف سبب الإيقاف (${title}) لوجود (${target.linkedSuspendedBeneficiariesCount}) حالة موقوفة مرتبطة بهذا السبب حالياً! يجب تعديل سبب إيقاف تلك الحالات أو إعادة تفعيلها أولاً.`;
+      this.cdr.detectChanges();
+      setTimeout(() => { this.errorMessage = ''; this.cdr.detectChanges(); }, 6000);
+      return;
+    }
+
     if (confirm(`هل أنت متأكد من حذف سبب الإيقاف "${title}"؟`)) {
       this.api.deleteSuspensionReason(id).subscribe({
         next: () => {
-          this.successMessage = `تم حذف سبب الإيقاف بنجاح.`;
+          this.successMessage = `✅ تم حذف سبب الإيقاف بنجاح.`;
           this.loadReasons();
           setTimeout(() => {
             this.successMessage = '';

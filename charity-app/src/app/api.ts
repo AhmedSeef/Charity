@@ -1075,7 +1075,20 @@ export class Api {
   // Suspension Reasons Management
   // ==========================================
   getSuspensionReasons(): Observable<any[]> {
-    return of(this.db.suspensionReasons || []);
+    const reasons = this.db.suspensionReasons || [];
+    const beneficiaries = this.db.beneficiaries || [];
+    const enriched = reasons.map((r: any) => {
+      const count = beneficiaries.filter((b: any) => 
+        (b.isSuspended || b.status === 'موقوف') &&
+        (String(b.suspensionReasonId) === String(r.id) || b.suspensionReasonTitle === r.title)
+      ).length;
+      return {
+        ...r,
+        linkedSuspendedBeneficiariesCount: count,
+        canDelete: count === 0
+      };
+    });
+    return of(enriched);
   }
 
   addSuspensionReason(data: any): Observable<any> {
@@ -1096,6 +1109,20 @@ export class Api {
 
   deleteSuspensionReason(id: string): Observable<any> {
     if (!this.db.suspensionReasons) this.db.suspensionReasons = [];
+    const reason = this.db.suspensionReasons.find((r: any) => String(r.id) === String(id));
+    if (reason) {
+      const linkedCases = (this.db.beneficiaries || []).filter((b: any) => 
+        (b.isSuspended || b.status === 'موقوف') && 
+        (String(b.suspensionReasonId) === String(reason.id) || b.suspensionReasonTitle === reason.title)
+      );
+
+      if (linkedCases.length > 0) {
+        const names = linkedCases.slice(0, 3).map((b: any) => b.name).join('، ');
+        const extra = linkedCases.length > 3 ? ` وغيرها (${linkedCases.length} حالة إجمالاً)` : '';
+        throw new Error(`⛔ لا يمكن حذف سبب الإيقاف (${reason.title}) لوجود (${linkedCases.length}) حالة موقوفة مرتبطة بهذا السبب حالياً: [${names}${extra}]! يجب تعديل سبب إيقاف تلك الحالات أو إعادة تفعيلها أولاً.`);
+      }
+    }
+
     this.db.suspensionReasons = this.db.suspensionReasons.filter((r: any) => String(r.id) !== String(id));
     this.save();
     return of({ success: true });
