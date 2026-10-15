@@ -1,0 +1,99 @@
+<div dir="rtl" style="text-align: right;">
+
+  <!-- تنبيهات -->
+  <div *ngIf="successMessage" style="background-color: #e8f5e9; border: 2px solid #43a047; color: #1b5e20; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-weight: bold; font-size: 15px;">
+    {{ successMessage }}
+  </div>
+
+  <div *ngIf="errorMessage" style="background-color: #ffebee; border: 2px solid #e53935; color: #b71c1c; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-weight: bold; font-size: 15px;">
+    {{ errorMessage }}
+  </div>
+
+  <!-- رأس الشاشة -->
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 25px; border-bottom: 2px solid #b71c1c; padding-bottom: 12px;">
+    <div>
+      <h2 style="color: #b71c1c; margin: 0; display: flex; align-items: center; gap: 10px;">
+        <span>⛔ إدارة أسباب إيقاف الملفات وحظر الصرف</span>
+      </h2>
+      <p style="color: #666; margin: 5px 0 0 0; font-size: 14px;">
+        تعريف وتخصيص أسباب تجميد وإيقاف ملفات الحالات (وفاة، تحسن الدخل، ازدواجية، إلخ). الملف الموقوف يصبح غير فعال ويُحظر الصرف له تلقائياً.
+      </p>
+    </div>
+  </div>
+
+  <!-- شبكة مقسمة: نموذج الإضافة وقائمة الأسباب المعرفة -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 25px;">
+    
+    <!-- نموذج إضافة سبب إيقاف جديد -->
+    <div style="background: white; border: 1px solid #ffcdd2; border-radius: 10px; padding: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); height: fit-content;">
+      <h3 style="color: #c62828; margin: 0 0 15px 0; font-size: 17px; border-bottom: 2px solid #ffcdd2; padding-bottom: 8px;">
+        ➕ إضافة سبب إيقاف جديد
+      </h3>
+
+      <form (ngSubmit)="addReason()">
+        <div style="margin-bottom: 15px;">
+          <label style="font-size: 13px; color: #444; font-weight: bold; display: block; margin-bottom: 5px;">
+            مسمى / عنوان سبب الإيقاف *
+          </label>
+          <input type="text" [(ngModel)]="newReason.title" name="title" placeholder="مثال: تحسن الدخل الشهري، السفر خارج المحافظة..." required 
+                 style="width: 100%; padding: 11px; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; font-size: 14px; font-weight: bold;">
+        </div>
+
+        <div style="margin-bottom: 20px;">
+          <label style="font-size: 13px; color: #444; font-weight: bold; display: block; margin-bottom: 5px;">
+            شرح وتفاصيل سبب الإيقاف
+          </label>
+          <textarea [(ngModel)]="newReason.description" name="description" rows="3" placeholder="توضيح متى يتم تطبيق هذا السبب والشروط المرتبطة به..." 
+                    style="width: 100%; padding: 11px; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; font-size: 13px; resize: vertical; line-height: 1.5;"></textarea>
+        </div>
+
+        <button type="submit" 
+                style="width: 100%; padding: 12px; background-color: #c62828; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 15px; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 8px;">
+          💾 حفظ وإدراج السبب في قائمة الاختيارات
+        </button>
+      </form>
+    </div>
+
+    <!-- قائمة أسباب الإيقاف المسجلة -->
+    <div style="background: white; border: 1px solid #e0e0e0; border-radius: 10px; padding: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+        <h3 style="color: #37474f; margin: 0; font-size: 17px;">
+          📋 أسباب الإيقاف المعتمدة ({{ filteredReasons.length }})
+        </h3>
+        
+        <input type="text" [(ngModel)]="searchTerm" placeholder="🔍 بحث في الأسباب..." 
+               style="padding: 7px 12px; border-radius: 20px; border: 1px solid #ccc; font-size: 13px; width: 180px;">
+      </div>
+
+      <div *ngIf="filteredReasons.length === 0" style="text-align: center; padding: 30px; color: #888; background: #fafafa; border-radius: 8px;">
+        لا توجد أسباب إيقاف مسجلة حالياً.
+      </div>
+
+      <div *ngFor="let r of filteredReasons; let i = index" 
+           style="background: #fafafa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 14px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;">
+        <div style="flex: 1;">
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <span style="background: #ffebee; color: #c62828; width: 24px; height: 24px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold;">
+              {{ i + 1 }}
+            </span>
+            <strong style="color: #b71c1c; font-size: 15px;">{{ r.title }}</strong>
+            <span *ngIf="r.charityName" style="background: #ede7f6; color: #4527a0; font-size: 11px; padding: 2px 8px; border-radius: 10px;">
+              {{ r.charityName }}
+            </span>
+          </div>
+
+          <p *ngIf="r.description" style="color: #555; font-size: 13px; margin: 6px 0 0 32px; line-height: 1.4;">
+            {{ r.description }}
+          </p>
+        </div>
+
+        <button type="button" (click)="deleteReason(r.id, r.title)" 
+                style="background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold;">
+          🗑️ حذف
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+</div>

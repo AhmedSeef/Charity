@@ -34,8 +34,8 @@
           <select [(ngModel)]="newDist.beneficiaryId" name="beneficiaryId" required 
                   style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; font-weight: bold;">
             <option value="" disabled selected>-- اختر المستفيد من الشبكة --</option>
-            <option *ngFor="let b of beneficiaries" [value]="b.id">
-              {{ b.name }} ({{ b.category }} - {{ b.nationalId }})
+            <option *ngFor="let b of beneficiaries" [value]="b.id" [disabled]="b.isSuspended || b.status === 'موقوف'" [style.color]="(b.isSuspended || b.status === 'موقوف') ? '#d32f2f' : 'inherit'">
+              {{ b.name }} ({{ b.category }} - {{ b.nationalId }}) {{ (b.isSuspended || b.status === 'موقوف') ? '⛔ [موقوف: ' + (b.suspensionReasonTitle || 'محظور الصرف') + ']' : '' }}
             </option>
           </select>
         </div>

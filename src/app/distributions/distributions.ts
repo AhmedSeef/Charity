@@ -104,6 +104,12 @@ export class DistributionsComponent implements OnInit {
       return;
     }
 
+    const selectedBen = this.beneficiaries.find(b => String(b.id) === String(this.newDist.beneficiaryId));
+    if (selectedBen && (selectedBen.isSuspended || selectedBen.status === 'موقوف')) {
+      this.errorMessage = `⛔ عذراً، لا يمكن تسجيل أي صرف للمستفيد (${selectedBen.name}) لأن الملف موقوف حالياً وحظر الصرف نشط (السبب: ${selectedBen.suspensionReasonTitle || 'موقوف'}).`;
+      return;
+    }
+
     if (this.isStockInsufficient) {
       const item = this.selectedItem;
       this.errorMessage = `⚠️ عذراً، الكمية المطلوبة (${this.newDist.quantity}) أكبر من الرصيد المتوفر بمخزن ${this.activeCharity?.name} (${item.quantity} ${item.unit})!`;
@@ -113,26 +119,32 @@ export class DistributionsComponent implements OnInit {
     const payload = { ...this.newDist, quantity: Number(this.newDist.quantity) };
     const item = this.selectedItem;
 
-    this.api.addDistribution(payload).subscribe(() => {
-      if (item && item.kind === 'صنف ملموس') {
-        this.successMessage = `✅ تم تسجيل حركة الصرف بنجاح لحساب (${this.activeCharity?.name})، وخصم (${payload.quantity} ${item.unit}) من رصيد المخزن!`;
-      } else {
-        this.successMessage = `✅ تم توثيق تقديم الخدمة بنجاح في ملف المستفيد بالشبكة الموحدة!`;
-      }
+    this.api.addDistribution(payload).subscribe({
+      next: () => {
+        if (item && item.kind === 'صنف ملموس') {
+          this.successMessage = `✅ تم تسجيل حركة الصرف بنجاح لحساب (${this.activeCharity?.name})، وخصم (${payload.quantity} ${item.unit}) من رصيد المخزن!`;
+        } else {
+          this.successMessage = `✅ تم توثيق تقديم الخدمة بنجاح في ملف المستفيد بالشبكة الموحدة!`;
+        }
 
-      this.loadData();
-      this.newDist = { 
-        beneficiaryId: '', 
-        inventoryId: '', 
-        quantity: 1, 
-        date: new Date().toISOString().split('T')[0], 
-        notes: '' 
-      };
+        this.loadData();
+        this.newDist = { 
+          beneficiaryId: '', 
+          inventoryId: '', 
+          quantity: 1, 
+          date: new Date().toISOString().split('T')[0], 
+          notes: '' 
+        };
 
-      setTimeout(() => {
-        this.successMessage = '';
+        setTimeout(() => {
+          this.successMessage = '';
+          this.cdr.detectChanges();
+        }, 5000);
+      },
+      error: (err: any) => {
+        this.errorMessage = err.message || '⚠️ فشل في تسجيل حركة الصرف.';
         this.cdr.detectChanges();
-      }, 5000);
+      }
     });
   }
 }

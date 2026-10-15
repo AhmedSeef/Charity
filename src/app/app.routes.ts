@@ -7,6 +7,7 @@ import { InventoryComponent } from './inventory/inventory';
 import { DistributionsComponent } from './distributions/distributions';
 import { SettingsComponent } from './settings/settings';
 import { StaffComponent } from './staff/staff';
+import { SuspensionReasonsComponent } from './suspension-reasons/suspension-reasons';
 import { LoginComponent } from './login/login';
 import { authGuard } from './auth.guard';
 
@@ -15,6 +16,7 @@ export const routes: Routes = [
   { path: 'login', component: LoginComponent },
   { path: 'dashboard', component: DashboardComponent, canActivate: [authGuard] },
   { path: 'beneficiaries', component: BeneficiariesComponent, canActivate: [authGuard] },
+  { path: 'suspension-reasons', component: SuspensionReasonsComponent, canActivate: [authGuard] },
   { path: 'items-catalog', component: ItemsCatalogComponent, canActivate: [authGuard] },
   { path: 'inventory', component: InventoryComponent, canActivate: [authGuard] },
   { path: 'donations', component: DonationsComponent, canActivate: [authGuard] },

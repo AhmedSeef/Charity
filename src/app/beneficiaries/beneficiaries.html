@@ -27,9 +27,22 @@
           ✏️ تعديل بيانات الملف
         </button>
 
+        <!-- أزرار إيقاف الملف وإعادة التفعيل -->
+        <button *ngIf="canEditBeneficiary(selectedBen) && !selectedBen.isSuspended && selectedBen.status !== 'موقوف'" 
+                type="button" (click)="openSuspendModal(selectedBen)" 
+                style="background-color: #c62828; color: white; border: none; padding: 8px 18px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold; display: flex; align-items: center; gap: 6px;">
+          ⛔ إيقاف الملف وحظر الصرف
+        </button>
+
+        <button *ngIf="canEditBeneficiary(selectedBen) && (selectedBen.isSuspended || selectedBen.status === 'موقوف')" 
+                type="button" (click)="reactivateBeneficiary(selectedBen)" 
+                style="background-color: #2e7d32; color: white; border: none; padding: 8px 18px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold; display: flex; align-items: center; gap: 6px;">
+          ✅ إعادة تفعيل الملف والسماح بالصرف
+        </button>
+
         <span *ngIf="!canEditBeneficiary(selectedBen)" 
               style="background-color: #f5f5f5; color: #616161; border: 1px dashed #bdbdbd; padding: 7px 14px; border-radius: 6px; font-size: 13px; font-weight: bold; display: inline-flex; align-items: center; gap: 6px;">
-          🔒 التعديل مقصور على: {{ selectedBen.registeredByCharityName }}
+          🔒 التعديل والإيقاف مقصور على: {{ selectedBen.registeredByCharityName }}
         </span>
 
         <button type="button" (click)="printProfile()" 
@@ -54,6 +67,40 @@
       </div>
     </div>
 
+    <!-- بانر تحذيري مميز إذا كان الملف موقوفاً عن الصرف -->
+    <div *ngIf="selectedBen.isSuspended || selectedBen.status === 'موقوف'" 
+         style="background-color: #ffebee; border: 2px solid #c62828; border-radius: 8px; padding: 16px 20px; margin-bottom: 22px; box-shadow: 0 3px 8px rgba(198,40,40,0.12);">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+        <div style="display: flex; align-items: flex-start; gap: 12px;">
+          <span style="font-size: 32px; line-height: 1;">⛔</span>
+          <div>
+            <h3 style="margin: 0; color: #b71c1c; font-size: 18px; font-weight: bold;">
+              تنبيه حظر الصرف: هذا الملف موقوف حالياً وغير فعال!
+            </h3>
+            <p style="margin: 6px 0 0 0; color: #c62828; font-size: 14px;">
+              <strong>سبب الإيقاف:</strong> <span style="font-weight: bold; text-decoration: underline;">{{ selectedBen.suspensionReasonTitle || 'موقوف بقرار إداري' }}</span>
+              <span *ngIf="selectedBen.suspendedAt" style="margin-right: 15px;">
+                <strong>تاريخ الإيقاف:</strong> {{ selectedBen.suspendedAt | date:'yyyy-MM-dd' }}
+              </span>
+              <span *ngIf="selectedBen.suspendedByCharityName" style="margin-right: 15px;">
+                <strong>بمعرفة:</strong> {{ selectedBen.suspendedByCharityName }}
+              </span>
+            </p>
+            <p *ngIf="selectedBen.suspensionNotes" style="margin: 6px 0 0 0; color: #7f0000; font-size: 13px;">
+              <strong>ملاحظات الإيقاف:</strong> {{ selectedBen.suspensionNotes }}
+            </p>
+            <p style="margin: 6px 0 0 0; color: #880e4f; font-size: 12px; font-weight: bold;">
+              🛡️ تطبيق حظر الصرف: لن تتمكن أي جمعية في الشبكة من صرف أي مساعدة عينية أو نقدية لهذه الحالة لحين إعادة التفعيل.
+            </p>
+          </div>
+        </div>
+        <button *ngIf="canEditBeneficiary(selectedBen)" type="button" (click)="reactivateBeneficiary(selectedBen)"
+                style="background-color: #2e7d32; color: white; border: none; padding: 10px 18px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+          ✅ رفع الإيقاف وإعادة تفعيل الملف
+        </button>
+      </div>
+    </div>
+
     <!-- بطاقة الهوية الأساسية للمستفيد -->
     <div style="background: white; border: 1px solid #c8e6c9; border-radius: 10px; padding: 25px; margin-bottom: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); display: flex; align-items: center; gap: 25px; flex-wrap: wrap;">
       <div style="width: 85px; height: 85px; border-radius: 50%; background: #e0f2f1; display: flex; align-items: center; justify-content: center; font-size: 38px; color: #004d40; border: 3px solid #80cbc4;">
@@ -66,8 +113,13 @@
           <span style="background-color: #ffe0b2; color: #e65100; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: bold;">
             {{ selectedBen.category }}
           </span>
-          <span style="background-color: #e8f5e9; color: #2e7d32; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: bold;">
+          <span *ngIf="!selectedBen.isSuspended && selectedBen.status !== 'موقوف'" 
+                style="background-color: #e8f5e9; color: #2e7d32; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: bold;">
             {{ selectedBen.status || 'مستحق فعال' }}
+          </span>
+          <span *ngIf="selectedBen.isSuspended || selectedBen.status === 'موقوف'" 
+                style="background-color: #ffebee; color: #c62828; border: 1px solid #ef9a9a; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: bold;">
+            ⛔ موقوف (محظور الصرف)
           </span>
           <span *ngIf="selectedBen.hasChronicDisease" style="background-color: #fce4ec; color: #c2185b; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; border: 1px solid #f8bbd0;">
             🩺 مريض مزمن
@@ -235,6 +287,7 @@
               <th style="text-align: center;">نوع الاحتياج/الدعم</th>
               <th>الدخل ومصدره</th>
               <th>ملاحظات</th>
+              <th style="text-align: center; width: 140px;">إجراءات / استقلال</th>
             </tr>
           </thead>
           <tbody>
@@ -263,6 +316,16 @@
                 <span *ngIf="!m.hasIncome" style="color: #757575;">بدون دخل</span>
               </td>
               <td style="color: #666; font-size: 13px;">{{ m.notes || m.healthStatus || '—' }}</td>
+              <td style="text-align: center;">
+                <button *ngIf="canEditBeneficiary(selectedBen)" type="button" (click)="openSeparateModal(m)" 
+                        title="فصل هذا الفرد واستقلاله بملف جديد أو فك قيده من الأسرة"
+                        style="background-color: #fff8e1; color: #f57f17; border: 1px solid #ffe082; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; display: inline-flex; align-items: center; gap: 4px;">
+                  ✂️ فصل واستقلال
+                </button>
+                <span *ngIf="!canEditBeneficiary(selectedBen)" style="color: #9e9e9e; font-size: 11px;">
+                  🔒 محمي
+                </span>
+              </td>
             </tr>
           </tbody>
         </table>
@@ -778,19 +841,36 @@
             </td>
 
             <td style="text-align: center;">
-              <span style="background-color: #e8f5e9; color: #2e7d32; padding: 3px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">
+              <span *ngIf="!b.isSuspended && b.status !== 'موقوف'" 
+                    style="background-color: #e8f5e9; color: #2e7d32; padding: 3px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">
                 {{ b.status || 'مستحق فعال' }}
+              </span>
+              <span *ngIf="b.isSuspended || b.status === 'موقوف'" 
+                    style="background-color: #ffebee; color: #c62828; border: 1px solid #ef9a9a; padding: 3px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;"
+                    [title]="'موقوف: ' + (b.suspensionReasonTitle || 'سبب إداري')">
+                ⛔ موقوف
               </span>
             </td>
 
             <td style="text-align: center;" (click)="$event.stopPropagation()">
               <button type="button" (click)="openDetail(b)" 
-                      style="background-color: #00695c; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; margin-left: 6px;">
-                👁️ عرض الملف
+                      style="background-color: #00695c; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; margin-left: 4px;">
+                👁️ عرض
               </button>
               <button *ngIf="canEditBeneficiary(b)" type="button" (click)="openEdit(b, $event)" title="تعديل بيانات الملف (متاح لجمعيتكم)" 
-                      style="background-color: #f5f5f5; color: #333; border: 1px solid #ccc; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                      style="background-color: #f5f5f5; color: #333; border: 1px solid #ccc; padding: 6px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; margin-left: 4px;">
                 ✏️
+              </button>
+              <!-- زر إيقاف / إعادة تفعيل سريع -->
+              <button *ngIf="canEditBeneficiary(b) && !b.isSuspended && b.status !== 'موقوف'" 
+                      type="button" (click)="openSuspendModal(b, $event)" title="إيقاف الملف وحظر الصرف" 
+                      style="background-color: #ffebee; color: #c62828; border: 1px solid #ffcdd2; padding: 6px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; margin-left: 4px;">
+                ⛔
+              </button>
+              <button *ngIf="canEditBeneficiary(b) && (b.isSuspended || b.status === 'موقوف')" 
+                      type="button" (click)="reactivateBeneficiary(b, $event)" title="إعادة تفعيل الملف والسماح بالصرف" 
+                      style="background-color: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; padding: 6px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; margin-left: 4px;">
+                ✅
               </button>
               <span *ngIf="!canEditBeneficiary(b)" [title]="'الملف مسجل بواسطة ' + (b.registeredByCharityName || 'جمعية أخرى') + ' - التعديل مقصور على الجمعية المسجلة'" 
                     style="background-color: #f5f5f5; color: #9e9e9e; border: 1px dashed #ccc; padding: 5px 8px; border-radius: 4px; font-size: 12px; cursor: not-allowed; display: inline-block;">
@@ -817,6 +897,141 @@
       (pageSizeChange)="pageSize = $event; currentPage = 1">
     </app-pagination>
 
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: إيقاف الملف وحظر الصرف -->
+  <!-- ========================================== -->
+  <div *ngIf="showSuspendModal" 
+       style="position: fixed; inset: 0; background: rgba(0,0,0,0.55); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 15px;">
+    <div style="background: white; border-radius: 10px; max-width: 520px; width: 100%; box-shadow: 0 10px 30px rgba(0,0,0,0.3); overflow: hidden; animation: fadeIn 0.2s ease;">
+      <!-- Header -->
+      <div style="background-color: #c62828; color: white; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="margin: 0; font-size: 18px; display: flex; align-items: center; gap: 8px;">
+          <span>⛔</span> إيقاف ملف حالة وحظر الصرف
+        </h3>
+        <button type="button" (click)="closeSuspendModal()" 
+                style="background: transparent; border: none; color: white; font-size: 20px; cursor: pointer; line-height: 1;">✕</button>
+      </div>
+
+      <!-- Body -->
+      <div style="padding: 20px;">
+        <div style="background-color: #fff3e0; border-right: 4px solid #ef6c00; padding: 12px; border-radius: 4px; margin-bottom: 18px; font-size: 13px; color: #e65100; line-height: 1.5;">
+          <strong>تنبيه رقابي حاسم:</strong> إيقاف هذا الملف سيمنع فوراً <u>جميع الجمعيات المشتركة في المنظومة</u> من صرف أي مساعدات أو مواد عينية أو نقدية لهذه الحالة.
+        </div>
+
+        <div style="margin-bottom: 15px; font-size: 14px;">
+          <div><strong>اسم الحالة:</strong> {{ targetBeneficiaryToSuspend?.name }}</div>
+          <div style="margin-top: 4px; color: #555;"><strong>الرقم القومي:</strong> <code>{{ targetBeneficiaryToSuspend?.nationalId }}</code></div>
+        </div>
+
+        <div style="margin-bottom: 15px;">
+          <label style="display: block; font-size: 13px; font-weight: bold; color: #333; margin-bottom: 6px;">
+            سبب الإيقاف *
+          </label>
+          <select [(ngModel)]="selectedSuspensionReasonTitle" 
+                  style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; font-size: 14px; font-weight: bold;">
+            <option *ngFor="let r of suspensionReasons" [value]="r.title">{{ r.title }}</option>
+            <option value="وفاة صاحب الحالة">وفاة صاحب الحالة</option>
+            <option value="تحسن الدخل والاستغناء عن المساعدة">تحسن الدخل والاستغناء عن المساعدة</option>
+            <option value="انتقال السكن خارج نطاق عمل الجمعيات">انتقال السكن خارج نطاق عمل الجمعيات</option>
+            <option value="ازدواجية الصرف ومخالفة الشروط">ازدواجية الصرف ومخالفة الشروط</option>
+            <option value="طلب المستفيد نفسه">طلب المستفيد نفسه</option>
+            <option value="سبب إداري / بحث ميداني آخر">سبب إداري / بحث ميداني آخر</option>
+          </select>
+        </div>
+
+        <div style="margin-bottom: 15px;">
+          <label style="display: block; font-size: 13px; font-weight: bold; color: #333; margin-bottom: 6px;">
+            ملاحظات وتفاصيل الإيقاف (اختياري)
+          </label>
+          <textarea [(ngModel)]="suspensionNotes" rows="3" placeholder="اكتب تفاصيل بحث الحالة أو سبب اتخاذ القرار..." 
+                    style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; font-size: 13px;"></textarea>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div style="background-color: #fafafa; border-top: 1px solid #eee; padding: 12px 20px; display: flex; justify-content: flex-end; gap: 10px;">
+        <button type="button" (click)="closeSuspendModal()" 
+                style="background: white; border: 1px solid #ccc; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px;">
+          إلغاء
+        </button>
+        <button type="button" (click)="confirmSuspend()" 
+                style="background-color: #c62828; color: white; border: none; padding: 8px 20px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold;">
+          ⛔ تأكيد إيقاف الملف وحظر الصرف
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: فصل فرد الأسرة واستقلاله بملف جديد -->
+  <!-- ========================================== -->
+  <div *ngIf="showSeparateModal" 
+       style="position: fixed; inset: 0; background: rgba(0,0,0,0.55); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 15px;">
+    <div style="background: white; border-radius: 10px; max-width: 540px; width: 100%; box-shadow: 0 10px 30px rgba(0,0,0,0.3); overflow: hidden; animation: fadeIn 0.2s ease;">
+      <!-- Header -->
+      <div style="background-color: #00695c; color: white; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="margin: 0; font-size: 18px; display: flex; align-items: center; gap: 8px;">
+          <span>✂️</span> فصل فرد من الأسرة واستقلال الملف
+        </h3>
+        <button type="button" (click)="closeSeparateModal()" 
+                style="background: transparent; border: none; color: white; font-size: 20px; cursor: pointer; line-height: 1;">✕</button>
+      </div>
+
+      <!-- Body -->
+      <div style="padding: 20px;">
+        <div style="background-color: #e0f2f1; border-right: 4px solid #00897b; padding: 12px; border-radius: 4px; margin-bottom: 18px; font-size: 13px; color: #004d40; line-height: 1.5;">
+          <strong>توضيح النظام:</strong> فصل هذا الفرد سيقوم بإلغاء قيده كمعال أو معيل من هذا الملف، مما يتيح له التعامل كشخص مستقل برقم قومي فريد دون تعارض مع ملف الأسرة السابق.
+        </div>
+
+        <div style="background: #fafafa; border: 1px solid #eee; border-radius: 6px; padding: 12px; margin-bottom: 15px; font-size: 14px;">
+          <div><strong>الاسم:</strong> {{ targetMemberToSeparate?.name }}</div>
+          <div style="margin-top: 4px;"><strong>الرقم القومي:</strong> <code>{{ targetMemberToSeparate?.nationalId }}</code></div>
+          <div style="margin-top: 4px; color: #555;">
+            <strong>صلة القرابة الحالية:</strong> {{ targetMemberToSeparate?.relationship }} ({{ targetMemberToSeparate?.memberType }})
+          </div>
+        </div>
+
+        <div style="margin-bottom: 15px;">
+          <label style="display: block; font-size: 13px; font-weight: bold; color: #333; margin-bottom: 6px;">
+            سبب الانفصال / الاستقلال *
+          </label>
+          <select [(ngModel)]="separateReason" 
+                  style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; font-size: 14px;">
+            <option value="استقلال بمسكن خاص وزواج">استقلال بمسكن خاص وزواج</option>
+            <option value="تكوين أسرة جديدة مستحقة">تكوين أسرة جديدة مستحقة</option>
+            <option value="بلوغ سن الرشد والعمل">بلوغ سن الرشد والعمل</option>
+            <option value="الانتقال لمحافظة أخرى">الانتقال لمحافظة أخرى</option>
+            <option value="فك ارتباط بملف الأسرة فقط">فك ارتباط بملف الأسرة فقط</option>
+          </select>
+        </div>
+
+        <div style="background-color: #fffde7; border: 1px solid #fff59d; border-radius: 6px; padding: 12px; margin-bottom: 10px;">
+          <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; font-size: 14px; font-weight: bold; color: #333;">
+            <input type="checkbox" [(ngModel)]="createNewProfileOnSeparate" style="margin-top: 3px; transform: scale(1.2);">
+            <div>
+              <span>فتح ملف حالة جديد ومستقل فوراً لهذا الفرد</span>
+              <p style="margin: 4px 0 0 0; font-weight: normal; font-size: 12px; color: #666;">
+                سيتم إنشاء ملف جديد باسمه ورقمه القومي في قائمة المستفيدين التابعة لجمعيتكم، لتبدأ مباشرة في إجراء البحث الاجتماعي وتلقي المساعدات له.
+              </p>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div style="background-color: #fafafa; border-top: 1px solid #eee; padding: 12px 20px; display: flex; justify-content: flex-end; gap: 10px;">
+        <button type="button" (click)="closeSeparateModal()" 
+                style="background: white; border: 1px solid #ccc; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px;">
+          إلغاء
+        </button>
+        <button type="button" (click)="confirmSeparateFamilyMember()" 
+                style="background-color: #00695c; color: white; border: none; padding: 8px 20px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold;">
+          ✂️ تأكيد الفصل والاستقلال
+        </button>
+      </div>
+    </div>
   </div>
 
 </div>

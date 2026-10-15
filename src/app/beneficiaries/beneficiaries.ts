@@ -70,6 +70,19 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
   supportTypes = ['طالب', 'مريض', 'طفل رضيع', 'مسن', 'عاطل عن العمل', 'من ذوي الهمم', 'ربة منزل', 'أخرى'];
   medicationFrequencies = ['أسبوعياً', 'كل أسبوعين', 'شهرياً', 'كل شهرين', 'كل 3 أشهر', 'حسب الحاجة / عند اللزوم'];
 
+  // إيقاف الملف وحظر الصرف
+  suspensionReasons: any[] = [];
+  showSuspendModal: boolean = false;
+  targetBeneficiaryToSuspend: any = null;
+  selectedSuspensionReasonTitle: string = '';
+  suspensionNotes: string = '';
+
+  // فصل فرد من الأسرة
+  showSeparateModal: boolean = false;
+  targetMemberToSeparate: any = null;
+  separateReason: string = 'استقلال بمسكن خاص وزواج';
+  createNewProfileOnSeparate: boolean = true;
+
   private querySub?: Subscription;
 
   constructor(
@@ -103,6 +116,10 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
     this.api.getAllInventory().subscribe((data: any[]) => { 
       this.inventory = data; 
       this.cdr.detectChanges(); 
+    });
+    this.api.getSuspensionReasons().subscribe((data: any[]) => {
+      this.suspensionReasons = data;
+      this.cdr.detectChanges();
     });
   }
 
@@ -345,6 +362,139 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
         this.cdr.detectChanges();
       }
     }
+  }
+
+  // ==========================================
+  // إيقاف الملف وحظر الصرف
+  // ==========================================
+  openSuspendModal(b: any, event?: Event) {
+    if (event) event.stopPropagation();
+    if (!this.canEditBeneficiary(b)) {
+      this.errorMessage = `🔒 غير مصرح: إيقاف الملف مقصور على الجمعية المسجلة له (${b.registeredByCharityName || 'الجمعية الأصلية'}).`;
+      this.cdr.detectChanges();
+      setTimeout(() => { this.errorMessage = ''; this.cdr.detectChanges(); }, 4000);
+      return;
+    }
+    this.targetBeneficiaryToSuspend = b;
+    this.selectedSuspensionReasonTitle = this.suspensionReasons.length > 0 ? this.suspensionReasons[0].title : 'وفاة صاحب الحالة';
+    this.suspensionNotes = '';
+    this.showSuspendModal = true;
+    this.cdr.detectChanges();
+  }
+
+  closeSuspendModal() {
+    this.showSuspendModal = false;
+    this.targetBeneficiaryToSuspend = null;
+    this.cdr.detectChanges();
+  }
+
+  confirmSuspend() {
+    if (!this.targetBeneficiaryToSuspend) return;
+    if (!this.selectedSuspensionReasonTitle) {
+      this.errorMessage = 'يرجى اختيار أو تحديد سبب الإيقاف.';
+      return;
+    }
+
+    const matchedReason = this.suspensionReasons.find(r => r.title === this.selectedSuspensionReasonTitle);
+
+    this.api.suspendBeneficiary(
+      this.targetBeneficiaryToSuspend.id,
+      this.selectedSuspensionReasonTitle,
+      matchedReason?.id,
+      this.suspensionNotes
+    ).subscribe({
+      next: (updated: any) => {
+        this.successMessage = `⛔ تم إيقاف ملف الحالة (${updated.name}) بنجاح، ولن يتمكن أي مستخدم من صرف أي مساعدة له.`;
+        this.closeSuspendModal();
+        this.loadData();
+        if (this.selectedBen && String(this.selectedBen.id) === String(updated.id)) {
+          this.selectedBen = updated;
+        }
+        setTimeout(() => { this.successMessage = ''; this.cdr.detectChanges(); }, 5000);
+      },
+      error: (err: any) => {
+        this.errorMessage = err.message || 'فشل في إيقاف الملف.';
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  reactivateBeneficiary(b: any, event?: Event) {
+    if (event) event.stopPropagation();
+    if (!this.canEditBeneficiary(b)) {
+      this.errorMessage = `🔒 غير مصرح: إعادة تفعيل الملف مقصورة على الجمعية المسجلة له (${b.registeredByCharityName || 'الجمعية الأصلية'}).`;
+      this.cdr.detectChanges();
+      setTimeout(() => { this.errorMessage = ''; this.cdr.detectChanges(); }, 4000);
+      return;
+    }
+
+    if (confirm(`هل أنت متأكد من رغبتك في إعادة تفعيل ملف الحالة (${b.name}) والسماح بالصرف له مجدداً؟`)) {
+      this.api.reactivateBeneficiary(b.id).subscribe({
+        next: (updated: any) => {
+          this.successMessage = `✅ تم إعادة تفعيل ملف المستفيد (${updated.name}) بنجاح، وأصبح متاحاً للصرف مجدداً.`;
+          this.loadData();
+          if (this.selectedBen && String(this.selectedBen.id) === String(updated.id)) {
+            this.selectedBen = updated;
+          }
+          setTimeout(() => { this.successMessage = ''; this.cdr.detectChanges(); }, 5000);
+        },
+        error: (err: any) => {
+          this.errorMessage = err.message || 'فشل في إعادة تفعيل الملف.';
+          this.cdr.detectChanges();
+        }
+      });
+    }
+  }
+
+  // ==========================================
+  // فصل فرد من ملف الأسرة لاستقلاله بملف جديد
+  // ==========================================
+  openSeparateModal(m: any) {
+    if (!this.canEditBeneficiary(this.selectedBen)) {
+      this.errorMessage = `🔒 غير مصرح: إدارة وفصل أفراد الأسرة مقصورة على الجمعية المسجلة للملف (${this.selectedBen?.registeredByCharityName || 'الجمعية الأصلية'}).`;
+      this.cdr.detectChanges();
+      setTimeout(() => { this.errorMessage = ''; this.cdr.detectChanges(); }, 4000);
+      return;
+    }
+    this.targetMemberToSeparate = m;
+    this.separateReason = 'استقلال بمسكن خاص وزواج';
+    this.createNewProfileOnSeparate = true;
+    this.showSeparateModal = true;
+    this.cdr.detectChanges();
+  }
+
+  closeSeparateModal() {
+    this.showSeparateModal = false;
+    this.targetMemberToSeparate = null;
+    this.cdr.detectChanges();
+  }
+
+  confirmSeparateFamilyMember() {
+    if (!this.selectedBen || !this.targetMemberToSeparate) return;
+
+    this.api.separateFamilyMember(
+      this.selectedBen.id,
+      this.targetMemberToSeparate.id,
+      this.createNewProfileOnSeparate,
+      this.separateReason
+    ).subscribe({
+      next: (res: any) => {
+        const actionDesc = this.createNewProfileOnSeparate 
+          ? `وفُتح له ملف حالة جديد ومستقل بنجاح (برقم قومي: ${this.targetMemberToSeparate.nationalId})!`
+          : 'وفك قيد رقمه القومي ليصبح متاحاً للتسجيل المستقل لاحقاً.';
+        this.successMessage = `✅ تم فصل فرد الأسرة (${this.targetMemberToSeparate.name}) من هذا الملف، ${actionDesc}`;
+        this.closeSeparateModal();
+        this.loadData();
+        if (res.updatedOriginalBeneficiary) {
+          this.selectedBen = res.updatedOriginalBeneficiary;
+        }
+        setTimeout(() => { this.successMessage = ''; this.cdr.detectChanges(); }, 6000);
+      },
+      error: (err: any) => {
+        this.errorMessage = err.message || 'فشل في فصل فرد الأسرة.';
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   printProfile() {

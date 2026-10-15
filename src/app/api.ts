@@ -704,6 +704,15 @@ export class Api {
       "details": "جمعية متخصصة في الخدمات الطبية والعلاجية وتوفير الأجهزة التعويضية مشهرة برقم 9012.",
       "phone": "01233445566"
     }
+  ],
+  "suspensionReasons": [
+    { "id": "sr1", "title": "وفاة صاحب الحالة", "description": "وفاة المستفيد المسجل بالملف وانتقال الرعاية أو إغلاق الملف", "isActive": true, "charityId": "c1", "charityName": "جمعية أبواب الخير" },
+    { "id": "sr2", "title": "تحسن الحالة المادية ووجود دخل كافٍ", "description": "تحسن الوضع الاقتصادي للأسرة وتوفر مصدر دخل ثابت ومستقر", "isActive": true, "charityId": "c1", "charityName": "جمعية أبواب الخير" },
+    { "id": "sr3", "title": "تغيير محل الإقامة خارج النطاق الجغرافي", "description": "انتقال الأسرة لمحافظة أو منطقة سكنية خارج النطاق الجغرافي للجمعية", "isActive": true, "charityId": "c1", "charityName": "جمعية أبواب الخير" },
+    { "id": "sr4", "title": "ازدواجية الصرف والاستفادة من جهات أخرى", "description": "ثبوت استلام مساعدات متكررة وكافية من جهات أو جمعيات شريكة أخرى", "isActive": true, "charityId": "c1", "charityName": "جمعية أبواب الخير" },
+    { "id": "sr5", "title": "زواج الفتاة / استقلال الحالة", "description": "زواج الحالة المستفيدة أو استقلالها بأسرة جديدة", "isActive": true, "charityId": "c1", "charityName": "جمعية أبواب الخير" },
+    { "id": "sr6", "title": "عدم صحة البيانات المقدمة في البحث", "description": "اكتشاف تضارب أو عدم دقة في بيانات الدخل أو الممتلكات", "isActive": true, "charityId": "c1", "charityName": "جمعية أبواب الخير" },
+    { "id": "sr7", "title": "عدم التجاوب مع البحث الميداني الدوري", "description": "تعذر التواصل مع الحالة ورفض استقبال الباحث الاجتماعي لإعادة البحث", "isActive": true, "charityId": "c1", "charityName": "جمعية أبواب الخير" }
   ]
 };
     const localDb = localStorage.getItem('charity_db');
@@ -723,6 +732,12 @@ export class Api {
     } else {
       // Ensure all collections have charityId tags
       let modified = false;
+
+      // Ensure default suspension reasons exist
+      if (!this.db.suspensionReasons || !Array.isArray(this.db.suspensionReasons) || this.db.suspensionReasons.length === 0) {
+        this.db.suspensionReasons = defaultData.suspensionReasons;
+        modified = true;
+      }
 
       // Ensure default charities exist
       if (!this.db.charities.some((c: any) => c.id === 'c2')) {
@@ -962,6 +977,130 @@ export class Api {
     throw new Error('المستفيد غير موجود');
   }
 
+  suspendBeneficiary(beneficiaryId: string, reasonTitle: string, reasonId?: string, notes?: string): Observable<any> {
+    const ben = (this.db.beneficiaries || []).find((b: any) => String(b.id) === String(beneficiaryId));
+    if (!ben) throw new Error('المستفيد غير موجود');
+
+    const active = this.getActiveCharity();
+    if (ben.registeredByCharityId && ben.registeredByCharityId !== active.id) {
+      throw new Error(`غير مصرح: إيقاف الملف مقصور على الجمعية المسجلة له (${ben.registeredByCharityName || 'الجمعية الأصلية'}).`);
+    }
+
+    ben.isSuspended = true;
+    ben.status = 'موقوف';
+    ben.suspensionReasonId = reasonId || null;
+    ben.suspensionReasonTitle = reasonTitle;
+    ben.suspensionNotes = notes || '';
+    ben.suspendedAt = new Date().toISOString();
+    ben.suspendedByCharityId = active.id;
+    ben.suspendedByCharityName = active.name;
+
+    this.save();
+    return of(ben);
+  }
+
+  reactivateBeneficiary(beneficiaryId: string): Observable<any> {
+    const ben = (this.db.beneficiaries || []).find((b: any) => String(b.id) === String(beneficiaryId));
+    if (!ben) throw new Error('المستفيد غير موجود');
+
+    const active = this.getActiveCharity();
+    if (ben.registeredByCharityId && ben.registeredByCharityId !== active.id) {
+      throw new Error(`غير مصرح: إعادة تفعيل الملف مقصورة على الجمعية المسجلة له (${ben.registeredByCharityName || 'الجمعية الأصلية'}).`);
+    }
+
+    ben.isSuspended = false;
+    ben.status = 'مستحق فعال';
+    ben.suspensionNotes = (ben.suspensionNotes || '') + ` [أعيد التفعيل بتاريخ ${new Date().toLocaleDateString('ar-EG')}]`;
+
+    this.save();
+    return of(ben);
+  }
+
+  separateFamilyMember(beneficiaryId: string, memberId: string, createNewProfile: boolean = true, reason?: string): Observable<any> {
+    const ben = (this.db.beneficiaries || []).find((b: any) => String(b.id) === String(beneficiaryId));
+    if (!ben) throw new Error('المستفيد غير موجود');
+
+    const active = this.getActiveCharity();
+    if (ben.registeredByCharityId && ben.registeredByCharityId !== active.id) {
+      throw new Error(`غير مصرح: إدارة وفصل أفراد الأسرة مقصورة على الجمعية المسجلة للملف (${ben.registeredByCharityName}).`);
+    }
+
+    if (!ben.familyMembers) ben.familyMembers = [];
+    const idx = ben.familyMembers.findIndex((m: any) => String(m.id) === String(memberId));
+    if (idx === -1) throw new Error('فرد الأسرة غير موجود بالملف');
+
+    const member = ben.familyMembers[idx];
+    ben.familyMembers.splice(idx, 1);
+    ben.familyCount = Math.max(1, (ben.familyCount || 1) - 1);
+
+    let newBen = null;
+    if (createNewProfile) {
+      newBen = {
+        id: 'b_' + Date.now().toString(),
+        nationalId: member.nationalId,
+        name: member.name,
+        phone: ben.phone,
+        category: 'حالات منفصلة / مستقلة',
+        maritalStatus: 'أعزب',
+        familyCount: 1,
+        address: ben.address,
+        housing: ben.housing,
+        healthIssues: member.healthStatus || '',
+        researchNotes: `تم فصل الحالة واستقلالها من ملف الأسرة (${ben.name}). سبب الفصل: ${reason || 'استقلال بملف خاص'}`,
+        status: 'مستحق فعال',
+        incomeSource: member.incomeSource || '',
+        monthlyIncome: member.incomeAmount || null,
+        hasLandOrProperty: false,
+        landOrPropertyDetails: '',
+        hasGovernmentPension: false,
+        governmentPensionDetails: '',
+        hasChronicDisease: false,
+        chronicDiseaseDetails: '',
+        needsPeriodicMedication: false,
+        periodicMedicationDetails: '',
+        medicationFrequency: '',
+        familyMembers: [],
+        registeredByCharityId: active.id,
+        registeredByCharityName: active.name
+      };
+
+      this.db.beneficiaries.unshift(newBen);
+    }
+
+    this.save();
+    return of({ updatedOriginalBeneficiary: ben, newIndependentBeneficiary: newBen });
+  }
+
+  // ==========================================
+  // Suspension Reasons Management
+  // ==========================================
+  getSuspensionReasons(): Observable<any[]> {
+    return of(this.db.suspensionReasons || []);
+  }
+
+  addSuspensionReason(data: any): Observable<any> {
+    if (!this.db.suspensionReasons) this.db.suspensionReasons = [];
+    const active = this.getActiveCharity();
+    const newReason = {
+      id: 'sr_' + Date.now().toString(),
+      title: (data.title || '').trim(),
+      description: (data.description || '').trim(),
+      isActive: true,
+      charityId: active.id,
+      charityName: active.name
+    };
+    this.db.suspensionReasons.push(newReason);
+    this.save();
+    return of(newReason);
+  }
+
+  deleteSuspensionReason(id: string): Observable<any> {
+    if (!this.db.suspensionReasons) this.db.suspensionReasons = [];
+    this.db.suspensionReasons = this.db.suspensionReasons.filter((r: any) => String(r.id) !== String(id));
+    this.save();
+    return of({ success: true });
+  }
+
   // ==========================================
   // 2. Distributions (CROSS-CHARITY AID RECORD)
   // ==========================================
@@ -1000,6 +1139,13 @@ export class Api {
   }
 
   addDistribution(data: any): Observable<any> {
+    // الحظر الصارم للصرف على المستفيد الموقوف
+    const ben = (this.db.beneficiaries || []).find((b: any) => String(b.id) === String(data.beneficiaryId));
+    if (ben && (ben.isSuspended || ben.status === 'موقوف')) {
+      const reasonMsg = ben.suspensionReasonTitle ? ` (بسبب: ${ben.suspensionReasonTitle})` : '';
+      throw new Error(`⛔ محظور الصرف: ملف هذا المستفيد (${ben.name}) موقوف حالياً وغير فعال${reasonMsg}! لا يمكن تسجيل أي حركة صرف له حتى يتم إعادة تفعيل الملف.`);
+    }
+
     data.id = 'dist_' + Date.now().toString();
     if (!data.date) data.date = new Date().toISOString().split('T')[0];
 
