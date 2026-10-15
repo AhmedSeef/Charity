@@ -95,6 +95,58 @@ export class Api {
       "housing": "إيجار قديم",
       "healthIssues": "ضعف إبصار ومشاكل بالرمد",
       "researchNotes": "أسرة تعول 3 أطفال، عائل الأسرة باليومية وبحاجة لمساعدات غذائية ونقدية دورية.",
+      "incomeSource": "عامل يومية بالمعمار",
+      "monthlyIncome": 2800,
+      "hasLandOrProperty": false,
+      "landOrPropertyDetails": "",
+      "hasGovernmentPension": true,
+      "governmentPensionDetails": "معاش تكافل وكرامة 750 ج.م شهرياً",
+      "hasChronicDisease": true,
+      "chronicDiseaseDetails": "ضعف إبصار ومشاكل بالرمد وارتفاع ضغط الدم",
+      "needsPeriodicMedication": true,
+      "periodicMedicationDetails": "قطرات ترطيب وحفظ ضغط العين وعلاج ضغط",
+      "medicationFrequency": "شهرياً",
+      "familyMembers": [
+        {
+          "id": "fm_b1_1",
+          "nationalId": "28804041234568",
+          "name": "مريم كمال السيد",
+          "relationship": "زوجة",
+          "memberType": "معال",
+          "hasIncome": false,
+          "incomeAmount": null,
+          "incomeSource": "",
+          "supportType": "ربة منزل",
+          "healthStatus": "جيدة",
+          "notes": "ربة منزل ترعى الأطفال"
+        },
+        {
+          "id": "fm_b1_2",
+          "nationalId": "31502021234569",
+          "name": "يوسف أحمد محمود",
+          "relationship": "ابن",
+          "memberType": "معال",
+          "hasIncome": false,
+          "incomeAmount": null,
+          "incomeSource": "",
+          "supportType": "طالب",
+          "healthStatus": "جيدة",
+          "notes": "طالب بالمرحلة الابتدائية"
+        },
+        {
+          "id": "fm_b1_3",
+          "nationalId": "31806061234560",
+          "name": "نور أحمد محمود",
+          "relationship": "ابنة",
+          "memberType": "معال",
+          "hasIncome": false,
+          "incomeAmount": null,
+          "incomeSource": "",
+          "supportType": "طفل",
+          "healthStatus": "جيدة",
+          "notes": "طفلة في سن الحضانة"
+        }
+      ],
       "registeredByCharityId": "c1",
       "registeredByCharityName": "جمعية أبواب الخير"
     },
@@ -111,6 +163,32 @@ export class Api {
       "housing": "سكن مشترك",
       "healthIssues": "مريضة سكر وتحتاج أدوية شهرية وكرسي متحرك",
       "researchNotes": "مسنة تعيش مع ابنتها، لا يوجد دخل ثابت سوى معاش تكافل وكرامة.",
+      "incomeSource": "لا يوجد عمل (مسنة)",
+      "monthlyIncome": 0,
+      "hasLandOrProperty": false,
+      "landOrPropertyDetails": "",
+      "hasGovernmentPension": true,
+      "governmentPensionDetails": "معاش ضمان اجتماعي وتكافل 600 ج.م",
+      "hasChronicDisease": true,
+      "chronicDiseaseDetails": "مرض السكري المتقدم والتهاب المفاصل وعجز حركي",
+      "needsPeriodicMedication": true,
+      "periodicMedicationDetails": "أنسولين ومسكنات وأدوية ضبط السكر",
+      "medicationFrequency": "شهرياً",
+      "familyMembers": [
+        {
+          "id": "fm_b2_1",
+          "nationalId": "29801017654322",
+          "name": "هناء محمود إسماعيل",
+          "relationship": "ابنة",
+          "memberType": "معيل",
+          "hasIncome": true,
+          "incomeAmount": 1500,
+          "incomeSource": "خياطة وتطريز منزلي",
+          "supportType": "أخرى",
+          "healthStatus": "سليمة",
+          "notes": "ابنتها المعيلة وتساعد في مصاريف البيت والأدوية"
+        }
+      ],
       "registeredByCharityId": "c1",
       "registeredByCharityName": "جمعية أبواب الخير"
     },
@@ -781,13 +859,78 @@ export class Api {
     return of(this.db.beneficiaries || []);
   }
 
+  private validateNationalIdUniqueness(data: any, currentId?: string): void {
+    const benNatId = (data.nationalId || '').trim();
+    if (!benNatId) {
+      throw new Error('الرقم القومي لصاحب الملف مطلوب!');
+    }
+
+    // 1. فحص عدم تكرار الرقم القومي مع أي مستفيد آخر
+    const conflictBen = (this.db.beneficiaries || []).find(
+      (b: any) => b.nationalId === benNatId && String(b.id) !== String(currentId)
+    );
+    if (conflictBen) {
+      throw new Error(`الرقم القومي (${benNatId}) مسجل مسبقاً لمستفيد آخر باسم: ${conflictBen.name}!`);
+    }
+
+    // 2. فحص عدم تسجيل الرقم القومي لصاحب الملف كفرد أسرة في ملف آخر
+    for (const b of this.db.beneficiaries || []) {
+      if (String(b.id) === String(currentId)) continue;
+      if (b.familyMembers && Array.isArray(b.familyMembers)) {
+        const conflictFm = b.familyMembers.find((m: any) => (m.nationalId || '').trim() === benNatId);
+        if (conflictFm) {
+          throw new Error(`الرقم القومي (${benNatId}) مسجل مسبقاً كفرد أسرة تابع لملف (${b.name}) باسم: ${conflictFm.name}!`);
+        }
+      }
+    }
+
+    // 3. فحص أفراد الأسرة
+    if (data.familyMembers && Array.isArray(data.familyMembers)) {
+      const seenFm = new Set<string>();
+      for (const m of data.familyMembers) {
+        const mNatId = (m.nationalId || '').trim();
+        if (!mNatId) {
+          throw new Error(`الرقم القومي لفرد الأسرة (${m.name || 'بدون اسم'}) مطلوب!`);
+        }
+        if (mNatId === benNatId) {
+          throw new Error(`لا يمكن أن يتطابق الرقم القومي لفرد الأسرة (${m.name}) مع الرقم القومي لصاحب الملف!`);
+        }
+        if (seenFm.has(mNatId)) {
+          throw new Error(`الرقم القومي (${mNatId}) مكرر أكثر من مرة بين أفراد الأسرة!`);
+        }
+        seenFm.add(mNatId);
+
+        // فحص عدم تسجيل فرد الأسرة كصاحب ملف مستقل مسبقاً
+        const benExists = (this.db.beneficiaries || []).find(
+          (b: any) => b.nationalId === mNatId && String(b.id) !== String(currentId)
+        );
+        if (benExists) {
+          throw new Error(`الرقم القومي لفرد الأسرة (${m.name} - ${mNatId}) مسجل مسبقاً كصاحب ملف مستقل باسم: ${benExists.name}!`);
+        }
+
+        // فحص عدم تسجيل فرد الأسرة في أسرة أخرى
+        for (const b of this.db.beneficiaries || []) {
+          if (String(b.id) === String(currentId)) continue;
+          if (b.familyMembers && Array.isArray(b.familyMembers)) {
+            const fmExists = b.familyMembers.find((item: any) => (item.nationalId || '').trim() === mNatId);
+            if (fmExists) {
+              throw new Error(`الرقم القومي (${mNatId}) لفرد الأسرة (${m.name}) مسجل مسبقاً في ملف أسرة (${b.name})!`);
+            }
+          }
+        }
+      }
+    }
+  }
+
   addBeneficiary(data: any): Observable<any> {
+    this.validateNationalIdUniqueness(data);
     data.id = 'b_' + Date.now().toString();
     const active = this.getActiveCharity();
     if (!data.registeredByCharityId) {
       data.registeredByCharityId = active.id;
       data.registeredByCharityName = active.name;
     }
+    if (!data.familyMembers) data.familyMembers = [];
     this.db.beneficiaries.unshift(data);
     this.save();
     return of(data);
@@ -805,6 +948,8 @@ export class Api {
         console.error(errorMsg);
         throw new Error(errorMsg);
       }
+
+      this.validateNationalIdUniqueness(data, existing.id);
 
       this.db.beneficiaries[idx] = {
         ...data,

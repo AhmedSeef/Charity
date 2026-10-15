@@ -47,12 +47,28 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
     housing: 'إيجار جديد',
     healthIssues: '',
     researchNotes: '',
-    status: 'مستحق فعال' 
+    status: 'مستحق فعال',
+    incomeSource: '',
+    monthlyIncome: null,
+    hasLandOrProperty: false,
+    landOrPropertyDetails: '',
+    hasGovernmentPension: false,
+    governmentPensionDetails: '',
+    hasChronicDisease: false,
+    chronicDiseaseDetails: '',
+    needsPeriodicMedication: false,
+    periodicMedicationDetails: '',
+    medicationFrequency: '',
+    familyMembers: []
   };
 
   categories = ['أرامل وأيتام', 'مرضى ومسنين', 'غارمين', 'حالات طوارئ', 'طالب علم'];
   maritalStatuses = ['متزوج', 'أرمل', 'مطلق', 'أعزب'];
   housingTypes = ['إيجار جديد', 'إيجار قديم', 'ملك', 'سكن مشترك', 'سكن متهالك/يحتاج ترميم'];
+  relationships = ['زوج/زوجة', 'ابن', 'ابنة', 'والد', 'والدة', 'أخ/أخت', 'حفيد', 'جد/جدة', 'أخرى'];
+  memberTypes = ['معال', 'معيل'];
+  supportTypes = ['طالب', 'مريض', 'طفل رضيع', 'مسن', 'عاطل عن العمل', 'من ذوي الهمم', 'ربة منزل', 'أخرى'];
+  medicationFrequencies = ['أسبوعياً', 'كل أسبوعين', 'شهرياً', 'كل شهرين', 'كل 3 أشهر', 'حسب الحاجة / عند اللزوم'];
 
   private querySub?: Subscription;
 
@@ -112,7 +128,10 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
             this.router.navigate([], { relativeTo: this.route, queryParams: { mode: 'detail', id: found.id } });
             return;
           }
-          this.currentBen = { ...found };
+          this.currentBen = { 
+            ...found, 
+            familyMembers: (found.familyMembers || []).map((m: any) => ({ ...m })) 
+          };
           this.formMode = 'edit';
           this.viewMode = 'form';
         } else {
@@ -204,6 +223,48 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
     return this.filteredBeneficiaries.slice(start, start + this.pageSize);
   }
 
+  addFamilyMember() {
+    if (!this.currentBen.familyMembers) {
+      this.currentBen.familyMembers = [];
+    }
+    this.currentBen.familyMembers.push({
+      id: 'fm_' + Date.now().toString() + '_' + Math.floor(Math.random() * 1000),
+      nationalId: '',
+      name: '',
+      relationship: 'ابن',
+      memberType: 'معال',
+      hasIncome: false,
+      incomeAmount: null,
+      incomeSource: '',
+      supportType: 'طالب',
+      healthStatus: '',
+      notes: ''
+    });
+    this.syncFamilyCount();
+  }
+
+  removeFamilyMember(index: number) {
+    if (this.currentBen.familyMembers && this.currentBen.familyMembers.length > index) {
+      this.currentBen.familyMembers.splice(index, 1);
+      this.syncFamilyCount();
+    }
+  }
+
+  syncFamilyCount() {
+    const membersCount = this.currentBen.familyMembers ? this.currentBen.familyMembers.length : 0;
+    this.currentBen.familyCount = membersCount + 1;
+  }
+
+  get dependentsCount(): number {
+    const list = (this.viewMode === 'detail' ? this.selectedBen?.familyMembers : this.currentBen?.familyMembers) || [];
+    return list.filter((m: any) => m.memberType === 'معال').length;
+  }
+
+  get supportersCount(): number {
+    const list = (this.viewMode === 'detail' ? this.selectedBen?.familyMembers : this.currentBen?.familyMembers) || [];
+    return list.filter((m: any) => m.memberType === 'معيل').length;
+  }
+
   resetForm() {
     this.currentBen = { 
       id: null,
@@ -217,7 +278,19 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
       housing: 'إيجار جديد', 
       healthIssues: '', 
       researchNotes: '', 
-      status: 'مستحق فعال' 
+      status: 'مستحق فعال',
+      incomeSource: '',
+      monthlyIncome: null,
+      hasLandOrProperty: false,
+      landOrPropertyDetails: '',
+      hasGovernmentPension: false,
+      governmentPensionDetails: '',
+      hasChronicDisease: false,
+      chronicDiseaseDetails: '',
+      needsPeriodicMedication: false,
+      periodicMedicationDetails: '',
+      medicationFrequency: '',
+      familyMembers: []
     };
   }
 
@@ -242,24 +315,35 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
             setTimeout(() => { this.successMessage = ''; this.cdr.detectChanges(); }, 4000);
           },
           error: (err: any) => {
-            this.errorMessage = err.message || '⚠️ غير مصرح بتعديل هذا الملف.';
+            this.errorMessage = err.message || '⚠️ حدث خطأ أثناء التعديل.';
             this.cdr.detectChanges();
           }
         });
       } catch (e: any) {
-        this.errorMessage = e.message || '⚠️ غير مصرح بتعديل هذا الملف.';
+        this.errorMessage = e.message || '⚠️ حدث خطأ أثناء التعديل.';
         this.cdr.detectChanges();
       }
     } else {
-      this.api.addBeneficiary(this.currentBen).subscribe((added: any) => {
-        this.successMessage = `✅ تم تسجيل وفتح ملف الحالة الجديد (${added.name}) بنجاح!`;
-        this.api.getBeneficiaries().subscribe((data: any[]) => {
-          this.beneficiaries = data;
-          this.openDetail(added);
-          this.cdr.detectChanges();
+      try {
+        this.api.addBeneficiary(this.currentBen).subscribe({
+          next: (added: any) => {
+            this.successMessage = `✅ تم تسجيل وفتح ملف الحالة الجديد (${added.name}) بنجاح!`;
+            this.api.getBeneficiaries().subscribe((data: any[]) => {
+              this.beneficiaries = data;
+              this.openDetail(added);
+              this.cdr.detectChanges();
+            });
+            setTimeout(() => { this.successMessage = ''; this.cdr.detectChanges(); }, 4000);
+          },
+          error: (err: any) => {
+            this.errorMessage = err.message || '⚠️ حدث خطأ أثناء الحفظ.';
+            this.cdr.detectChanges();
+          }
         });
-        setTimeout(() => { this.successMessage = ''; this.cdr.detectChanges(); }, 4000);
-      });
+      } catch (e: any) {
+        this.errorMessage = e.message || '⚠️ حدث خطأ أثناء الحفظ.';
+        this.cdr.detectChanges();
+      }
     }
   }
 

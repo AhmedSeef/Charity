@@ -69,6 +69,12 @@
           <span style="background-color: #e8f5e9; color: #2e7d32; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: bold;">
             {{ selectedBen.status || 'مستحق فعال' }}
           </span>
+          <span *ngIf="selectedBen.hasChronicDisease" style="background-color: #fce4ec; color: #c2185b; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; border: 1px solid #f8bbd0;">
+            🩺 مريض مزمن
+          </span>
+          <span *ngIf="selectedBen.needsPeriodicMedication" style="background-color: #e1f5fe; color: #0288d1; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; border: 1px solid #b3e5fc;">
+            💊 علاج دوري ({{ selectedBen.medicationFrequency || 'شهرياً' }})
+          </span>
           <span *ngIf="selectedBen.registeredByCharityName" 
                 style="background-color: #ede7f6; color: #4527a0; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; border: 1px solid #d1c4e9;">
             🏢 مسجل لدى: {{ selectedBen.registeredByCharityName }}
@@ -76,14 +82,14 @@
         </div>
 
         <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 10px; color: #555; font-size: 14px;">
-          <span><strong>الرقم القومي:</strong> {{ selectedBen.nationalId }}</span>
+          <span><strong>الرقم القومي:</strong> <code style="font-size: 14px; background: #f5f5f5; padding: 2px 6px; border-radius: 4px;">{{ selectedBen.nationalId }}</code></span>
           <span><strong>الهاتف:</strong> {{ selectedBen.phone }}</span>
           <span><strong>العنوان:</strong> {{ selectedBen.address }}</span>
         </div>
       </div>
     </div>
 
-    <!-- شبكة بطاقات تفاصيل الملف الاجتماعي -->
+    <!-- شبكة بطاقات تفاصيل الملف الاجتماعي والمالي والصحي -->
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; margin-bottom: 25px;">
       
       <!-- بطاقة الحالة الأسرية والمعيشية -->
@@ -93,12 +99,17 @@
         </h3>
         <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
           <tr style="border-bottom: 1px solid #eee;">
-            <td style="padding: 8px 0; color: #666; width: 130px;">الحالة الاجتماعية:</td>
+            <td style="padding: 8px 0; color: #666; width: 140px;">الحالة الاجتماعية:</td>
             <td style="padding: 8px 0; font-weight: bold; color: #333;">{{ selectedBen.maritalStatus }}</td>
           </tr>
           <tr style="border-bottom: 1px solid #eee;">
-            <td style="padding: 8px 0; color: #666;">عدد أفراد الأسرة:</td>
-            <td style="padding: 8px 0; font-weight: bold; color: #333;">{{ selectedBen.familyCount }} أفراد</td>
+            <td style="padding: 8px 0; color: #666;">إجمالي أفراد الأسرة:</td>
+            <td style="padding: 8px 0; font-weight: bold; color: #333;">
+              {{ selectedBen.familyCount }} أفراد
+              <span *ngIf="selectedBen.familyMembers?.length" style="color: #666; font-size: 12px; font-weight: normal;">
+                (معالين: {{ dependentsCount }} | معيلين: {{ supportersCount }})
+              </span>
+            </td>
           </tr>
           <tr style="border-bottom: 1px solid #eee;">
             <td style="padding: 8px 0; color: #666;">طبيعة السكن:</td>
@@ -111,26 +122,151 @@
         </table>
       </div>
 
-      <!-- بطاقة الحالة الصحية وتوصيات الباحث -->
+      <!-- بطاقة الموقف المالي والدخل والممتلكات -->
       <div style="background: white; border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.04);">
         <h3 style="margin: 0 0 15px 0; color: #00695c; border-bottom: 2px solid #b2dfdb; padding-bottom: 8px; font-size: 16px;">
-          🩺 الحالة الصحية وتقرير البحث
+          💼 الموقف المالي والممتلكات
         </h3>
-        <div style="margin-bottom: 12px;">
-          <div style="font-size: 13px; color: #666; margin-bottom: 4px;">الأمراض المزمنة والإعاقات:</div>
-          <div style="background: #fafafa; padding: 10px; border-radius: 6px; border: 1px solid #eee; font-weight: bold; color: #333;">
-            {{ selectedBen.healthIssues || 'لا توجد أمراض أو إعاقات مسجلة' }}
-          </div>
-        </div>
+        <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+          <tr style="border-bottom: 1px solid #eee;">
+            <td style="padding: 8px 0; color: #666; width: 140px;">مصدر الدخل:</td>
+            <td style="padding: 8px 0; font-weight: bold; color: #333;">{{ selectedBen.incomeSource || 'لا يوجد دخل ثابت / يومية' }}</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #eee;">
+            <td style="padding: 8px 0; color: #666;">الدخل الشهري:</td>
+            <td style="padding: 8px 0; font-weight: bold; color: #2e7d32;">
+              {{ selectedBen.monthlyIncome ? (selectedBen.monthlyIncome | number:'1.0-0') + ' ج.م' : 'بدون دخل منتظم' }}
+            </td>
+          </tr>
+          <tr style="border-bottom: 1px solid #eee;">
+            <td style="padding: 8px 0; color: #666;">حيازة أراضي/عقارات:</td>
+            <td style="padding: 8px 0; font-weight: bold; color: #333;">
+              <span *ngIf="selectedBen.hasLandOrProperty" style="color: #d32f2f;">نعم ({{ selectedBen.landOrPropertyDetails || 'يملك أراضي/أملاك' }})</span>
+              <span *ngIf="!selectedBen.hasLandOrProperty" style="color: #2e7d32;">لا يملك أي أراضي أو أملاك</span>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; color: #666;">معاش حكومي / تكافل:</td>
+            <td style="padding: 8px 0; font-weight: bold; color: #333;">
+              <span *ngIf="selectedBen.hasGovernmentPension" style="color: #0288d1;">نعم ({{ selectedBen.governmentPensionDetails || 'معاش حكومي/تكافل' }})</span>
+              <span *ngIf="!selectedBen.hasGovernmentPension" style="color: #757575;">لا يتقاضى أي معاش</span>
+            </td>
+          </tr>
+        </table>
+      </div>
 
-        <div>
-          <div style="font-size: 13px; color: #666; margin-bottom: 4px;">ملاحظات وتوصيات الباحث الاجتماعي:</div>
-          <div style="background: #fafafa; padding: 10px; border-radius: 6px; border: 1px solid #eee; color: #444; line-height: 1.5;">
-            {{ selectedBen.researchNotes || 'لم تُدون أي ملاحظات بحثية إضافية' }}
-          </div>
+      <!-- بطاقة الملف الصحي والأمراض المزمنة والعلاج الدوري -->
+      <div style="background: white; border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.04);">
+        <h3 style="margin: 0 0 15px 0; color: #00695c; border-bottom: 2px solid #b2dfdb; padding-bottom: 8px; font-size: 16px;">
+          🩺 الملف الصحي والأدوية الدورية
+        </h3>
+        <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+          <tr style="border-bottom: 1px solid #eee;">
+            <td style="padding: 8px 0; color: #666; width: 140px;">أمراض مزمنة:</td>
+            <td style="padding: 8px 0; font-weight: bold; color: #333;">
+              <span *ngIf="selectedBen.hasChronicDisease" style="color: #c2185b;">{{ selectedBen.chronicDiseaseDetails || 'يعاني من مرض مزمن' }}</span>
+              <span *ngIf="!selectedBen.hasChronicDisease" style="color: #2e7d32;">سليم / لا توجد أمراض مزمنة</span>
+            </td>
+          </tr>
+          <tr style="border-bottom: 1px solid #eee;">
+            <td style="padding: 8px 0; color: #666;">احتياج علاج دوري:</td>
+            <td style="padding: 8px 0; font-weight: bold; color: #333;">
+              <span *ngIf="selectedBen.needsPeriodicMedication" style="color: #0288d1;">
+                نعم ({{ selectedBen.periodicMedicationDetails || 'علاج مستمر' }})
+              </span>
+              <span *ngIf="!selectedBen.needsPeriodicMedication" style="color: #757575;">لا يحتاج علاج دوري</span>
+            </td>
+          </tr>
+          <tr style="border-bottom: 1px solid #eee;">
+            <td style="padding: 8px 0; color: #666;">معدل صرف العلاج:</td>
+            <td style="padding: 8px 0; font-weight: bold; color: #333;">
+              {{ selectedBen.medicationFrequency || 'غير محدد' }}
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; color: #666;">ملاحظات صحية أخرى:</td>
+            <td style="padding: 8px 0; color: #555;">{{ selectedBen.healthIssues || '—' }}</td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- بطاقة تقرير وتوصيات الباحث الميداني -->
+      <div style="background: white; border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.04);">
+        <h3 style="margin: 0 0 15px 0; color: #00695c; border-bottom: 2px solid #b2dfdb; padding-bottom: 8px; font-size: 16px;">
+          📝 تقرير وتوصيات الباحث الميداني
+        </h3>
+        <div style="background: #fafafa; padding: 12px; border-radius: 6px; border: 1px solid #eee; color: #333; line-height: 1.6; font-size: 14px; min-height: 120px;">
+          {{ selectedBen.researchNotes || 'لم تُدون أي توصيات بحثية إضافية بعد.' }}
         </div>
       </div>
 
+    </div>
+
+    <!-- جدول أفراد الأسرة، المعالين والمعيلين -->
+    <div style="background: white; border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); margin-bottom: 25px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #004d40; padding-bottom: 10px; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+        <div>
+          <h3 style="margin: 0; color: #004d40; font-size: 17px; display: flex; align-items: center; gap: 8px;">
+            <span>👨‍👩‍👧‍👦 سجل أفراد الأسرة المسجلين بالملف (المعالين والمعيلين)</span>
+            <span style="background: #e0f2f1; color: #00695c; font-size: 12px; padding: 2px 10px; border-radius: 12px; font-weight: bold;">
+              إجمالي: {{ selectedBen.familyMembers?.length || 0 }} فرد
+            </span>
+          </h3>
+          <p style="margin: 4px 0 0 0; color: #666; font-size: 13px;">
+            تدقيق الأرقام القومية وصلة القرابة ومصادر الدخل لكل فرد لمنع ازدواجية الصرف عبر الجمعيات.
+          </p>
+        </div>
+      </div>
+
+      <div *ngIf="!selectedBen.familyMembers || selectedBen.familyMembers.length === 0" 
+           style="text-align: center; padding: 25px; color: #777; background: #fafafa; border-radius: 6px; border: 1px dashed #ccc;">
+        لم يتم تسجيل أفراد أسرة تابعين لهذا الملف حتى الآن.
+      </div>
+
+      <div *ngIf="selectedBen.familyMembers && selectedBen.familyMembers.length > 0" style="overflow-x: auto;">
+        <table border="1" cellpadding="8" cellspacing="0" style="width: 100%; border-collapse: collapse; font-size: 14px; text-align: right;">
+          <thead>
+            <tr style="background-color: #f1f8e9; color: #33691e;">
+              <th style="width: 40px; text-align: center;">#</th>
+              <th>الاسم الرباعي</th>
+              <th>الرقم القومي (14 رقم)</th>
+              <th>صلة القرابة</th>
+              <th style="text-align: center;">التصنيف</th>
+              <th style="text-align: center;">نوع الاحتياج/الدعم</th>
+              <th>الدخل ومصدره</th>
+              <th>ملاحظات</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let m of selectedBen.familyMembers; let idx = index" style="border-bottom: 1px solid #eee;">
+              <td style="text-align: center; color: #888;">{{ idx + 1 }}</td>
+              <td><strong>{{ m.name }}</strong></td>
+              <td><code style="background: #f5f5f5; padding: 2px 6px; border-radius: 4px;">{{ m.nationalId }}</code></td>
+              <td>{{ m.relationship }}</td>
+              <td style="text-align: center;">
+                <span [style.background]="m.memberType === 'معيل' ? '#e8f5e9' : '#fff3e0'" 
+                      [style.color]="m.memberType === 'معيل' ? '#2e7d32' : '#e65100'" 
+                      style="padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: bold;">
+                  {{ m.memberType }}
+                </span>
+              </td>
+              <td style="text-align: center;">
+                <span style="background: #e0f7fa; color: #006064; padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: 500;">
+                  {{ m.supportType }}
+                </span>
+              </td>
+              <td>
+                <span *ngIf="m.hasIncome" style="color: #2e7d32; font-weight: bold;">
+                  {{ m.incomeAmount ? (m.incomeAmount | number:'1.0-0') + ' ج.م' : 'له دخل' }}
+                  <span *ngIf="m.incomeSource" style="color: #666; font-weight: normal; font-size: 12px;">({{ m.incomeSource }})</span>
+                </span>
+                <span *ngIf="!m.hasIncome" style="color: #757575;">بدون دخل</span>
+              </td>
+              <td style="color: #666; font-size: 13px;">{{ m.notes || m.healthStatus || '—' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <!-- السجل الكامل لحركات الصرف والمساعدات (الشبكة الموحدة) -->
@@ -148,41 +284,25 @@
           </p>
         </div>
         
-        <span style="background: #e0f2f1; color: #004d40; padding: 4px 12px; border-radius: 12px; font-weight: bold; font-size: 13px;">
-          إجمالي الحركات: {{ getBeneficiaryDistributions(selectedBen.id).length }}
-        </span>
-      </div>
-
-      <!-- تنبيه استحقاق ذكي عند وجود صرف سابق من جمعيات أخرى -->
-      <div *ngIf="getOtherCharitiesAid(selectedBen.id).length > 0" 
-           style="background-color: #fff8e1; border: 2px solid #ffa000; border-radius: 8px; padding: 14px 18px; margin-bottom: 20px; color: #5d4037;">
-        <div style="display: flex; align-items: center; gap: 8px; font-weight: bold; font-size: 14px;">
-          <span style="font-size: 18px;">⚠️</span>
-          <span>تنبيه شبكة الجمعيات المشتركة:</span>
-          <span style="background: #e65100; color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px;">
-            صرف سابق مسجل من جمعيات شريكة
-          </span>
-        </div>
-        <div style="font-size: 13px; margin-top: 6px; line-height: 1.6;">
-          حصل هذا المستفيد على <strong>{{ getOtherCharitiesAid(selectedBen.id).length }}</strong> مساعدة سابقة من جمعيات شقيقة:
-          <span *ngFor="let o of getOtherCharitiesAid(selectedBen.id); let isLast = last" style="display: inline-block; background: white; padding: 2px 8px; border-radius: 4px; border: 1px solid #ffe082; margin: 2px 4px; font-weight: bold; color: #e65100;">
-            🏢 {{ o.charityName }}: {{ o.itemName }} ({{ o.amount ? (o.amount + ' ج.م') : (o.quantity + ' ' + o.unit) }}) بتاريخ {{ o.date }}
-          </span>
-          <br>
-          <span style="color: #6d4c41; font-size: 12px;">💡 يرجى التحقق من تواريخ الصرف لتفادي الازدواجية وتوجيه الدعم للأسر الأكثر احتياجاً.</span>
+        <!-- تنبيه مميز إذا كان المستفيد قد استلم من جمعيات أخرى -->
+        <div *ngIf="getOtherCharitiesAid(selectedBen.id).length > 0" 
+             style="background-color: #fff3e0; border: 1px solid #ffe0b2; color: #e65100; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: bold;">
+          ⚠️ تنبيه تدقيق: استلم هذا المستفيد {{ getOtherCharitiesAid(selectedBen.id).length }} مساعدة من جمعيات أخرى في الشبكة!
         </div>
       </div>
 
-      <div *ngIf="getBeneficiaryDistributions(selectedBen.id).length === 0" style="text-align: center; padding: 30px; color: #777;">
-        لم يتم تسجيل أي حركات صرف أو مساعدات لهذه الحالة حتى الآن من أي جمعية.
+      <div *ngIf="getBeneficiaryDistributions(selectedBen.id).length === 0" 
+           style="text-align: center; padding: 30px; color: #888; background: #fafafa; border-radius: 6px; border: 1px dashed #ccc;">
+        لم يتم تسجيل أي مساعدات منصرفة لهذا المستفيد حتى الآن عبر النظام.
       </div>
 
-      <div *ngIf="getBeneficiaryDistributions(selectedBen.id).length > 0" style="overflow-x: auto; width: 100%;">
-        <table border="1" cellpadding="10" cellspacing="0" style="width: 100%; border-collapse: collapse; font-size: 14px;">
+      <div *ngIf="getBeneficiaryDistributions(selectedBen.id).length > 0" style="overflow-x: auto;">
+        <table border="1" cellpadding="8" cellspacing="0" style="width: 100%; border-collapse: collapse; font-size: 14px; text-align: right;">
           <thead>
-            <tr style="background-color: #e0f2f1; color: #004d40;">
-              <th>تاريخ الصرف</th>
-              <th>الجمعية المانحة</th>
+            <tr style="background-color: #f5f5f5; color: #333;">
+              <th style="width: 40px; text-align: center;">#</th>
+              <th>الجهة المانحة (الجمعية)</th>
+              <th>التاريخ</th>
               <th>نوع المساعدة</th>
               <th>الصنف / الخدمة</th>
               <th>الكمية / القيمة</th>
@@ -190,33 +310,27 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let h of getBeneficiaryDistributions(selectedBen.id)" 
-                [style.background-color]="h.isFromCurrentCharity ? '#ffffff' : '#fafffa'">
-              <td style="color: #444; font-weight: bold; white-space: nowrap;">{{ h.date }}</td>
+            <tr *ngFor="let h of getBeneficiaryDistributions(selectedBen.id); let i = index" 
+                [style.background-color]="h.isFromCurrentCharity ? '#ffffff' : '#fffde7'" 
+                style="border-bottom: 1px solid #eee;">
+              <td style="text-align: center; color: #888;">{{ i + 1 }}</td>
               <td>
-                <span [style.background-color]="h.isFromCurrentCharity ? '#e8f5e9' : '#e1f5fe'"
-                      [style.color]="h.isFromCurrentCharity ? '#1b5e20' : '#0277bd'"
-                      style="padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: bold; display: inline-flex; align-items: center; gap: 5px; border: 1px solid rgba(0,0,0,0.08);">
-                  <span>{{ h.isFromCurrentCharity ? '⭐' : '🏢' }}</span>
-                  <span>{{ h.charityName }}</span>
-                  <small *ngIf="h.isFromCurrentCharity" style="color: #2e7d32; font-size: 10px;">(جمعيتنا)</small>
-                  <small *ngIf="!h.isFromCurrentCharity" style="color: #0288d1; font-size: 10px;">(شقيقة)</small>
+                <span *ngIf="h.isFromCurrentCharity" style="color: #004d40; font-weight: bold;">
+                  🏛️ {{ h.charityName }} <span style="font-size: 11px; background: #e0f2f1; padding: 2px 6px; border-radius: 4px;">(جمعيتنا)</span>
+                </span>
+                <span *ngIf="!h.isFromCurrentCharity" style="color: #c2185b; font-weight: bold;">
+                  🤝 {{ h.charityName }} <span style="font-size: 11px; background: #fce4ec; padding: 2px 6px; border-radius: 4px;">(جمعية شقيقة)</span>
                 </span>
               </td>
+              <td>{{ h.date }}</td>
               <td>
-                <span *ngIf="h.kind === 'خدمة'" style="background: #e3f2fd; color: #1565c0; padding: 3px 8px; border-radius: 10px; font-size: 11px; font-weight: bold;">
-                  🩺 خدمة
-                </span>
-                <span *ngIf="h.kind === 'إعانة نقدية'" style="background: #fff3e0; color: #e65100; padding: 3px 8px; border-radius: 10px; font-size: 11px; font-weight: bold;">
-                  💵 إعانة مالية
-                </span>
-                <span *ngIf="h.kind !== 'خدمة' && h.kind !== 'إعانة نقدية'" style="background: #e8f5e9; color: #2e7d32; padding: 3px 8px; border-radius: 10px; font-size: 11px; font-weight: bold;">
-                  📦 صنف ملموس
+                <span [style.background-color]="h.kind === 'خدمة' ? '#e3f2fd' : (h.kind === 'إعانة نقدية' ? '#e8f5e9' : '#fff3e0')"
+                      [style.color]="h.kind === 'خدمة' ? '#1565c0' : (h.kind === 'إعانة نقدية' ? '#2e7d32' : '#e65100')"
+                      style="padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">
+                  {{ h.kind }}
                 </span>
               </td>
-              <td>
-                <strong>{{ h.itemName }}</strong>
-              </td>
+              <td><strong>{{ h.itemName }}</strong></td>
               <td>
                 <span *ngIf="h.amount" style="color: #2e7d32; font-weight: bold; font-size: 15px;">
                   {{ h.amount | number:'1.0-0' }} ج.م
@@ -232,7 +346,6 @@
       </div>
     </div>
 
-
   </div>
 
 
@@ -246,7 +359,7 @@
           {{ formMode === 'add' ? '➕ فتح ملف حالة جديد (بحث اجتماعي)' : '🔄 تعديل بيانات ملف المستفيد: ' + currentBen.name }}
         </h2>
         <p style="color: #666; margin: 5px 0 0 0; font-size: 14px;">
-          تسجيل البيانات الاجتماعية والصحية الشاملة للحالة لخدمة برنامج إدارة الحالات (CRM).
+          تسجيل البيانات الاجتماعية والمالية والصحية وتدقيق الأرقام القومية للمعالين والمعيلين لمنع التكرار.
         </p>
       </div>
 
@@ -265,8 +378,8 @@
         </h4>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 25px;">
           <div>
-            <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">الرقم القومي (14 رقم) *</label>
-            <input type="text" [(ngModel)]="currentBen.nationalId" name="nationalId" placeholder="14 رقم قومي" required 
+            <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">الرقم القومي للمستفيد (14 رقم) *</label>
+            <input type="text" [(ngModel)]="currentBen.nationalId" name="nationalId" placeholder="14 رقم قومي فريد" required maxlength="14" 
                    style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; font-weight: bold;">
           </div>
 
@@ -305,9 +418,9 @@
           </div>
 
           <div>
-            <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">عدد أفراد الأسرة</label>
-            <input type="number" [(ngModel)]="currentBen.familyCount" name="familyCount" min="1" 
-                   style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; font-weight: bold;">
+            <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">عدد أفراد الأسرة (يحسب تلقائياً)</label>
+            <input type="number" [(ngModel)]="currentBen.familyCount" name="familyCount" min="1" readonly
+                   style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ddd; background: #eee; box-sizing: border-box; font-weight: bold;">
           </div>
 
           <div>
@@ -336,21 +449,202 @@
           </div>
         </div>
 
-        <!-- القسم الثالث: الجانب الصحي وبحث الحالة -->
+        <!-- القسم الثالث: الوضع المالي والممتلكات والمعاش الحكومي -->
         <h4 style="color: #00695c; margin: 0 0 15px 0; font-size: 16px; border-bottom: 2px solid #b2dfdb; padding-bottom: 6px;">
-          3. الجانب الصحي وبحث الحالة وتوصيات الباحث
+          3. الوضع المالي والممتلكات والمعاش الحكومي
         </h4>
-        <div style="display: grid; grid-template-columns: 1fr; gap: 15px; margin-bottom: 25px;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 25px;">
           <div>
-            <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">الأمراض المزمنة أو الإعاقات (إن وجدت)</label>
-            <input type="text" [(ngModel)]="currentBen.healthIssues" name="healthIssues" placeholder="مثال: مريض سكر، إعاقة بصرية، يحتاج جلسات علاج طبيعي..." 
+            <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">مصدر الدخل لصاحب الملف</label>
+            <input type="text" [(ngModel)]="currentBen.incomeSource" name="incomeSource" placeholder="مثال: عامل يومية، أرزقي، سائق، لا يعمل..." 
                    style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box;">
           </div>
 
           <div>
-            <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">ملاحظات وتوصيات الباحث الاجتماعي</label>
-            <textarea [(ngModel)]="currentBen.researchNotes" name="researchNotes" placeholder="سجل تقرير المعاينة الميدانية: الديون، حالة السقف والمطبخ، الأجهزة المعطلة، ونوع المساعدة الموصى بها..." rows="4" 
+            <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">الدخل الشهري التقريبي (ج.م)</label>
+            <input type="number" [(ngModel)]="currentBen.monthlyIncome" name="monthlyIncome" placeholder="مثال: 2500" min="0" 
+                   style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; font-weight: bold;">
+          </div>
+
+          <div>
+            <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">هل يملك أراضي زراعية أو عقارات؟</label>
+            <select [(ngModel)]="currentBen.hasLandOrProperty" name="hasLandOrProperty" 
+                    style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; font-weight: bold;">
+              <option [ngValue]="false">لا يملك</option>
+              <option [ngValue]="true">نعم يملك</option>
+            </select>
+          </div>
+
+          <div *ngIf="currentBen.hasLandOrProperty">
+            <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">تفاصيل ومساحة الأراضي / الأملاك</label>
+            <input type="text" [(ngModel)]="currentBen.landOrPropertyDetails" name="landOrPropertyDetails" placeholder="مثال: قيراط زراعي إرث، بيت عائلة قديم..." 
+                   style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box;">
+          </div>
+
+          <div>
+            <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">معاش شهري حكومي (تكافل وكرامة / تأمينات)؟</label>
+            <select [(ngModel)]="currentBen.hasGovernmentPension" name="hasGovernmentPension" 
+                    style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; font-weight: bold;">
+              <option [ngValue]="false">لا يحصل على معاش</option>
+              <option [ngValue]="true">نعم يحصل على معاش</option>
+            </select>
+          </div>
+
+          <div *ngIf="currentBen.hasGovernmentPension">
+            <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">نوع وقيمة المعاش الشهري</label>
+            <input type="text" [(ngModel)]="currentBen.governmentPensionDetails" name="governmentPensionDetails" placeholder="مثال: تكافل وكرامة 700 ج.م، معاش والده 900 ج.م..." 
+                   style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box;">
+          </div>
+        </div>
+
+        <!-- القسم الرابع: الملف الصحي والأمراض المزمنة والعلاج الدوري -->
+        <h4 style="color: #00695c; margin: 0 0 15px 0; font-size: 16px; border-bottom: 2px solid #b2dfdb; padding-bottom: 6px;">
+          4. الملف الصحي والأمراض المزمنة والعلاج الدوري
+        </h4>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 25px;">
+          <div>
+            <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">هل يعاني من مرض مزمن؟</label>
+            <select [(ngModel)]="currentBen.hasChronicDisease" name="hasChronicDisease" 
+                    style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; font-weight: bold;">
+              <option [ngValue]="false">لا يعاني من أمراض مزمنة</option>
+              <option [ngValue]="true">نعم يعاني من مرض مزمن</option>
+            </select>
+          </div>
+
+          <div *ngIf="currentBen.hasChronicDisease">
+            <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">طبيعة وتشخيص المرض المزمن</label>
+            <input type="text" [(ngModel)]="currentBen.chronicDiseaseDetails" name="chronicDiseaseDetails" placeholder="مثال: سكري، ضغط مرتفع، فشل كلوي، روماتويد..." 
+                   style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box;">
+          </div>
+
+          <div>
+            <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">هل يحتاج إلى علاج وأدوية دورية؟</label>
+            <select [(ngModel)]="currentBen.needsPeriodicMedication" name="needsPeriodicMedication" 
+                    style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; font-weight: bold;">
+              <option [ngValue]="false">لا يحتاج علاج دوري</option>
+              <option [ngValue]="true">نعم يحتاج علاج دوري مستمر</option>
+            </select>
+          </div>
+
+          <div *ngIf="currentBen.needsPeriodicMedication">
+            <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">طبيعة وأسماء الأدوية المطلوبة</label>
+            <input type="text" [(ngModel)]="currentBen.periodicMedicationDetails" name="periodicMedicationDetails" placeholder="مثال: أنسولين، علاج جلطات، بخاخات صدر..." 
+                   style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box;">
+          </div>
+
+          <div *ngIf="currentBen.needsPeriodicMedication">
+            <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">تكرار ومعدل صرف العلاج</label>
+            <select [(ngModel)]="currentBen.medicationFrequency" name="medicationFrequency" 
+                    style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box;">
+              <option *ngFor="let f of medicationFrequencies" [value]="f">{{ f }}</option>
+            </select>
+          </div>
+
+          <div style="grid-column: 1 / -1;">
+            <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">ملاحظات وتوصيات الباحث الميداني</label>
+            <textarea [(ngModel)]="currentBen.researchNotes" name="researchNotes" placeholder="سجل تقرير المعاينة الميدانية: التوصيات بالدعم الغذائي، ترميم المسكن، جهاز العروسة..." rows="3" 
                       style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; resize: vertical; box-sizing: border-box; line-height: 1.5;"></textarea>
+          </div>
+        </div>
+
+        <!-- القسم الخامس: أفراد الأسرة والمعالين والمعيلين -->
+        <div style="margin-bottom: 30px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #00695c; padding-bottom: 8px; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+            <div>
+              <h4 style="color: #00695c; margin: 0; font-size: 16px;">
+                5. أفراد الأسرة، المعالين والمعيلين (تدقيق الرقم القومي)
+              </h4>
+              <p style="margin: 3px 0 0 0; color: #666; font-size: 13px;">
+                أدخل أفراد الأسرة بأرقامهم القومية؛ لن يقبل النظام تكرار أي رقم قومي مسجل مسبقاً في ملف آخر.
+              </p>
+            </div>
+
+            <button type="button" (click)="addFamilyMember()" 
+                    style="background-color: #00796b; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold; display: flex; align-items: center; gap: 6px;">
+              ➕ إضافة فرد أسرة جديد
+            </button>
+          </div>
+
+          <div *ngIf="!currentBen.familyMembers || currentBen.familyMembers.length === 0" 
+               style="text-align: center; padding: 20px; background: #fff; border-radius: 6px; border: 1px dashed #bdbdbd; color: #757575;">
+            لم تقم بإضافة أي أفراد للأسرة بعد. اضغط على زر "إضافة فرد أسرة جديد" لإدراج الأبناء أو الزوجة أو الوالدين.
+          </div>
+
+          <div *ngFor="let member of currentBen.familyMembers; let i = index" 
+               style="background: white; border: 1px solid #e0e0e0; border-radius: 8px; padding: 15px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px dashed #eee; padding-bottom: 6px;">
+              <span style="font-weight: bold; color: #004d40;">فرد أسرة #{{ i + 1 }}</span>
+              <button type="button" (click)="removeFamilyMember(i)" 
+                      style="background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold;">
+                🗑️ حذف الفرد
+              </button>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;">
+              <div>
+                <label style="font-size: 12px; color: #666; display: block; margin-bottom: 3px;">الرقم القومي (14 رقم) *</label>
+                <input type="text" [(ngModel)]="member.nationalId" [name]="'fm_nat_' + i" placeholder="14 رقم قومي" required maxlength="14" 
+                       style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc; box-sizing: border-box; font-weight: bold; font-size: 13px;">
+              </div>
+
+              <div>
+                <label style="font-size: 12px; color: #666; display: block; margin-bottom: 3px;">الاسم الرباعي *</label>
+                <input type="text" [(ngModel)]="member.name" [name]="'fm_name_' + i" placeholder="اسم فرد الأسرة" required 
+                       style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc; box-sizing: border-box; font-size: 13px;">
+              </div>
+
+              <div>
+                <label style="font-size: 12px; color: #666; display: block; margin-bottom: 3px;">صلة القرابة</label>
+                <select [(ngModel)]="member.relationship" [name]="'fm_rel_' + i" 
+                        style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc; box-sizing: border-box; font-size: 13px;">
+                  <option *ngFor="let r of relationships" [value]="r">{{ r }}</option>
+                </select>
+              </div>
+
+              <div>
+                <label style="font-size: 12px; color: #666; display: block; margin-bottom: 3px;">التصنيف بالملف</label>
+                <select [(ngModel)]="member.memberType" [name]="'fm_type_' + i" 
+                        style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc; box-sizing: border-box; font-size: 13px; font-weight: bold;">
+                  <option value="معال">معال (يعوله المستفيد)</option>
+                  <option value="معيل">معيل (يعول ويساعد صاحب الملف)</option>
+                </select>
+              </div>
+
+              <div>
+                <label style="font-size: 12px; color: #666; display: block; margin-bottom: 3px;">نوع الدعم / الاحتياج</label>
+                <select [(ngModel)]="member.supportType" [name]="'fm_sup_' + i" 
+                        style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc; box-sizing: border-box; font-size: 13px;">
+                  <option *ngFor="let st of supportTypes" [value]="st">{{ st }}</option>
+                </select>
+              </div>
+
+              <div>
+                <label style="font-size: 12px; color: #666; display: block; margin-bottom: 3px;">هل له دخل شخصي؟</label>
+                <select [(ngModel)]="member.hasIncome" [name]="'fm_hasinc_' + i" 
+                        style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc; box-sizing: border-box; font-size: 13px;">
+                  <option [ngValue]="false">لا دخل له</option>
+                  <option [ngValue]="true">نعم له دخل</option>
+                </select>
+              </div>
+
+              <div *ngIf="member.hasIncome">
+                <label style="font-size: 12px; color: #666; display: block; margin-bottom: 3px;">قيمة الدخل (ج.م)</label>
+                <input type="number" [(ngModel)]="member.incomeAmount" [name]="'fm_incamt_' + i" placeholder="المبلغ" min="0" 
+                       style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc; box-sizing: border-box; font-size: 13px;">
+              </div>
+
+              <div *ngIf="member.hasIncome">
+                <label style="font-size: 12px; color: #666; display: block; margin-bottom: 3px;">مصدر دخل الفرد</label>
+                <input type="text" [(ngModel)]="member.incomeSource" [name]="'fm_incsrc_' + i" placeholder="مثال: عمل ورشة، خياطة..." 
+                       style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc; box-sizing: border-box; font-size: 13px;">
+              </div>
+
+              <div style="grid-column: 1 / -1;">
+                <label style="font-size: 12px; color: #666; display: block; margin-bottom: 3px;">ملاحظات أو الحالة الصحية لفرد الأسرة</label>
+                <input type="text" [(ngModel)]="member.notes" [name]="'fm_notes_' + i" placeholder="سنة دراسية، مرض يعاني منه، أو احتياج محدد..." 
+                       style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc; box-sizing: border-box; font-size: 13px;">
+              </div>
+            </div>
           </div>
         </div>
 
@@ -390,21 +684,22 @@
       </div>
     </div>
 
-    <!-- الفلترة والبحث السريع -->
-    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;">
-      <!-- تبويب الفئات -->
-      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-        <button type="button" (click)="selectedCategoryFilter = 'الكل'"
-                [style.background-color]="selectedCategoryFilter === 'الكل' ? '#004d40' : '#e0e0e0'"
+    <!-- شريط البحث والتصفية -->
+    <div style="background-color: white; padding: 15px; border-radius: 8px; border: 1px solid #e0e0e0; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+      
+      <!-- تصفية حسب الفئة -->
+      <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+        <span style="font-weight: bold; color: #555; font-size: 14px;">التصفية بالفئة:</span>
+        <button type="button" (click)="selectedCategoryFilter = 'الكل'; currentPage = 1" 
+                [style.background-color]="selectedCategoryFilter === 'الكل' ? '#004d40' : '#f5f5f5'"
                 [style.color]="selectedCategoryFilter === 'الكل' ? 'white' : '#333'"
-                style="padding: 8px 16px; border: none; border-radius: 20px; cursor: pointer; font-weight: bold; font-size: 13px;">
+                style="border: 1px solid #ccc; padding: 6px 12px; border-radius: 20px; cursor: pointer; font-size: 13px;">
           الكل ({{ beneficiaries.length }})
         </button>
-
-        <button *ngFor="let c of categories" type="button" (click)="selectedCategoryFilter = c"
-                [style.background-color]="selectedCategoryFilter === c ? '#004d40' : '#e0e0e0'"
+        <button *ngFor="let c of categories" type="button" (click)="selectedCategoryFilter = c; currentPage = 1" 
+                [style.background-color]="selectedCategoryFilter === c ? '#004d40' : '#f5f5f5'"
                 [style.color]="selectedCategoryFilter === c ? 'white' : '#333'"
-                style="padding: 8px 14px; border: none; border-radius: 20px; cursor: pointer; font-weight: bold; font-size: 13px;">
+                style="border: 1px solid #ccc; padding: 6px 12px; border-radius: 20px; cursor: pointer; font-size: 13px;">
           {{ c }}
         </button>
       </div>
@@ -424,7 +719,8 @@
             <th>الاسم والملف</th>
             <th>الرقم القومي / الهاتف</th>
             <th>الأسرة والمعيشة</th>
-            <th>الحالة الصحية والبحث</th>
+            <th>الدخل والممتلكات</th>
+            <th>الحالة الصحية والأدوية</th>
             <th style="text-align: center;">حالة الملف</th>
             <th style="text-align: center; width: 180px;">إجراءات الحالة</th>
           </tr>
@@ -442,19 +738,42 @@
             </td>
 
             <td>
-              <strong>{{ b.nationalId }}</strong><br>
+              <code style="font-size: 13px; font-weight: bold;">{{ b.nationalId }}</code><br>
               <span style="color: #666; font-size: 12px;">📞 {{ b.phone }}</span>
             </td>
 
             <td>
               {{ b.maritalStatus }} ({{ b.familyCount }} أفراد)<br>
               <span style="color: #555; font-size: 12px;">🏠 {{ b.housing }}</span>
+              <div *ngIf="b.familyMembers?.length" style="font-size: 11px; color: #00796b; margin-top: 2px;">
+                👥 {{ b.familyMembers.length }} فرد مسجل بالملف
+              </div>
             </td>
 
-            <td style="max-width: 220px;">
-              <div style="color: #333; font-size: 13px;">{{ b.healthIssues || '—' }}</div>
-              <div *ngIf="b.researchNotes" style="color: #777; font-size: 11px; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                📝 {{ b.researchNotes }}
+            <td>
+              <div *ngIf="b.monthlyIncome" style="color: #2e7d32; font-weight: bold; font-size: 13px;">
+                💵 {{ b.monthlyIncome | number:'1.0-0' }} ج.م
+              </div>
+              <div *ngIf="!b.monthlyIncome" style="color: #888; font-size: 12px;">
+                {{ b.incomeSource || 'بدون دخل ثابت' }}
+              </div>
+              <span *ngIf="b.hasGovernmentPension" style="background: #e1f5fe; color: #0277bd; font-size: 10px; padding: 1px 5px; border-radius: 3px; display: inline-block; margin-top: 2px;">
+                معاش حكومي
+              </span>
+              <span *ngIf="b.hasLandOrProperty" style="background: #fff3e0; color: #e65100; font-size: 10px; padding: 1px 5px; border-radius: 3px; display: inline-block; margin-top: 2px; margin-right: 2px;">
+                أراضي/أملاك
+              </span>
+            </td>
+
+            <td style="max-width: 200px;">
+              <span *ngIf="b.hasChronicDisease" style="background: #fce4ec; color: #c2185b; font-size: 11px; font-weight: bold; padding: 2px 6px; border-radius: 4px; display: inline-block;">
+                🩺 مرض مزمن
+              </span>
+              <span *ngIf="b.needsPeriodicMedication" style="background: #e8f5e9; color: #2e7d32; font-size: 11px; font-weight: bold; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-right: 3px;">
+                💊 علاج دوري
+              </span>
+              <div *ngIf="!b.hasChronicDisease && !b.needsPeriodicMedication" style="color: #888; font-size: 12px;">
+                {{ b.healthIssues || 'سليم طبياً' }}
               </div>
             </td>
 
@@ -481,8 +800,8 @@
           </tr>
 
           <tr *ngIf="filteredBeneficiaries.length === 0">
-            <td colspan="6" style="text-align: center; padding: 30px; color: #888;">
-              لا توجد حالات مسجلة مطابقة للبحث أو التصفية الحالية.
+            <td colspan="7" style="text-align: center; padding: 30px; color: #888;">
+              لا توجد حالات مسجلة تطابق خيارات البحث الحالية.
             </td>
           </tr>
         </tbody>
@@ -491,11 +810,11 @@
 
     <!-- ترقيم الصفحات -->
     <app-pagination 
-      [totalItems]="filteredBeneficiaries.length" 
-      [pageSize]="pageSize" 
-      [currentPage]="currentPage" 
-      (pageChange)="currentPage = $event" 
-      (pageSizeChange)="pageSize = $event">
+      [totalItems]="filteredBeneficiaries.length"
+      [pageSize]="pageSize"
+      [currentPage]="currentPage"
+      (pageChange)="currentPage = $event"
+      (pageSizeChange)="pageSize = $event; currentPage = 1">
     </app-pagination>
 
   </div>
