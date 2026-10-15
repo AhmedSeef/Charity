@@ -1,8 +1,8 @@
 <div dir="rtl" style="text-align: right;">
   <div style="margin-bottom: 20px;">
-    <h2 style="color: #004d40; margin: 0;">🔄 حركات الصرف وتوزيع المساعدات</h2>
+    <h2 style="color: #004d40; margin: 0;">🔄 حركات صرف ومساعدات: {{ activeCharity?.name }}</h2>
     <p style="color: #666; margin: 5px 0 0 0; font-size: 14px;">
-      تسجيل تسليم المساعدات العينية من مخازن الجمعية للمستفيدين (مع خصم الرصيد تلقائياً)، وتقديم الخدمات الطبية والاجتماعية.
+      تسجيل حركات الصرف الخاصة بجمعيتكم وخصمها من رصيد المخزن الداخلي. تظهر هذه الحركة فوراً في الملف المشترك للمستفيد لتراها الجمعيات الشريكة.
     </p>
   </div>
 
@@ -15,14 +15,14 @@
     {{ errorMessage }}
   </div>
 
-  <!-- فورم صرف مساعدة جديدة من مخازن الجمعية الحالية -->
+  <!-- فورم صرف مساعدة جديدة -->
   <div style="background-color: #f9f9f9; padding: 20px; border-radius: 8px; margin-bottom: 25px; border: 1px solid #ddd; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
     <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #bf360c; padding-bottom: 10px; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
       <h3 style="margin: 0; color: #bf360c;">
-        📤 تسجيل حركة صرف أو تقديم خدمة لحساب: <strong>{{ activeCharity?.name }}</strong>
+        📤 إضافة حركة صرف جديدة من مخازن: <strong>{{ activeCharity?.name }}</strong>
       </h3>
       <span style="background: #efebe9; color: #4e342e; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: bold;">
-        🏢 الخصم يتم من مخزن جمعيتكم فقط
+        🏢 الخصم يتم من رصيدكم الداخلي فقط
       </span>
     </div>
 
@@ -30,10 +30,10 @@
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px; margin-bottom: 15px;">
         <!-- اختيار المستفيد (مشترك من الشبكة الموحدة) -->
         <div>
-          <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">المستفيد المستحق (الشبكة الموحدة) *</label>
+          <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">المستفيد المستحق (قاعدة المستفيدين المشتركة) *</label>
           <select [(ngModel)]="newDist.beneficiaryId" name="beneficiaryId" required 
                   style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; font-weight: bold;">
-            <option value="" disabled selected>-- اختر المستفيد من قاعدة الشبكة --</option>
+            <option value="" disabled selected>-- اختر المستفيد من الشبكة --</option>
             <option *ngFor="let b of beneficiaries" [value]="b.id">
               {{ b.name }} ({{ b.category }} - {{ b.nationalId }})
             </option>
@@ -109,35 +109,25 @@
     </form>
   </div>
 
-  <!-- شريط التبديل بين حركات الجمعية وسجل الشبكة الموحد -->
-  <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
-    <button type="button" (click)="setScope('my_charity')"
-            [style.background-color]="viewScope === 'my_charity' ? '#004d40' : '#e0e0e0'"
-            [style.color]="viewScope === 'my_charity' ? 'white' : '#333'"
-            style="padding: 9px 18px; border: none; border-radius: 20px; cursor: pointer; font-weight: bold; font-size: 13px; display: flex; align-items: center; gap: 6px;">
-      <span>⭐ حركات صرف {{ activeCharity?.name }} فقط</span>
-      <span style="background: rgba(255,255,255,0.3); padding: 1px 7px; border-radius: 10px; font-size: 12px;">{{ distributions.length }}</span>
-    </button>
-
-    <button type="button" (click)="setScope('all_network')"
-            [style.background-color]="viewScope === 'all_network' ? '#1565c0' : '#e0e0e0'"
-            [style.color]="viewScope === 'all_network' ? 'white' : '#333'"
-            style="padding: 9px 18px; border: none; border-radius: 20px; cursor: pointer; font-weight: bold; font-size: 13px; display: flex; align-items: center; gap: 6px;">
-      <span>🌐 السجل الموحد لكافة الجمعيات بالشبكة المشتركة</span>
-      <span style="background: rgba(255,255,255,0.3); padding: 1px 7px; border-radius: 10px; font-size: 12px;">{{ allNetworkDistributions.length }}</span>
-    </button>
+  <!-- كارت التوجيه لسجل المستفيدين المشترك -->
+  <div style="background-color: #e0f2f1; border-right: 4px solid #004d40; border-radius: 6px; padding: 12px 18px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+    <div style="font-size: 13px; color: #004d40;">
+      ℹ️ <strong>سجل استحقاق المستفيدين المشترك:</strong> يعرض الجدول أدناه حركات الصرف المنفذة من جمعيتكم فقط. لمشاهدة ما تسلّمه المستفيد من الجمعيات الأخرى بالشبكة، توجه لـ:
+    </div>
+    <a routerLink="/beneficiaries" style="background-color: #004d40; color: white; text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: bold;">
+      👨‍👩‍👧‍👦 ملفات المستفيدين والحركات عليهم ←
+    </a>
   </div>
 
-  <!-- جدول حركات الصرف والتوزيع -->
+  <!-- جدول حركات الصرف الخاصة بالجمعية -->
   <div style="overflow-x: auto; width: 100%; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
     <table border="1" cellpadding="10" cellspacing="0" style="width: 100%; border-collapse: collapse; background-color: white; font-size: 14px;">
       <thead>
         <tr style="background-color: #fbe9e7; color: #bf360c;">
           <th>المستفيد المستحق</th>
-          <th>الجمعية المنفذة للصرف</th>
           <th>نوع المساعدة</th>
           <th>الصنف / الخدمة المصروفة</th>
-          <th>الكمية / القيمة</th>
+          <th>الكمية</th>
           <th>تاريخ الصرف</th>
           <th>ملاحظات</th>
         </tr>
@@ -146,15 +136,6 @@
         <tr *ngFor="let d of paginatedDistributions">
           <td>
             <strong style="color: #004d40; font-size: 15px;">{{ getBenName(d.beneficiaryId) }}</strong>
-          </td>
-
-          <td>
-            <span [style.background-color]="d.charityId === activeCharity?.id ? '#e8f5e9' : '#e1f5fe'"
-                  [style.color]="d.charityId === activeCharity?.id ? '#1b5e20' : '#0277bd'"
-                  style="padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: bold; display: inline-flex; align-items: center; gap: 5px;">
-              <span>{{ d.charityId === activeCharity?.id ? '⭐' : '🏢' }}</span>
-              <span>{{ d.charityName || 'جمعية شقيقة' }}</span>
-            </span>
           </td>
 
           <td>
@@ -188,9 +169,9 @@
           <td style="color: #555;">{{ d.notes || '—' }}</td>
         </tr>
 
-        <tr *ngIf="displayedDistributions.length === 0">
-          <td colspan="7" style="text-align: center; padding: 25px; color: #888;">
-            لا توجد حركات صرف مسجلة في هذا النطاق.
+        <tr *ngIf="distributions.length === 0">
+          <td colspan="6" style="text-align: center; padding: 25px; color: #888;">
+            لا توجد حركات صرف مسجلة لجمعيتكم حتى الآن.
           </td>
         </tr>
       </tbody>
@@ -198,7 +179,7 @@
   </div>
 
   <app-pagination 
-    [totalItems]="displayedDistributions.length" 
+    [totalItems]="distributions.length" 
     [pageSize]="pageSize" 
     [currentPage]="currentPage" 
     (pageChange)="currentPage = $event" 
