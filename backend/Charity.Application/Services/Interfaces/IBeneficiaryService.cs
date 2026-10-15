@@ -13,4 +13,6 @@ public interface IBeneficiaryService
     Task<BeneficiaryDto> SuspendAsync(string id, SuspendBeneficiaryDto dto);
     Task<BeneficiaryDto> ReactivateAsync(string id);
     Task<BeneficiaryDto> SeparateFamilyMemberAsync(string beneficiaryId, SeparateFamilyMemberDto dto);
+    Task<BeneficiaryDto> TransferHeadshipAsync(string beneficiaryId, TransferHeadshipDto dto);
+    Task DeleteAsync(string id);
 }

@@ -12,6 +12,7 @@ public class BeneficiaryService : IBeneficiaryService
 {
     private readonly IRepository<Beneficiary> _beneficiaryRepo;
     private readonly IRepository<BeneficiaryFamilyMember> _familyMemberRepo;
+    private readonly IRepository<BeneficiaryHeadHistory> _headHistoryRepo;
     private readonly IRepository<Distribution> _distributionRepo;
     private readonly ICurrentUserService _currentUserService;
     private readonly IUnitOfWork _unitOfWork;
@@ -19,12 +20,14 @@ public class BeneficiaryService : IBeneficiaryService
     public BeneficiaryService(
         IRepository<Beneficiary> beneficiaryRepo,
         IRepository<BeneficiaryFamilyMember> familyMemberRepo,
+        IRepository<BeneficiaryHeadHistory> headHistoryRepo,
         IRepository<Distribution> distributionRepo,
         ICurrentUserService currentUserService,
         IUnitOfWork unitOfWork)
     {
         _beneficiaryRepo = beneficiaryRepo;
         _familyMemberRepo = familyMemberRepo;
+        _headHistoryRepo = headHistoryRepo;
         _distributionRepo = distributionRepo;
         _currentUserService = currentUserService;
         _unitOfWork = unitOfWork;
@@ -36,12 +39,18 @@ public class BeneficiaryService : IBeneficiaryService
         var entities = await _beneficiaryRepo.GetAllAsync();
         var allMembers = await _familyMemberRepo.GetAllAsync();
         var membersGrouped = allMembers.GroupBy(m => m.BeneficiaryId).ToDictionary(g => g.Key, g => g.ToList());
+        var allHistories = await _headHistoryRepo.GetAllAsync();
+        var historiesGrouped = allHistories.GroupBy(h => h.BeneficiaryId).ToDictionary(g => g.Key, g => g.ToList());
 
         foreach (var b in entities)
         {
             if (membersGrouped.TryGetValue(b.Id, out var fList))
             {
                 b.FamilyMembers = fList;
+            }
+            if (historiesGrouped.TryGetValue(b.Id, out var hList))
+            {
+                b.HeadHistories = hList;
             }
         }
 
@@ -56,6 +65,9 @@ public class BeneficiaryService : IBeneficiaryService
 
         var members = await _familyMemberRepo.FindAsync(m => m.BeneficiaryId == id);
         entity.FamilyMembers = members.ToList();
+
+        var histories = await _headHistoryRepo.FindAsync(h => h.BeneficiaryId == id);
+        entity.HeadHistories = histories.ToList();
 
         return entity.ToDto(currentCharityId);
     }
@@ -107,6 +119,8 @@ public class BeneficiaryService : IBeneficiaryService
 
         existing.NationalId = dto.NationalId.Trim();
         existing.Name = dto.Name.Trim();
+        if (!string.IsNullOrWhiteSpace(dto.FamilyCode)) existing.FamilyCode = dto.FamilyCode.Trim();
+        if (!string.IsNullOrWhiteSpace(dto.FamilyName)) existing.FamilyName = dto.FamilyName.Trim();
         existing.Phone = dto.Phone;
         existing.Category = dto.Category;
         existing.MaritalStatus = dto.MaritalStatus;
@@ -321,6 +335,114 @@ public class BeneficiaryService : IBeneficiaryService
         existing.FamilyMembers = remainingMembers.ToList();
 
         return existing.ToDto(currentCharityId);
+    }
+
+    public async Task<BeneficiaryDto> TransferHeadshipAsync(string beneficiaryId, TransferHeadshipDto dto)
+    {
+        var existing = await _beneficiaryRepo.GetByIdAsync(beneficiaryId)
+            ?? throw new EntityNotFoundException(nameof(Beneficiary), beneficiaryId);
+
+        var currentCharityId = _currentUserService.CharityId ?? string.Empty;
+        var currentCharityName = _currentUserService.CharityName ?? "الجمعية المسجلة";
+
+        if (!string.IsNullOrEmpty(existing.RegisteredByCharityId) && existing.RegisteredByCharityId != currentCharityId)
+        {
+            throw new UnauthorizedDomainException(
+                $"غير مصرح: نقل ولاية الملف مقصورة على الجمعية المسجلة له ({existing.RegisteredByCharityName})."
+            );
+        }
+
+        var newHeadMember = await _familyMemberRepo.FirstOrDefaultAsync(m => m.Id == dto.NewHeadFamilyMemberId && m.BeneficiaryId == beneficiaryId)
+            ?? throw new EntityNotFoundException(nameof(BeneficiaryFamilyMember), dto.NewHeadFamilyMemberId);
+
+        // 1. تسجيل سجل التعاقب التاريخي للأسرة
+        var history = new BeneficiaryHeadHistory
+        {
+            BeneficiaryId = existing.Id,
+            PreviousHeadName = existing.Name,
+            PreviousHeadNationalId = existing.NationalId,
+            NewHeadName = newHeadMember.Name,
+            NewHeadNationalId = newHeadMember.NationalId,
+            Reason = string.IsNullOrWhiteSpace(dto.Reason) ? "وفاة رب الأسرة السابق" : dto.Reason,
+            Notes = dto.Notes ?? string.Empty,
+            TransferredAt = DateTime.UtcNow,
+            TransferredByCharityId = currentCharityId,
+            TransferredByCharityName = currentCharityName
+        };
+        await _headHistoryRepo.AddAsync(history);
+
+        // 2. تحويل العائل السابق إلى فرد أسرة (عائل سابق / متوفى) للحفاظ على سجله داخل الملف
+        var formerHeadMember = new BeneficiaryFamilyMember
+        {
+            BeneficiaryId = existing.Id,
+            NationalId = existing.NationalId,
+            Name = existing.Name,
+            Relationship = string.IsNullOrWhiteSpace(dto.FormerHeadRelationship) ? "رب الأسرة السابق (متوفى)" : dto.FormerHeadRelationship,
+            MemberType = "معال",
+            SupportType = "سابق / متوفى",
+            Notes = $"عائل الأسرة السابق. سبب نقل الولاية: {history.Reason}",
+            IsFormerHead = true,
+            EducationStage = "غير محدد",
+            IsSchoolDropout = false,
+            IsChildLabor = false
+        };
+        await _familyMemberRepo.AddAsync(formerHeadMember);
+
+        // 3. حذف/ترقية الفرد المختار من جدول أفراد الأسرة (سوفت ديليت) لأنه أصبح هو رب الأسرة الأساسي
+        await _familyMemberRepo.DeleteAsync(newHeadMember);
+
+        // 4. تحديث البيانات الأساسية للمستفيد بالاسم والرقم القومي للعائل الجديد
+        existing.Name = newHeadMember.Name;
+        existing.NationalId = newHeadMember.NationalId;
+
+        if (!string.IsNullOrWhiteSpace(dto.NewFamilyName))
+        {
+            existing.FamilyName = dto.NewFamilyName.Trim();
+        }
+        else if (history.Reason.Contains("وفاة") && !existing.FamilyName.Contains("المرحوم"))
+        {
+            existing.FamilyName = $"عائلة المرحوم {history.PreviousHeadName}";
+        }
+
+        // إذا كان الملف موقوفاً بسبب وفاة العائل السابق، يتم فك الإيقاف واستئناف الصرف للعائل الجديد
+        if (existing.IsSuspended && (existing.SuspensionReasonTitle?.Contains("وفاة") == true || history.Reason.Contains("وفاة")))
+        {
+            existing.IsSuspended = false;
+            existing.Status = "مستحق فعال";
+            existing.SuspensionNotes = (existing.SuspensionNotes ?? "") + $" [تم استئناف النشاط ونقل الولاية للعائل الجديد ({newHeadMember.Name}) بتاريخ {DateTime.Now:yyyy-MM-dd}]";
+        }
+
+        existing.ResearchNotes = (existing.ResearchNotes ?? "") + $"\n[تم نقل ولاية الأسرة بتاريخ {DateTime.Now:yyyy-MM-dd} من ({history.PreviousHeadName}) إلى ({newHeadMember.Name}). السبب: {history.Reason}]";
+
+        await _beneficiaryRepo.UpdateAsync(existing);
+        await _unitOfWork.SaveChangesAsync();
+
+        var remainingMembers = await _familyMemberRepo.FindAsync(m => m.BeneficiaryId == beneficiaryId);
+        existing.FamilyMembers = remainingMembers.ToList();
+
+        var histories = await _headHistoryRepo.FindAsync(h => h.BeneficiaryId == beneficiaryId);
+        existing.HeadHistories = histories.ToList();
+
+        return existing.ToDto(currentCharityId);
+    }
+
+    public async Task DeleteAsync(string id)
+    {
+        var existing = await _beneficiaryRepo.GetByIdAsync(id)
+            ?? throw new EntityNotFoundException(nameof(Beneficiary), id);
+
+        var currentCharityId = _currentUserService.CharityId ?? string.Empty;
+        if (!string.IsNullOrEmpty(existing.RegisteredByCharityId) && existing.RegisteredByCharityId != currentCharityId)
+        {
+            throw new UnauthorizedDomainException(
+                $"غير مصرح: حذف أو أرشفة ملف الحالة مقصورة على الجمعية المسجلة له ({existing.RegisteredByCharityName})."
+            );
+        }
+
+        // حذف لين (Soft Delete): يغير IsDeleted = true ويحفظ كافة البيانات التاريخية وحركات الصرف
+        existing.Status = "مؤرشف / ملغي";
+        await _beneficiaryRepo.DeleteAsync(existing);
+        await _unitOfWork.SaveChangesAsync();
     }
 
     private async Task ValidateNationalIdsAsync(string? currentBeneficiaryId, string beneficiaryNationalId, List<CreateFamilyMemberDto>? familyMembers)

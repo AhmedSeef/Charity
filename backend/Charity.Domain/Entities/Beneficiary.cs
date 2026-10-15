@@ -2,6 +2,10 @@ namespace Charity.Domain.Entities;
 
 public class Beneficiary : BaseEntity
 {
+    // 0. هوية العائلة / الأسرة الموحدة (Family Profile & Succession)
+    public string FamilyCode { get; set; } = string.Empty; // كود العائلة الدائم مثل FAM-26-0001
+    public string FamilyName { get; set; } = string.Empty; // مسمى العائلة مثل: عائلة أحمد محمود أو عائلة المرحوم...
+
     public string NationalId { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string Phone { get; set; } = string.Empty;
@@ -71,4 +75,7 @@ public class Beneficiary : BaseEntity
 
     // Navigation to family members (معالين ومعيلين)
     public ICollection<BeneficiaryFamilyMember> FamilyMembers { get; set; } = new List<BeneficiaryFamilyMember>();
+
+    // Navigation to headship succession history (سجل تعاقب ولاية الأسرة)
+    public ICollection<BeneficiaryHeadHistory> HeadHistories { get; set; } = new List<BeneficiaryHeadHistory>();
 }

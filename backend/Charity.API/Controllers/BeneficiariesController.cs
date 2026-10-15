@@ -74,4 +74,18 @@ public class BeneficiariesController : ControllerBase
         var result = await _beneficiaryService.SeparateFamilyMemberAsync(id, dto);
         return Ok(result);
     }
+
+    [HttpPost("{id}/transfer-headship")]
+    public async Task<ActionResult<BeneficiaryDto>> TransferHeadship(string id, [FromBody] TransferHeadshipDto dto)
+    {
+        var result = await _beneficiaryService.TransferHeadshipAsync(id, dto);
+        return Ok(result);
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<ActionResult> Delete(string id)
+    {
+        await _beneficiaryService.DeleteAsync(id);
+        return NoContent();
+    }
 }

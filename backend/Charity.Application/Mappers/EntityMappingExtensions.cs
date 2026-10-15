@@ -57,7 +57,23 @@ public static class EntityMappingExtensions
         IsSeparated = m.IsSeparated,
         SeparatedAt = m.SeparatedAt,
         SeparatedToBeneficiaryId = m.SeparatedToBeneficiaryId,
-        SeparationReason = m.SeparationReason
+        SeparationReason = m.SeparationReason,
+        IsFormerHead = m.IsFormerHead
+    };
+
+    // BeneficiaryHeadHistory
+    public static BeneficiaryHeadHistoryDto ToDto(this BeneficiaryHeadHistory h) => new()
+    {
+        Id = h.Id,
+        BeneficiaryId = h.BeneficiaryId,
+        PreviousHeadName = h.PreviousHeadName,
+        PreviousHeadNationalId = h.PreviousHeadNationalId,
+        NewHeadName = h.NewHeadName,
+        NewHeadNationalId = h.NewHeadNationalId,
+        Reason = h.Reason,
+        Notes = h.Notes,
+        TransferredAt = h.TransferredAt,
+        TransferredByCharityName = h.TransferredByCharityName
     };
 
     public static BeneficiaryFamilyMember ToEntity(this CreateFamilyMemberDto dto, string beneficiaryId) => new()
@@ -83,6 +99,8 @@ public static class EntityMappingExtensions
     public static BeneficiaryDto ToDto(this Beneficiary b, string currentCharityId) => new()
     {
         Id = b.Id,
+        FamilyCode = b.FamilyCode,
+        FamilyName = b.FamilyName,
         NationalId = b.NationalId,
         Name = b.Name,
         Phone = b.Phone,
@@ -130,11 +148,18 @@ public static class EntityMappingExtensions
         RegisteredByCharityId = b.RegisteredByCharityId,
         RegisteredByCharityName = b.RegisteredByCharityName,
         IsEditableByCurrentCharity = string.IsNullOrEmpty(b.RegisteredByCharityId) || b.RegisteredByCharityId == currentCharityId,
-        FamilyMembers = b.FamilyMembers?.Select(m => m.ToDto()).ToList() ?? new()
+        FamilyMembers = b.FamilyMembers?.Select(m => m.ToDto()).ToList() ?? new(),
+        HeadHistories = b.HeadHistories?.Select(h => h.ToDto()).OrderByDescending(h => h.TransferredAt).ToList() ?? new()
     };
 
     public static Beneficiary ToEntity(this CreateBeneficiaryDto dto, string charityId, string charityName) => new()
     {
+        FamilyCode = string.IsNullOrWhiteSpace(dto.FamilyCode) 
+            ? $"FAM-{DateTime.UtcNow:yy}-{Random.Shared.Next(1000, 9999)}" 
+            : dto.FamilyCode.Trim(),
+        FamilyName = string.IsNullOrWhiteSpace(dto.FamilyName) 
+            ? $"عائلة {dto.Name.Trim()}" 
+            : dto.FamilyName.Trim(),
         NationalId = dto.NationalId.Trim(),
         Name = dto.Name.Trim(),
         Phone = dto.Phone,

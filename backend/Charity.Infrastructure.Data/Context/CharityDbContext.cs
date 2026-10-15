@@ -14,6 +14,7 @@ public class CharityDbContext : IdentityDbContext<ApplicationUser, IdentityRole,
     public DbSet<Charity.Domain.Entities.Charity> Charities => Set<Charity.Domain.Entities.Charity>();
     public DbSet<Beneficiary> Beneficiaries => Set<Beneficiary>();
     public DbSet<BeneficiaryFamilyMember> BeneficiaryFamilyMembers => Set<BeneficiaryFamilyMember>();
+    public DbSet<BeneficiaryHeadHistory> BeneficiaryHeadHistories => Set<BeneficiaryHeadHistory>();
     public DbSet<SuspensionReason> SuspensionReasons => Set<SuspensionReason>();
     public DbSet<InventoryItem> InventoryItems => Set<InventoryItem>();
     public DbSet<Donation> Donations => Set<Donation>();
@@ -57,6 +58,9 @@ public class CharityDbContext : IdentityDbContext<ApplicationUser, IdentityRole,
         {
             b.ToTable("Beneficiaries");
             b.HasKey(x => x.Id);
+            b.Property(x => x.FamilyCode).HasMaxLength(50);
+            b.HasIndex(x => x.FamilyCode);
+            b.Property(x => x.FamilyName).HasMaxLength(250);
             b.Property(x => x.NationalId).IsRequired().HasMaxLength(20);
             b.HasIndex(x => x.NationalId).IsUnique();
             b.Property(x => x.Name).IsRequired().HasMaxLength(200);
@@ -85,6 +89,26 @@ public class CharityDbContext : IdentityDbContext<ApplicationUser, IdentityRole,
 
             b.HasOne(x => x.Beneficiary)
              .WithMany(ben => ben.FamilyMembers)
+             .HasForeignKey(x => x.BeneficiaryId)
+             .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // BeneficiaryHeadHistory configuration (Succession Audit Trail)
+        builder.Entity<BeneficiaryHeadHistory>(b =>
+        {
+            b.ToTable("BeneficiaryHeadHistories");
+            b.HasKey(x => x.Id);
+            b.Property(x => x.PreviousHeadName).IsRequired().HasMaxLength(200);
+            b.Property(x => x.PreviousHeadNationalId).IsRequired().HasMaxLength(20);
+            b.Property(x => x.NewHeadName).IsRequired().HasMaxLength(200);
+            b.Property(x => x.NewHeadNationalId).IsRequired().HasMaxLength(20);
+            b.Property(x => x.Reason).HasMaxLength(200);
+            b.Property(x => x.Notes).HasMaxLength(1000);
+            b.Property(x => x.TransferredByCharityId).HasMaxLength(50);
+            b.Property(x => x.TransferredByCharityName).HasMaxLength(200);
+
+            b.HasOne(x => x.Beneficiary)
+             .WithMany(ben => ben.HeadHistories)
              .HasForeignKey(x => x.BeneficiaryId)
              .OnDelete(DeleteBehavior.Cascade);
         });
@@ -182,5 +206,18 @@ public class CharityDbContext : IdentityDbContext<ApplicationUser, IdentityRole,
              .HasForeignKey(x => x.CharityId)
              .OnDelete(DeleteBehavior.Cascade);
         });
+
+        // ==========================================
+        // Soft Delete: Global Query Filters
+        // الداتا التاريخية محفوظة دائماً ولا يتم حذفها فعلياً من قاعدة البيانات
+        // ==========================================
+        builder.Entity<Beneficiary>().HasQueryFilter(x => !x.IsDeleted);
+        builder.Entity<BeneficiaryFamilyMember>().HasQueryFilter(x => !x.IsDeleted);
+        builder.Entity<BeneficiaryHeadHistory>().HasQueryFilter(x => !x.IsDeleted);
+        builder.Entity<Distribution>().HasQueryFilter(x => !x.IsDeleted);
+        builder.Entity<Donation>().HasQueryFilter(x => !x.IsDeleted);
+        builder.Entity<InventoryItem>().HasQueryFilter(x => !x.IsDeleted);
+        builder.Entity<StaffMember>().HasQueryFilter(x => !x.IsDeleted);
+        builder.Entity<SuspensionReason>().HasQueryFilter(x => !x.IsDeleted);
     }
 }

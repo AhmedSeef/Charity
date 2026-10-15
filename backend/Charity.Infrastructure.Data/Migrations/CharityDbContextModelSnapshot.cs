@@ -132,12 +132,25 @@ namespace Charity.Infrastructure.Data.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("ElectricitySource")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("FamilyCode")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
                     b.Property<int>("FamilyCount")
                         .HasColumnType("int");
+
+                    b.Property<string>("FamilyName")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
 
                     b.Property<string>("GovernmentPensionDetails")
                         .IsRequired()
@@ -168,6 +181,9 @@ namespace Charity.Infrastructure.Data.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsCandidateForMicroProject")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
                     b.Property<bool>("IsSuspended")
@@ -281,6 +297,8 @@ namespace Charity.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("FamilyCode");
+
                     b.HasIndex("NationalId")
                         .IsUnique();
 
@@ -299,6 +317,9 @@ namespace Charity.Infrastructure.Data.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("EducationStage")
@@ -321,6 +342,12 @@ namespace Charity.Infrastructure.Data.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsChildLabor")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsFormerHead")
                         .HasColumnType("bit");
 
                     b.Property<bool>("IsSchoolDropout")
@@ -377,6 +404,74 @@ namespace Charity.Infrastructure.Data.Migrations
                     b.ToTable("BeneficiaryFamilyMembers", (string)null);
                 });
 
+            modelBuilder.Entity("Charity.Domain.Entities.BeneficiaryHeadHistory", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("BeneficiaryId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("NewHeadName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("NewHeadNationalId")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Notes")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("PreviousHeadName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("PreviousHeadNationalId")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime>("TransferredAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("TransferredByCharityId")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("TransferredByCharityName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BeneficiaryId");
+
+                    b.ToTable("BeneficiaryHeadHistories", (string)null);
+                });
+
             modelBuilder.Entity("Charity.Domain.Entities.Charity", b =>
                 {
                     b.Property<string>("Id")
@@ -394,9 +489,15 @@ namespace Charity.Infrastructure.Data.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Icon")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
 
                     b.Property<string>("License")
                         .IsRequired()
@@ -441,9 +542,15 @@ namespace Charity.Infrastructure.Data.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Details")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Logo")
                         .IsRequired()
@@ -488,8 +595,14 @@ namespace Charity.Infrastructure.Data.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("InventoryItemId")
                         .HasColumnType("nvarchar(450)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
 
                     b.Property<string>("ItemName")
                         .IsRequired()
@@ -545,6 +658,9 @@ namespace Charity.Infrastructure.Data.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("DonationKind")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -563,6 +679,9 @@ namespace Charity.Infrastructure.Data.Migrations
 
                     b.Property<string>("InventoryItemId")
                         .HasColumnType("nvarchar(450)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
 
                     b.Property<string>("ItemName")
                         .HasColumnType("nvarchar(max)");
@@ -606,6 +725,12 @@ namespace Charity.Infrastructure.Data.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
 
                     b.Property<string>("ItemName")
                         .IsRequired()
@@ -657,6 +782,12 @@ namespace Charity.Infrastructure.Data.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
 
                     b.Property<string>("JoinDate")
                         .IsRequired()
@@ -720,12 +851,18 @@ namespace Charity.Infrastructure.Data.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
                     b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
                     b.Property<string>("Title")
@@ -904,6 +1041,17 @@ namespace Charity.Infrastructure.Data.Migrations
                     b.Navigation("Beneficiary");
                 });
 
+            modelBuilder.Entity("Charity.Domain.Entities.BeneficiaryHeadHistory", b =>
+                {
+                    b.HasOne("Charity.Domain.Entities.Beneficiary", "Beneficiary")
+                        .WithMany("HeadHistories")
+                        .HasForeignKey("BeneficiaryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Beneficiary");
+                });
+
             modelBuilder.Entity("Charity.Domain.Entities.CharitySettings", b =>
                 {
                     b.HasOne("Charity.Domain.Entities.Charity", "Charity")
@@ -1037,6 +1185,8 @@ namespace Charity.Infrastructure.Data.Migrations
                     b.Navigation("Distributions");
 
                     b.Navigation("FamilyMembers");
+
+                    b.Navigation("HeadHistories");
                 });
 
             modelBuilder.Entity("Charity.Domain.Entities.Charity", b =>

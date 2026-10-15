@@ -23,6 +23,9 @@ public class FamilyMemberDto
     public DateTime? SeparatedAt { get; set; }
     public string? SeparatedToBeneficiaryId { get; set; }
     public string? SeparationReason { get; set; }
+
+    // هل هو عائل سابق للأسرة (سابق/متوفى)
+    public bool IsFormerHead { get; set; }
 }
 
 public class CreateFamilyMemberDto
@@ -46,6 +49,8 @@ public class CreateFamilyMemberDto
 public class BeneficiaryDto
 {
     public string Id { get; set; } = string.Empty;
+    public string FamilyCode { get; set; } = string.Empty; // كود العائلة الدائم مثل FAM-26-0001
+    public string FamilyName { get; set; } = string.Empty; // مسمى العائلة الموحد
     public string NationalId { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string Phone { get; set; } = string.Empty;
@@ -106,10 +111,15 @@ public class BeneficiaryDto
 
     // أفراد الأسرة والمعالين والمعيلين
     public List<FamilyMemberDto> FamilyMembers { get; set; } = new();
+
+    // سجل تعاقب ولاية الأسرة (التاريخ الكامل للعائلين السابقين)
+    public List<BeneficiaryHeadHistoryDto> HeadHistories { get; set; } = new();
 }
 
 public class CreateBeneficiaryDto
 {
+    public string? FamilyCode { get; set; } // اختياري - يتم توليده تلقائياً إن ترك فارغاً
+    public string? FamilyName { get; set; } // مسمى العائلة مثل عائلة فلان الفلاني
     public string NationalId { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string Phone { get; set; } = string.Empty;
@@ -160,6 +170,8 @@ public class CreateBeneficiaryDto
 
 public class UpdateBeneficiaryDto
 {
+    public string? FamilyCode { get; set; }
+    public string? FamilyName { get; set; }
     public string NationalId { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string Phone { get; set; } = string.Empty;
@@ -220,4 +232,27 @@ public class SeparateFamilyMemberDto
     public string FamilyMemberId { get; set; } = string.Empty;
     public bool CreateIndependentBeneficiaryProfile { get; set; } = true;
     public string? Reason { get; set; }
+}
+
+public class BeneficiaryHeadHistoryDto
+{
+    public string Id { get; set; } = string.Empty;
+    public string BeneficiaryId { get; set; } = string.Empty;
+    public string PreviousHeadName { get; set; } = string.Empty;
+    public string PreviousHeadNationalId { get; set; } = string.Empty;
+    public string NewHeadName { get; set; } = string.Empty;
+    public string NewHeadNationalId { get; set; } = string.Empty;
+    public string Reason { get; set; } = string.Empty;
+    public string Notes { get; set; } = string.Empty;
+    public DateTime TransferredAt { get; set; }
+    public string TransferredByCharityName { get; set; } = string.Empty;
+}
+
+public class TransferHeadshipDto
+{
+    public string NewHeadFamilyMemberId { get; set; } = string.Empty; // الفرد المراد ترقيته كعائل جديد
+    public string Reason { get; set; } = "وفاة رب الأسرة السابق"; // وفاة، عجز كامل أو مرض، انفصال...
+    public string? FormerHeadRelationship { get; set; } = "رب الأسرة السابق (متوفى)";
+    public string? NewFamilyName { get; set; } // مسمى العائلة المحدث اختياري
+    public string? Notes { get; set; }
 }

@@ -84,6 +84,8 @@ export class Api {
   "beneficiaries": [
     {
       "id": "b1",
+      "familyCode": "FAM-26-0001",
+      "familyName": "عائلة أحمد محمود سالم",
       "nationalId": "28501011234567",
       "name": "أحمد محمود سالم",
       "category": "أرامل وأيتام",
@@ -92,6 +94,7 @@ export class Api {
       "phone": "01098765432",
       "maritalStatus": "متزوج",
       "familyCount": 4,
+      "headHistories": [],
       "housing": "إيجار قديم",
       "healthIssues": "ضعف إبصار ومشاكل بالرمد",
       "researchNotes": "أسرة تعول 3 أطفال، عائل الأسرة باليومية وبحاجة لمساعدات غذائية ونقدية دورية.",
@@ -176,6 +179,8 @@ export class Api {
     },
     {
       "id": "b2",
+      "familyCode": "FAM-26-0002",
+      "familyName": "عائلة المرحوم محمود إسماعيل",
       "nationalId": "27005057654321",
       "name": "سعاد إبراهيم محمد",
       "category": "مرضى ومسنين",
@@ -183,10 +188,24 @@ export class Api {
       "status": "مستحق فعال",
       "phone": "01187654321",
       "maritalStatus": "أرمل",
-      "familyCount": 2,
+      "familyCount": 3,
+      "headHistories": [
+        {
+          "id": "hh_b2_1",
+          "beneficiaryId": "b2",
+          "previousHeadName": "محمود إسماعيل حسن",
+          "previousHeadNationalId": "26001017654320",
+          "newHeadName": "سعاد إبراهيم محمد",
+          "newHeadNationalId": "27005057654321",
+          "reason": "وفاة رب الأسرة السابق 🕊️",
+          "notes": "انتقلت ولاية الملف للأرملة لرعاية بناتها مع حفظ كامل حركات الصرف السابقة للأسرة",
+          "transferredAt": "2026-02-10T10:30:00.000Z",
+          "transferredByCharityName": "جمعية أبواب الخير"
+        }
+      ],
       "housing": "سكن مشترك",
       "healthIssues": "مريضة سكر وتحتاج أدوية شهرية وكرسي متحرك",
-      "researchNotes": "مسنة تعيش مع ابنتها، لا يوجد دخل ثابت سوى معاش تكافل وكرامة.",
+      "researchNotes": "مسنة تعيش مع ابنتها، لا يوجد دخل ثابت سوى معاش تكافل وكرامة. تم نقل ولاية الملف لها بعد وفاة الزوج.",
       "incomeSource": "لا يوجد عمل (مسنة)",
       "monthlyIncome": 0,
       "hasLandOrProperty": false,
@@ -215,6 +234,23 @@ export class Api {
       "suggestedMicroProject": "تطوير مشغل خياطة منزلي لابنتها",
       "familyMembers": [
         {
+          "id": "fm_b2_0",
+          "nationalId": "26001017654320",
+          "name": "محمود إسماعيل حسن",
+          "relationship": "رب الأسرة السابق (متوفى)",
+          "memberType": "معال",
+          "hasIncome": false,
+          "incomeAmount": null,
+          "incomeSource": "",
+          "supportType": "متوفى / سابق",
+          "healthStatus": "",
+          "educationStage": "غير محدد",
+          "isSchoolDropout": false,
+          "isChildLabor": false,
+          "isFormerHead": true,
+          "notes": "عائل الأسرة السابق (توفي وانتقلت ولاية الملف للأرملة سعاد مع حفظ سجله)"
+        },
+        {
           "id": "fm_b2_1",
           "nationalId": "29801017654322",
           "name": "هناء محمود إسماعيل",
@@ -228,6 +264,7 @@ export class Api {
           "educationStage": "ثانوي / فني",
           "isSchoolDropout": false,
           "isChildLabor": false,
+          "isFormerHead": false,
           "notes": "ابنتها المعيلة وتساعد في مصاريف البيت والأدوية"
         }
       ],
@@ -236,6 +273,8 @@ export class Api {
     },
     {
       "id": "b3",
+      "familyCode": "FAM-26-0003",
+      "familyName": "عائلة محمود حسن علي",
       "nationalId": "29012345678901",
       "name": "محمود حسن علي",
       "category": "غارمين",
@@ -244,6 +283,7 @@ export class Api {
       "phone": "01234567890",
       "maritalStatus": "متزوج",
       "familyCount": 5,
+      "headHistories": [],
       "housing": "إيجار جديد",
       "healthIssues": "سليم طبياً",
       "researchNotes": "عليه ديون متراكمة بسبب جهاز ابنته الكبرى وإيصالات أمانة.",
@@ -267,6 +307,8 @@ export class Api {
     },
     {
       "id": "b4",
+      "familyCode": "FAM-26-0004",
+      "familyName": "عائلة فاطمة عبد الرحمن",
       "nationalId": "28009091112223",
       "name": "فاطمة عبد الرحمن",
       "category": "حالات طوارئ",
@@ -275,6 +317,7 @@ export class Api {
       "phone": "01511223344",
       "maritalStatus": "مطلق",
       "familyCount": 3,
+      "headHistories": [],
       "housing": "سكن متهالك/يحتاج ترميم",
       "healthIssues": "روماتويد والتهاب مفاصل",
       "researchNotes": "تحتاج مساعدة شتاء وبطاطين وأدوات مدرسية لأطفالها.",
@@ -298,6 +341,8 @@ export class Api {
     },
     {
       "id": "b5",
+      "familyCode": "FAM-26-0005",
+      "familyName": "عائلة عماد الدين صبحي",
       "nationalId": "26504043334445",
       "name": "عماد الدين صبحي",
       "category": "مرضى ومسنين",
@@ -306,6 +351,7 @@ export class Api {
       "phone": "01022334455",
       "maritalStatus": "متزوج",
       "familyCount": 2,
+      "headHistories": [],
       "housing": "ملك قديم",
       "healthIssues": "بتر جزئي بالقدم ويحتاج كرسي متحرك",
       "researchNotes": "يحتاج رعاية صحية ودواء دوري.",
@@ -329,6 +375,8 @@ export class Api {
     },
     {
       "id": "b6",
+      "familyCode": "FAM-26-0006",
+      "familyName": "عائلة محمود المنسي",
       "nationalId": "29505051234567",
       "name": "عائلة محمود المنسي",
       "category": "حالات طوارئ",
@@ -337,6 +385,7 @@ export class Api {
       "phone": "01288997766",
       "maritalStatus": "متزوج",
       "familyCount": 6,
+      "headHistories": [],
       "housing": "إيجار جديد",
       "healthIssues": "أطفال في سن المدارس",
       "researchNotes": "تعطل عائل الأسرة عن العمل في ورشة.",
@@ -394,6 +443,8 @@ export class Api {
     },
     {
       "id": "b7",
+      "familyCode": "FAM-26-0007",
+      "familyName": "عائلة هبة كمال الدين",
       "nationalId": "28811223344556",
       "name": "هبة ككمال الدين",
       "category": "أرامل وأيتام",
@@ -402,6 +453,7 @@ export class Api {
       "phone": "01033445566",
       "maritalStatus": "أرمل",
       "familyCount": 3,
+      "headHistories": [],
       "housing": "إيجار قديم",
       "healthIssues": "لا يوجد",
       "researchNotes": "أرملة تعول يتيمين ومقيدة في برامج كفالة الأيتام.",
@@ -1096,6 +1148,15 @@ export class Api {
       data.registeredByCharityId = active.id;
       data.registeredByCharityName = active.name;
     }
+    if (!data.familyCode) {
+      const year = new Date().getFullYear().toString().slice(-2);
+      const count = (this.db.beneficiaries || []).length + 1;
+      data.familyCode = `FAM-${year}-${String(count).padStart(4, '0')}`;
+    }
+    if (!data.familyName) {
+      data.familyName = `عائلة ${data.name || ''}`.trim();
+    }
+    if (!data.headHistories) data.headHistories = [];
     if (!data.familyMembers) data.familyMembers = [];
     this.db.beneficiaries.unshift(data);
     this.save();
@@ -1220,6 +1281,114 @@ export class Api {
 
     this.save();
     return of({ updatedOriginalBeneficiary: ben, newIndependentBeneficiary: newBen });
+  }
+
+  // ==========================================
+  // نقل ولاية الملف (تعيين عائل جديد للأسرة)
+  // ==========================================
+  transferHeadship(beneficiaryId: string, dto: {
+    newHeadFamilyMemberId: string;
+    reason: string;
+    formerHeadRelationship?: string;
+    newFamilyName?: string;
+    notes?: string;
+  }): Observable<any> {
+    const ben = (this.db.beneficiaries || []).find((b: any) => String(b.id) === String(beneficiaryId));
+    if (!ben) throw new Error('المستفيد غير موجود');
+
+    const active = this.getActiveCharity();
+    if (ben.registeredByCharityId && ben.registeredByCharityId !== active.id) {
+      throw new Error(`غير مصرح: نقل ولاية الملف مقصورة على الجمعية المسجلة للملف (${ben.registeredByCharityName}).`);
+    }
+
+    if (!ben.familyMembers) ben.familyMembers = [];
+    const idx = ben.familyMembers.findIndex((m: any) => String(m.id) === String(dto.newHeadFamilyMemberId));
+    if (idx === -1) throw new Error('فرد الأسرة المختار غير موجود بالملف');
+
+    const newHeadMember = ben.familyMembers[idx];
+
+    // 1. تسجيل سجل التعاقب التاريخي للأسرة
+    if (!ben.headHistories) ben.headHistories = [];
+    const history = {
+      id: 'hh_' + Date.now().toString(),
+      beneficiaryId: ben.id,
+      previousHeadName: ben.name,
+      previousHeadNationalId: ben.nationalId,
+      newHeadName: newHeadMember.name,
+      newHeadNationalId: newHeadMember.nationalId,
+      reason: dto.reason || 'وفاة رب الأسرة السابق 🕊️',
+      notes: dto.notes || '',
+      transferredAt: new Date().toISOString(),
+      transferredByCharityName: active.name
+    };
+    ben.headHistories.unshift(history);
+
+    // 2. تحويل العائل السابق لفرد أسرة (عائل سابق / متوفى) للحفاظ على سجله التراكمي
+    const formerHeadMember = {
+      id: 'fm_prev_' + Date.now().toString(),
+      nationalId: ben.nationalId,
+      name: ben.name,
+      relationship: dto.formerHeadRelationship || 'رب الأسرة السابق (متوفى)',
+      memberType: 'معال',
+      hasIncome: false,
+      incomeAmount: null,
+      incomeSource: '',
+      supportType: 'متوفى / سابق',
+      healthStatus: '',
+      educationStage: 'غير محدد',
+      isSchoolDropout: false,
+      isChildLabor: false,
+      isFormerHead: true,
+      notes: `عائل الأسرة السابق. سبب نقل الولاية: ${history.reason}`
+    };
+
+    // 3. حذف الفرد المختار من أفراد الأسرة وإضافة العائل السابق
+    ben.familyMembers.splice(idx, 1);
+    ben.familyMembers.push(formerHeadMember);
+
+    // 4. ترقية الاسم والرقم القومي للعائل الجديد
+    ben.name = newHeadMember.name;
+    ben.nationalId = newHeadMember.nationalId;
+
+    if (dto.newFamilyName && dto.newFamilyName.trim()) {
+      ben.familyName = dto.newFamilyName.trim();
+    } else if (dto.reason.includes('وفاة') && !ben.familyName?.includes('المرحوم')) {
+      ben.familyName = `عائلة المرحوم ${history.previousHeadName}`;
+    }
+
+    // إذا كان الملف موقوفاً بسبب وفاة العائل السابق، يتم استئناف النشاط ورفع الحظر فوراً
+    if (ben.isSuspended && (ben.suspensionReasonTitle?.includes('وفاة') || dto.reason.includes('وفاة'))) {
+      ben.isSuspended = false;
+      ben.status = 'مستحق فعال';
+      ben.suspensionNotes = (ben.suspensionNotes || '') + ` [تم استئناف النشاط ونقل الولاية للعائل الجديد (${newHeadMember.name}) بتاريخ ${new Date().toLocaleDateString('ar-EG')}]`;
+    }
+
+    ben.researchNotes = (ben.researchNotes || '') + `\n[تم نقل ولاية الأسرة بتاريخ ${new Date().toLocaleDateString('ar-EG')} من (${history.previousHeadName}) إلى (${newHeadMember.name}). السبب: ${dto.reason}]`;
+
+    this.save();
+    return of(ben);
+  }
+
+  // ==========================================
+  // حذف لين وأرشفة للمستفيد (لا يوجد حذف نهائي للداتا التاريخية)
+  // ==========================================
+  deleteBeneficiary(id: string): Observable<any> {
+    const ben = (this.db.beneficiaries || []).find((b: any) => String(b.id) === String(id));
+    if (!ben) throw new Error('المستفيد غير موجود');
+
+    const active = this.getActiveCharity();
+    if (ben.registeredByCharityId && ben.registeredByCharityId !== active.id) {
+      throw new Error(`غير مصرح: حذف أو أرشفة ملف الحالة مقصورة على الجمعية المسجلة للملف (${ben.registeredByCharityName}).`);
+    }
+
+    // Soft delete: sets isDeleted = true and status = 'مؤرشف / ملغي'
+    ben.isDeleted = true;
+    ben.status = 'مؤرشف / ملغي';
+    ben.isSuspended = true;
+    ben.suspensionNotes = (ben.suspensionNotes || '') + ` [أرشفة لينة وحفظ للسجل التاريخي]`;
+
+    this.save();
+    return of({ success: true, message: 'تم أرشفة الملف بنجاح مع حفظ كامل السجل التاريخي وحركات الصرف.' });
   }
 
   // ==========================================

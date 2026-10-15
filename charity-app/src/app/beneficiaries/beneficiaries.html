@@ -27,6 +27,13 @@
           ✏️ تعديل بيانات الملف
         </button>
 
+        <!-- زر نقل ولاية وعائل الملف -->
+        <button *ngIf="canEditBeneficiary(selectedBen) && getEligibleNewHeads().length > 0" 
+                type="button" (click)="openTransferHeadModal()" 
+                style="background-color: #f57f17; color: white; border: none; padding: 8px 18px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.15);">
+          🔄 نقل ولاية الملف (تعيين عائل جديد)
+        </button>
+
         <!-- أزرار إيقاف الملف وإعادة التفعيل -->
         <button *ngIf="canEditBeneficiary(selectedBen) && !selectedBen.isSuspended && selectedBen.status !== 'موقوف'" 
                 type="button" (click)="openSuspendModal(selectedBen)" 
@@ -38,6 +45,14 @@
                 type="button" (click)="reactivateBeneficiary(selectedBen)" 
                 style="background-color: #2e7d32; color: white; border: none; padding: 8px 18px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold; display: flex; align-items: center; gap: 6px;">
           ✅ إعادة تفعيل الملف والسماح بالصرف
+        </button>
+
+        <!-- أرشفة لينة للملف (حفظ الداتا التاريخية) -->
+        <button *ngIf="canEditBeneficiary(selectedBen)" 
+                type="button" (click)="deleteBeneficiary(selectedBen)" 
+                style="background-color: #546e7a; color: white; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold; display: flex; align-items: center; gap: 4px;"
+                title="أرشفة وإيقاف الملف مع حفظ كامل الداتا التاريخية وحركات الصرف">
+          📦 أرشفة الملف
         </button>
 
         <span *ngIf="!canEditBeneficiary(selectedBen)" 
@@ -108,8 +123,27 @@
       </div>
 
       <div style="flex: 1; min-width: 250px;">
+        <!-- شريط هوية العائلة وكود الملف الموحد -->
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; border-bottom: 1px dashed #b2dfdb; padding-bottom: 8px;">
+          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <span style="background: #1a237e; color: white; padding: 4px 12px; border-radius: 6px; font-size: 13px; font-weight: bold; letter-spacing: 0.5px;">
+              🏷️ كود العائلة: {{ selectedBen.familyCode || 'FAM-26-0001' }}
+            </span>
+            <span style="background: #e8eaf6; color: #1a237e; border: 1px solid #c5cae9; padding: 4px 12px; border-radius: 6px; font-size: 14px; font-weight: bold;">
+              🏠 مسمى الأسرة: {{ selectedBen.familyName || ('عائلة ' + selectedBen.name) }}
+            </span>
+          </div>
+          <span *ngIf="selectedBen.headHistories && selectedBen.headHistories.length > 0" 
+                style="background: #fff8e1; color: #f57f17; border: 1px solid #ffe082; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: bold;">
+            🔄 تم نقل ولاية هذا الملف ({{ selectedBen.headHistories.length }} تعاقب)
+          </span>
+        </div>
+
         <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
           <h2 style="margin: 0; color: #004d40; font-size: 24px;">{{ selectedBen.name }}</h2>
+          <span style="font-size: 12px; background: #e0f2f1; color: #004d40; padding: 2px 8px; border-radius: 4px; font-weight: bold;">
+            (العائل الحالي المعتمد)
+          </span>
           <span [style.background]="selectedBen.priorityTier?.startsWith('أ') ? '#ffebee' : (selectedBen.priorityTier?.startsWith('ب') ? '#fff3e0' : '#e8f5e9')"
                 [style.color]="selectedBen.priorityTier?.startsWith('أ') ? '#c62828' : (selectedBen.priorityTier?.startsWith('ب') ? '#e65100' : '#2e7d32')"
                 [style.border]="selectedBen.priorityTier?.startsWith('أ') ? '1px solid #ef9a9a' : '1px solid #ffe082'"
@@ -413,7 +447,13 @@
               <td style="text-align: center; color: #888;">{{ idx + 1 }}</td>
               <td><strong>{{ m.name }}</strong></td>
               <td><code style="background: #f5f5f5; padding: 2px 6px; border-radius: 4px;">{{ m.nationalId }}</code></td>
-              <td>{{ m.relationship }}</td>
+              <td>
+                {{ m.relationship }}
+                <span *ngIf="m.isFormerHead || m.relationship?.includes('سابق')" 
+                      style="display: block; font-size: 11px; color: #d84315; background: #fbe9e7; padding: 1px 6px; border-radius: 4px; font-weight: bold; margin-top: 2px;">
+                  🕊️ رب أسرة سابق
+                </span>
+              </td>
               <td style="text-align: center;">
                 <span [style.background]="m.memberType === 'معيل' ? '#e8f5e9' : '#fff3e0'" 
                       [style.color]="m.memberType === 'معيل' ? '#2e7d32' : '#e65100'" 
@@ -444,15 +484,70 @@
               </td>
               <td style="color: #666; font-size: 13px;">{{ m.notes || m.healthStatus || '—' }}</td>
               <td style="text-align: center;">
-                <button *ngIf="canEditBeneficiary(selectedBen)" type="button" (click)="openSeparateModal(m)" 
+                <span *ngIf="m.isFormerHead || m.relationship?.includes('سابق')" 
+                      style="color: #bf360c; font-size: 11px; background: #fff8e1; border: 1px solid #ffe082; padding: 3px 8px; border-radius: 4px; font-weight: bold;">
+                  📜 سجل تاريخي
+                </span>
+                <button *ngIf="!m.isFormerHead && !m.relationship?.includes('سابق') && canEditBeneficiary(selectedBen)" type="button" (click)="openSeparateModal(m)" 
                         title="فصل هذا الفرد واستقلاله بملف جديد أو فك قيده من الأسرة"
                         style="background-color: #fff8e1; color: #f57f17; border: 1px solid #ffe082; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; display: inline-flex; align-items: center; gap: 4px;">
                   ✂️ فصل واستقلال
                 </button>
-                <span *ngIf="!canEditBeneficiary(selectedBen)" style="color: #9e9e9e; font-size: 11px;">
+                <span *ngIf="!m.isFormerHead && !m.relationship?.includes('سابق') && !canEditBeneficiary(selectedBen)" style="color: #9e9e9e; font-size: 11px;">
                   🔒 محمي
                 </span>
               </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- سجل تعاقب ولاية الأسرة وعائل الملف (Succession History & Audit Trail) -->
+    <div *ngIf="selectedBen.headHistories && selectedBen.headHistories.length > 0" 
+         style="background: white; border: 1px solid #ffe082; border-radius: 8px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); margin-bottom: 25px;">
+      <h3 style="margin: 0 0 15px 0; color: #e65100; font-size: 17px; display: flex; align-items: center; gap: 8px;">
+        <span>📜 سجل تعاقب ولاية وعائل الأسرة (Succession Audit Trail)</span>
+        <span style="background: #fff3e0; color: #e65100; font-size: 12px; padding: 2px 10px; border-radius: 12px; font-weight: bold;">
+          {{ selectedBen.headHistories.length }} نقل ولاية موثق
+        </span>
+      </h3>
+      <p style="margin: -8px 0 15px 0; color: #666; font-size: 13px;">
+        توثيق خط التعاقب التاريخي لضمان بقاء سجل الصرف التراكمي الموحد بكود العائلة ({{ selectedBen.familyCode || 'FAM-26-0001' }}) دون أي حذف للبيانات.
+      </p>
+
+      <div style="overflow-x: auto;">
+        <table border="1" cellpadding="8" cellspacing="0" style="width: 100%; border-collapse: collapse; font-size: 13px; text-align: right;">
+          <thead>
+            <tr style="background-color: #fff8e1; color: #bf360c;">
+              <th style="width: 40px; text-align: center;">#</th>
+              <th>العائل السابق (صاحب الملف الأصلي)</th>
+              <th>العائل الجديد (رب الأسرة المعتمد)</th>
+              <th>سبب نقل ولاية الملف</th>
+              <th>تاريخ النقل</th>
+              <th>الجمعية الموثقة</th>
+              <th>ملاحظات الباحث</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let h of selectedBen.headHistories; let idx = index" style="border-bottom: 1px solid #eee;">
+              <td style="text-align: center; color: #888;">{{ idx + 1 }}</td>
+              <td>
+                <strong style="color: #333;">{{ h.previousHeadName }}</strong>
+                <code style="display: block; font-size: 11px; color: #666;">{{ h.previousHeadNationalId }}</code>
+              </td>
+              <td>
+                <strong style="color: #2e7d32;">{{ h.newHeadName }}</strong>
+                <code style="display: block; font-size: 11px; color: #2e7d32;">{{ h.newHeadNationalId }}</code>
+              </td>
+              <td>
+                <span style="background: #fbe9e7; color: #d84315; padding: 2px 8px; border-radius: 6px; font-size: 12px; font-weight: bold;">
+                  {{ h.reason }}
+                </span>
+              </td>
+              <td style="color: #555;">{{ h.transferredAt | date:'yyyy-MM-dd' }}</td>
+              <td>{{ h.transferredByCharityName }}</td>
+              <td style="color: #666;">{{ h.notes || '—' }}</td>
             </tr>
           </tbody>
         </table>
@@ -464,13 +559,13 @@
       <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #004d40; padding-bottom: 10px; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
         <div>
           <h3 style="margin: 0; color: #004d40; font-size: 17px; display: flex; align-items: center; gap: 8px;">
-            <span>📦 سجل المساعدات الموحد للحالة عبر شبكة الجمعيات</span>
+            <span>📦 سجل المساعدات الموحد للأسرة بكود العائلة ({{ selectedBen.familyCode || 'FAM-26-0001' }})</span>
             <span style="background: #e8f5e9; color: #2e7d32; font-size: 11px; padding: 2px 8px; border-radius: 10px; border: 1px solid #c8e6c9;">
-              منع ازدواجية الصرف
+              سجل تراكمي موحد ودائم
             </span>
           </h3>
           <p style="margin: 4px 0 0 0; color: #666; font-size: 12px;">
-            يعرض هذا السجل كافة المساعدات التي تسلّمها المستفيد سواءً من جمعيتنا أو من الجمعيات الشريكة الأخرى.
+            يعرض هذا السجل التراكمي الموحد كافة المساعدات التي تسلّمتها الأسرة عبر شبكة الجمعيات، ويبقى محفوظاً للأبد حتى عند وفاة أو تعاقب عائل الأسرة (لا يوجد حذف نهائي للداتا التاريخية).
           </p>
         </div>
         
@@ -562,11 +657,23 @@
     <div style="background-color: #f9f9f9; padding: 25px; border-radius: 8px; border: 1px solid #ddd; box-shadow: 0 2px 6px rgba(0,0,0,0.05);">
       <form (ngSubmit)="onSubmit()">
         
-        <!-- القسم الأول: البيانات الأساسية -->
+        <!-- القسم الأول: البيانات الأساسية والتعريف الأسري -->
         <h4 style="color: #00695c; margin: 0 0 15px 0; font-size: 16px; border-bottom: 2px solid #b2dfdb; padding-bottom: 6px;">
-          1. البيانات الشخصية والاتصال والتوزيع الجغرافي
+          1. الهوية الأسرية والبيانات الشخصية والاتصال
         </h4>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 25px;">
+          <div>
+            <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">🏷️ كود العائلة الموحد (Family Code)</label>
+            <input type="text" [(ngModel)]="currentBen.familyCode" name="familyCode" placeholder="يولّد تلقائياً إن تُرِك فارغاً (مثال: FAM-26-0001)" 
+                   style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; font-family: monospace; font-weight: bold; color: #004d40;">
+          </div>
+
+          <div>
+            <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">🏠 مسمى الأسرة / اسم العائلة</label>
+            <input type="text" [(ngModel)]="currentBen.familyName" name="familyName" placeholder="مثال: عائلة فلان الفلاني" 
+                   style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; font-weight: bold;">
+          </div>
+
           <div>
             <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">الرقم القومي للمستفيد (14 رقم) *</label>
             <input type="text" [(ngModel)]="currentBen.nationalId" name="nationalId" placeholder="14 رقم قومي فريد" required maxlength="14" 
@@ -1057,7 +1164,15 @@
         <tbody>
           <tr *ngFor="let b of paginatedBeneficiaries" (click)="openDetail(b)" class="clickable-row">
             <td>
-              <strong style="color: #004d40; font-size: 15px;">{{ b.name }}</strong><br>
+              <strong style="color: #004d40; font-size: 15px;">{{ b.name }}</strong>
+              <div *ngIf="b.familyCode || b.familyName" style="margin: 3px 0; font-size: 12px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                <span style="background: #fff8e1; color: #b78103; border: 1px solid #ffe082; padding: 1px 6px; border-radius: 4px; font-family: monospace; font-weight: bold; font-size: 11px;">
+                  🏷️ {{ b.familyCode || 'FAM-26-0001' }}
+                </span>
+                <span *ngIf="b.familyName" style="color: #e65100; font-weight: 600; font-size: 12px;">
+                  🏠 {{ b.familyName }}
+                </span>
+              </div>
               <span style="background-color: #ffe0b2; color: #e65100; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold;">
                 {{ b.category }}
               </span>
@@ -1158,6 +1273,11 @@
                       type="button" (click)="reactivateBeneficiary(b, $event)" title="إعادة تفعيل الملف والسماح بالصرف" 
                       style="background-color: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; padding: 6px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; margin-left: 4px;">
                 ✅
+              </button>
+              <!-- زر أرشفة وحفظ تاريخي (Soft Delete) -->
+              <button *ngIf="canEditBeneficiary(b)" type="button" (click)="deleteBeneficiary(b, $event)" title="أرشفة الملف وحفظ الداتا التاريخية (حذف لين Soft Delete)" 
+                      style="background-color: #efebe9; color: #5d4037; border: 1px solid #d7ccc8; padding: 6px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; margin-left: 4px;">
+                📦
               </button>
               <span *ngIf="!canEditBeneficiary(b)" [title]="'الملف مسجل بواسطة ' + (b.registeredByCharityName || 'جمعية أخرى') + ' - التعديل مقصور على الجمعية المسجلة'" 
                     style="background-color: #f5f5f5; color: #9e9e9e; border: 1px dashed #ccc; padding: 5px 8px; border-radius: 4px; font-size: 12px; cursor: not-allowed; display: inline-block;">
@@ -1321,4 +1441,122 @@
     </div>
   </div>
 
+  <!-- ========================================== -->
+  <!-- MODAL: نقل ولاية الملف وتعيين عائل جديد للأسرة -->
+  <!-- ========================================== -->
+  <div *ngIf="showTransferHeadModal" 
+       style="position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 15px;">
+    <div style="background: white; border-radius: 10px; max-width: 600px; width: 100%; box-shadow: 0 10px 30px rgba(0,0,0,0.3); overflow: hidden; animation: fadeIn 0.2s ease;">
+      <!-- Header -->
+      <div style="background-color: #e65100; color: white; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="margin: 0; font-size: 18px; display: flex; align-items: center; gap: 8px;">
+          <span>🔄</span> نقل ولاية الملف وتعيين عائل جديد للأسرة
+        </h3>
+        <button type="button" (click)="closeTransferHeadModal()" 
+                style="background: transparent; border: none; color: white; font-size: 20px; cursor: pointer; line-height: 1;">✕</button>
+      </div>
+
+      <!-- Body -->
+      <div style="padding: 20px; max-height: 75vh; overflow-y: auto;">
+        
+        <!-- صندوق إرشادات وضمان الحوكمة وحفظ السجل التراكمي -->
+        <div style="background-color: #fff8e1; border-right: 4px solid #ffa000; padding: 14px; border-radius: 6px; margin-bottom: 18px; font-size: 13px; color: #795548; line-height: 1.6;">
+          <strong style="color: #e65100; font-size: 14px; display: block; margin-bottom: 4px;">
+            🛡️ حوكمة أسرية وحفظ كامل للبيانات التاريخية:
+          </strong>
+          <ul style="margin: 0; padding-right: 18px;">
+            <li><strong>لن يُمحى أي سجل صرف:</strong> تظل جميع المساعدات السابقة (نقدية وعينية) محفوظة ومقيدة باسم كود العائلة <code>{{ selectedBen?.familyCode || 'FAM-26-0001' }}</code> للأبد دون حذف.</li>
+            <li><strong>انتقال الهوية:</strong> سينتقل الرقم القومي الماستر للملف إلى العائل الجديد المختار (الزوجة أو الابن الأكبر).</li>
+            <li><strong>صون مكانة العائل السابق:</strong> سيتم ترحيل ({{ selectedBen?.name }}) إلى سجل أفراد الأسرة كـ <code>🕊️ رب أسرة سابق</code> وتوثيق واقعة النقل في سجل التعاقب.</li>
+          </ul>
+        </div>
+
+        <!-- ملخص الحالة الحالية -->
+        <div style="background: #fafafa; border: 1px solid #e0e0e0; border-radius: 6px; padding: 12px 16px; margin-bottom: 16px; font-size: 13px;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+            <span><strong>العائل الحالي (صاحب الملف):</strong> <span style="color: #c62828; font-weight: bold;">{{ selectedBen?.name }}</span></span>
+            <span><strong>كود العائلة:</strong> <code style="color: #004d40; font-weight: bold;">{{ selectedBen?.familyCode || 'FAM-26-0001' }}</code></span>
+          </div>
+          <div style="color: #555;">
+            <strong>الرقم القومي الحالي:</strong> <code>{{ selectedBen?.nationalId }}</code>
+          </div>
+        </div>
+
+        <!-- اختيار العائل الجديد من بين أفراد الأسرة المسجلين -->
+        <div style="margin-bottom: 16px;">
+          <label style="display: block; font-size: 13px; font-weight: bold; color: #333; margin-bottom: 6px;">
+            👑 اختيار رب الأسرة الجديد (العائل البديل) *
+          </label>
+          <div *ngIf="getEligibleNewHeads().length === 0" 
+               style="background: #ffebee; border: 1px solid #ffcdd2; color: #c62828; padding: 10px; border-radius: 6px; font-size: 13px;">
+            ⚠️ لا يوجد أفراد أسرة مسجلين ومؤهلين في هذا الملف. يرجى الدخول إلى "تعديل الملف" وإضافة الزوجة أو الأبناء أولاً لتتمكن من نقل الولاية إليهم.
+          </div>
+          <select *ngIf="getEligibleNewHeads().length > 0" 
+                  [(ngModel)]="selectedNewHeadMemberId" 
+                  style="width: 100%; padding: 10px; border-radius: 6px; border: 2px solid #ffb74d; box-sizing: border-box; font-size: 14px; font-weight: bold; background: #fffde7; color: #333;">
+            <option value="" disabled selected>-- اضغط لاختيار فرد الأسرة الجديد (الزوجة / الابن الأكبر...) --</option>
+            <option *ngFor="let m of getEligibleNewHeads()" [value]="m.id">
+              {{ m.name }} — ({{ m.relationship }} | {{ m.memberType }} | الرقم القومي: {{ m.nationalId }})
+            </option>
+          </select>
+        </div>
+
+        <!-- سبب نقل الولاية -->
+        <div style="margin-bottom: 16px;">
+          <label style="display: block; font-size: 13px; font-weight: bold; color: #333; margin-bottom: 6px;">
+            📋 سبب نقل ولاية الملف وعائل الأسرة *
+          </label>
+          <select [(ngModel)]="transferHeadReason" 
+                  style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; font-size: 14px;">
+            <option *ngFor="let tr of transferReasons" [value]="tr">{{ tr }}</option>
+          </select>
+        </div>
+
+        <!-- صفة العائل السابق في السجل -->
+        <div style="margin-bottom: 16px;">
+          <label style="display: block; font-size: 13px; font-weight: bold; color: #333; margin-bottom: 6px;">
+            🕊️ صفة ومسمى العائل السابق بعد النقل
+          </label>
+          <input type="text" [(ngModel)]="formerHeadRelationship" placeholder="مثال: رب الأسرة السابق (متوفى)" 
+                 style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; font-size: 14px;">
+        </div>
+
+        <!-- مسمى الأسرة الجديد -->
+        <div style="margin-bottom: 16px;">
+          <label style="display: block; font-size: 13px; font-weight: bold; color: #333; margin-bottom: 6px;">
+            🏠 مسمى الأسرة الجديد (اختياري)
+          </label>
+          <input type="text" [(ngModel)]="newFamilyNameInput" placeholder="مثال: عائلة سعاد إبراهيم (أو تترك لتتحدث تلقائياً)" 
+                 style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; font-size: 14px;">
+        </div>
+
+        <!-- ملاحظات إضافية وتوثيق البحث الاجتماعي -->
+        <div style="margin-bottom: 10px;">
+          <label style="display: block; font-size: 13px; font-weight: bold; color: #333; margin-bottom: 6px;">
+            📝 ملاحظات البحث الميداني وتوثيق القرار
+          </label>
+          <textarea [(ngModel)]="transferHeadNotes" rows="3" placeholder="وثّق سبب القرار، رقم شهادة الوفاة أو تفاصيل تقرير البحث الاجتماعي المعتمد..." 
+                    style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; font-size: 13px;"></textarea>
+        </div>
+
+      </div>
+
+      <!-- Footer -->
+      <div style="background-color: #fafafa; border-top: 1px solid #eee; padding: 12px 20px; display: flex; justify-content: flex-end; gap: 10px;">
+        <button type="button" (click)="closeTransferHeadModal()" 
+                style="background: white; border: 1px solid #ccc; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px;">
+          إلغاء
+        </button>
+        <button type="button" (click)="confirmTransferHeadship()" 
+                [disabled]="!selectedNewHeadMemberId || getEligibleNewHeads().length === 0"
+                [style.opacity]="(!selectedNewHeadMemberId || getEligibleNewHeads().length === 0) ? '0.5' : '1'"
+                [style.cursor]="(!selectedNewHeadMemberId || getEligibleNewHeads().length === 0) ? 'not-allowed' : 'pointer'"
+                style="background-color: #e65100; color: white; border: none; padding: 10px 22px; border-radius: 6px; font-size: 14px; font-weight: bold; display: flex; align-items: center; gap: 6px;">
+          <span>👑</span> تأكيد نقل ولاية الملف وحفظ التاريخ
+        </button>
+      </div>
+    </div>
+  </div>
+
 </div>
+

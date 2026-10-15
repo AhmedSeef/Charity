@@ -53,7 +53,16 @@ public class Repository<T> : IRepository<T> where T : class
 
     public virtual Task DeleteAsync(T entity)
     {
-        _dbSet.Remove(entity);
+        if (entity is Charity.Domain.Entities.BaseEntity baseEntity)
+        {
+            baseEntity.IsDeleted = true;
+            baseEntity.DeletedAt = DateTime.UtcNow;
+            _context.Entry(entity).State = EntityState.Modified;
+        }
+        else
+        {
+            _dbSet.Remove(entity);
+        }
         return Task.CompletedTask;
     }
 

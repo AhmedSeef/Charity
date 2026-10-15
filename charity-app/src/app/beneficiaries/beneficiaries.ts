@@ -37,6 +37,8 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
 
   currentBen: any = { 
     id: null,
+    familyCode: '',
+    familyName: '',
     nationalId: '', 
     name: '', 
     phone: '',
@@ -145,6 +147,21 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
   targetMemberToSeparate: any = null;
   separateReason: string = 'استقلال بمسكن خاص وزواج';
   createNewProfileOnSeparate: boolean = true;
+
+  // نقل ولاية الملف (تعيين عائل جديد للأسرة)
+  showTransferHeadModal: boolean = false;
+  selectedNewHeadMemberId: string = '';
+  transferHeadReason: string = 'وفاة رب الأسرة السابق 🕊️';
+  formerHeadRelationship: string = 'رب الأسرة السابق (متوفى)';
+  newFamilyNameInput: string = '';
+  transferHeadNotes: string = '';
+  transferReasons = [
+    'وفاة رب الأسرة السابق 🕊️',
+    'عجز كلي أو مرض مزمن مقعد ♿',
+    'انفصال / غياب وهجر الأسرة 🚪',
+    'بلوغ الابن الأكبر وتوليه الإعالة الكاملة 👨‍👩‍👧‍👦',
+    'أخرى'
+  ];
 
   private querySub?: Subscription;
 
@@ -292,6 +309,8 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
       const matchSearch = !term ||
         (b.name && b.name.toLowerCase().includes(term)) ||
         (b.nationalId && b.nationalId.includes(term)) ||
+        (b.familyCode && b.familyCode.toLowerCase().includes(term)) ||
+        (b.familyName && b.familyName.toLowerCase().includes(term)) ||
         (b.phone && b.phone.includes(term)) ||
         (b.address && b.address.toLowerCase().includes(term));
       return matchCat && matchSearch;
@@ -351,12 +370,15 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
   resetForm() {
     this.currentBen = { 
       id: null,
+      familyCode: '',
+      familyName: '',
       nationalId: '', 
       name: '', 
       phone: '', 
       category: 'أرامل وأيتام', 
       maritalStatus: 'متزوج',
       familyCount: 1, 
+      headHistories: [],
       address: '', 
       housing: 'إيجار جديد',
       villageOrDistrict: '',
@@ -576,6 +598,96 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
         this.cdr.detectChanges();
       }
     });
+  }
+
+  // ==========================================
+  // نقل ولاية الملف (تعيين عائل جديد للأسرة)
+  // ==========================================
+  openTransferHeadModal() {
+    if (!this.canEditBeneficiary(this.selectedBen)) {
+      this.errorMessage = `🔒 غير مصرح: نقل ولاية الملف مقصورة على الجمعية المسجلة للملف (${this.selectedBen?.registeredByCharityName || 'الجمعية الأصلية'}).`;
+      this.cdr.detectChanges();
+      setTimeout(() => { this.errorMessage = ''; this.cdr.detectChanges(); }, 4000);
+      return;
+    }
+    const eligibleMembers = this.getEligibleNewHeads();
+    this.selectedNewHeadMemberId = eligibleMembers.length > 0 ? eligibleMembers[0].id : '';
+    this.transferHeadReason = 'وفاة رب الأسرة السابق 🕊️';
+    this.formerHeadRelationship = 'رب الأسرة السابق (متوفى)';
+    this.newFamilyNameInput = `عائلة المرحوم ${this.selectedBen?.name || ''}`.trim();
+    this.transferHeadNotes = '';
+    this.showTransferHeadModal = true;
+    this.cdr.detectChanges();
+  }
+
+  closeTransferHeadModal() {
+    this.showTransferHeadModal = false;
+    this.cdr.detectChanges();
+  }
+
+  getEligibleNewHeads(): any[] {
+    if (!this.selectedBen || !this.selectedBen.familyMembers) return [];
+    return this.selectedBen.familyMembers.filter((m: any) => !m.isFormerHead && !m.relationship?.includes('سابق') && !m.isSeparated);
+  }
+
+  confirmTransferHeadship() {
+    if (!this.selectedBen || !this.selectedNewHeadMemberId) {
+      this.errorMessage = 'يرجى اختيار العائل الجديد من بين أفراد الأسرة المسجلين.';
+      return;
+    }
+
+    const chosenMember = (this.selectedBen.familyMembers || []).find((m: any) => String(m.id) === String(this.selectedNewHeadMemberId));
+
+    this.api.transferHeadship(this.selectedBen.id, {
+      newHeadFamilyMemberId: this.selectedNewHeadMemberId,
+      reason: this.transferHeadReason,
+      formerHeadRelationship: this.formerHeadRelationship,
+      newFamilyName: this.newFamilyNameInput,
+      notes: this.transferHeadNotes
+    }).subscribe({
+      next: (updated: any) => {
+        this.successMessage = `👑 تم بنجاح نقل ولاية الملف وتعيين (${chosenMember?.name || 'العائل الجديد'}) كرب أسرة، مع حفظ كامل سجل الصرف والمساعدات التاريخية للأسرة.`;
+        this.closeTransferHeadModal();
+        this.loadData();
+        this.selectedBen = updated;
+        setTimeout(() => { this.successMessage = ''; this.cdr.detectChanges(); }, 6000);
+      },
+      error: (err: any) => {
+        this.errorMessage = err.message || 'فشل في نقل ولاية الملف.';
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  // ==========================================
+  // حذف لين وأرشفة للمستفيد (لا يوجد حذف نهائي للداتا التاريخية)
+  // ==========================================
+  deleteBeneficiary(b: any, event?: Event) {
+    if (event) event.stopPropagation();
+    if (!this.canEditBeneficiary(b)) {
+      this.errorMessage = `🔒 غير مصرح: أرشفة أو إيقاف الملف مقصور على الجمعية المسجلة له (${b.registeredByCharityName || 'الجمعية الأصلية'}).`;
+      this.cdr.detectChanges();
+      setTimeout(() => { this.errorMessage = ''; this.cdr.detectChanges(); }, 4000);
+      return;
+    }
+
+    if (confirm(`⚠️ تنبيه نظام الحوكمة:\nلا يوجد حذف نهائي للداتا التاريخية.\nهل ترغب في أرشفة وإيقاف ملف (${b.name}) مع حفظ كامل سجل المساعدات والتاريخ الأسري في قاعدة البيانات؟`)) {
+      this.api.deleteBeneficiary(b.id).subscribe({
+        next: () => {
+          this.successMessage = `📦 تم أرشفة وإيقاف ملف الحالة بنجاح، وحفظ كافة البيانات وحركات الصرف التاريخية في سجلات النظام.`;
+          this.loadData();
+          if (this.selectedBen && String(this.selectedBen.id) === String(b.id)) {
+            this.viewMode = 'list';
+            this.selectedBen = null;
+          }
+          setTimeout(() => { this.successMessage = ''; this.cdr.detectChanges(); }, 5000);
+        },
+        error: (err: any) => {
+          this.errorMessage = err.message || 'فشل في أرشفة الملف.';
+          this.cdr.detectChanges();
+        }
+      });
+    }
   }
 
   printProfile() {
