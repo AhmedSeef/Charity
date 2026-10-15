@@ -1,0 +1,22 @@
+namespace Charity.Domain.Exceptions;
+
+public class DomainException : Exception
+{
+    public DomainException(string message) : base(message) { }
+}
+
+public class UnauthorizedDomainException : DomainException
+{
+    public UnauthorizedDomainException(string message) : base(message) { }
+}
+
+public class EntityNotFoundException : DomainException
+{
+    public EntityNotFoundException(string entityName, object key) 
+        : base($"Entity '{entityName}' with key '{key}' was not found.") { }
+}
+
+public class ValidationDomainException : DomainException
+{
+    public ValidationDomainException(string message) : base(message) { }
+}
