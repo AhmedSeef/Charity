@@ -62,7 +62,7 @@ public class CharityDbContext : IdentityDbContext<ApplicationUser, IdentityRole,
             b.HasIndex(x => x.FamilyCode);
             b.Property(x => x.FamilyName).HasMaxLength(250);
             b.Property(x => x.NationalId).IsRequired().HasMaxLength(20);
-            b.HasIndex(x => x.NationalId).IsUnique();
+            b.HasIndex(x => x.NationalId).IsUnique().HasFilter("[IsDeleted] = 0");
             b.Property(x => x.Name).IsRequired().HasMaxLength(200);
             b.Property(x => x.MonthlyIncome).HasPrecision(18, 2);
             b.Property(x => x.TotalDebtAmount).HasPrecision(18, 2);
@@ -80,7 +80,7 @@ public class CharityDbContext : IdentityDbContext<ApplicationUser, IdentityRole,
             b.ToTable("BeneficiaryFamilyMembers");
             b.HasKey(x => x.Id);
             b.Property(x => x.NationalId).IsRequired().HasMaxLength(20);
-            b.HasIndex(x => x.NationalId).IsUnique();
+            b.HasIndex(x => x.NationalId).IsUnique().HasFilter("[IsDeleted] = 0");
             b.Property(x => x.Name).IsRequired().HasMaxLength(200);
             b.Property(x => x.Relationship).HasMaxLength(100);
             b.Property(x => x.MemberType).HasMaxLength(50);

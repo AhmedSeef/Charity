@@ -25,6 +25,7 @@ internal sealed class FakeRepository<T> : IRepository<T> where T : BaseEntity
     }
     public Task UpdateAsync(T entity) { UpdateCalls++; return Task.CompletedTask; }
     public Task DeleteAsync(T entity) { entity.IsDeleted = true; entity.DeletedAt = DateTime.UtcNow; DeleteCalls++; return Task.CompletedTask; }
+    public Task HardDeleteAsync(T entity) { Items.Remove(entity); return Task.CompletedTask; }
     public Task<int> CountAsync(Expression<Func<T, bool>>? predicate = null) => Task.FromResult(predicate == null ? Query().Count() : Query().Count(predicate));
 }
 

@@ -412,4 +412,77 @@ public sealed class ApiWorkflowTests(CharityApiFactory app)
         using var client = await app.Login("amal", "Amal@123");
         Assert.Equal(HttpStatusCode.Forbidden, (await client.GetAsync("/api/analytics/bi?charityId=c1")).StatusCode);
     }
+
+    [Fact]
+    public async Task Headship_transfer_supports_multiple_sequential_transfers_without_unique_constraint_violation()
+    {
+        using var client = await app.Login();
+
+        var originalHeadNid = NationalId();
+        var wifeNid = NationalId();
+        var sonNid = NationalId();
+
+        var createDto = new CreateBeneficiaryDto
+        {
+            Name = "عائل الأسرة الأول " + Guid.NewGuid().ToString("N")[..6],
+            NationalId = originalHeadNid,
+            FamilyName = "عائلة فلان",
+            FamilyCount = 3,
+            FamilyMembers =
+            [
+                new CreateFamilyMemberDto { Name = "الزوجة", NationalId = wifeNid, Relationship = "زوجة", MemberType = "معال" },
+                new CreateFamilyMemberDto { Name = "الابن الأكبر", NationalId = sonNid, Relationship = "ابن", MemberType = "معيل" }
+            ]
+        };
+
+        var family = await Read<BeneficiaryDto>(await client.PostAsJsonAsync("/api/beneficiaries", createDto));
+        Assert.Equal(2, family.FamilyMembers.Count);
+        var wifeMember = family.FamilyMembers.First(m => m.NationalId == wifeNid);
+
+        // 1. Transfer to Wife (first transfer)
+        var transferToWife = new TransferHeadshipDto
+        {
+            NewHeadFamilyMemberId = wifeMember.Id,
+            Reason = "وفاة رب الأسرة الأول",
+            FormerHeadRelationship = "رب الأسرة السابق (متوفى)",
+            NewFamilyName = "عائلة المرحوم عائل الأسرة الأول"
+        };
+        var res1 = await client.PostAsJsonAsync($"/api/beneficiaries/{family.Id}/transfer-headship", transferToWife);
+        var familyAfterWife = await Read<BeneficiaryDto>(res1);
+
+        Assert.Equal(wifeNid, familyAfterWife.NationalId);
+        Assert.Equal("الزوجة", familyAfterWife.Name);
+        Assert.Single(familyAfterWife.HeadHistories);
+        Assert.Equal(originalHeadNid, familyAfterWife.HeadHistories[0].PreviousHeadNationalId);
+        Assert.Equal(wifeNid, familyAfterWife.HeadHistories[0].NewHeadNationalId);
+
+        // 2. Transfer to Son (second transfer - ensures former head wife does not collide with existing or deleted records)
+        var sonMember = familyAfterWife.FamilyMembers.First(m => m.NationalId == sonNid);
+        var transferToSon = new TransferHeadshipDto
+        {
+            NewHeadFamilyMemberId = sonMember.Id,
+            Reason = "سفر الأم وانتقال الإعالة للابن الأكبر",
+            FormerHeadRelationship = "الأم"
+        };
+        var res2 = await client.PostAsJsonAsync($"/api/beneficiaries/{family.Id}/transfer-headship", transferToSon);
+        var familyAfterSon = await Read<BeneficiaryDto>(res2);
+
+        Assert.Equal(sonNid, familyAfterSon.NationalId);
+        Assert.Equal("الابن الأكبر", familyAfterSon.Name);
+        Assert.Equal(2, familyAfterSon.HeadHistories.Count);
+
+        // 3. Transfer BACK to Wife (third transfer - cyclic transfer ensures complete stability)
+        var wifeMemberAgain = familyAfterSon.FamilyMembers.First(m => m.NationalId == wifeNid);
+        var transferBackToWife = new TransferHeadshipDto
+        {
+            NewHeadFamilyMemberId = wifeMemberAgain.Id,
+            Reason = "عودة الأم للإعالة",
+            FormerHeadRelationship = "الابن"
+        };
+        var res3 = await client.PostAsJsonAsync($"/api/beneficiaries/{family.Id}/transfer-headship", transferBackToWife);
+        var familyFinal = await Read<BeneficiaryDto>(res3);
+
+        Assert.Equal(wifeNid, familyFinal.NationalId);
+        Assert.Equal(3, familyFinal.HeadHistories.Count);
+    }
 }

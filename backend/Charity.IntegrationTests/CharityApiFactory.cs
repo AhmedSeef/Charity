@@ -10,6 +10,9 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Identity;
+using Charity.Domain.Entities;
+using Charity.Infrastructure.Data.Seed;
 
 namespace Charity.IntegrationTests;
 
@@ -41,9 +44,15 @@ public sealed class CharityApiFactory : WebApplicationFactory<Program>, IAsyncLi
 
     public async Task InitializeAsync()
     {
-        using var client = CreateClient(); // Runs normal startup migrations and seed.
+        using var client = CreateClient();
         await WithDb(async db =>
         {
+            await db.Database.MigrateAsync();
+            using var scope = Services.CreateScope();
+            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+            var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+            await DbInitializer.SeedAsync(db, userManager, roleManager);
+
             Assert.Equal(DatabaseName, db.Database.GetDbConnection().Database);
             Assert.Empty(await db.Database.GetPendingMigrationsAsync());
             Assert.True(await db.Users.AnyAsync(), "Startup must seed real Identity users in the disposable DB.");

@@ -67,6 +67,12 @@ public class Repository<T> : IRepository<T> where T : class
         return Task.CompletedTask;
     }
 
+    public virtual Task HardDeleteAsync(T entity)
+    {
+        _dbSet.Remove(entity);
+        return Task.CompletedTask;
+    }
+
     public virtual async Task<int> CountAsync(Expression<Func<T, bool>>? predicate = null)
     {
         if (predicate == null)

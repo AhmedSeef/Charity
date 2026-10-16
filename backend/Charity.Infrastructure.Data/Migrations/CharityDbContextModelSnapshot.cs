@@ -300,7 +300,8 @@ namespace Charity.Infrastructure.Data.Migrations
                     b.HasIndex("FamilyCode");
 
                     b.HasIndex("NationalId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("[IsDeleted] = 0");
 
                     b.HasIndex("RegisteredByCharityId");
 
@@ -399,7 +400,8 @@ namespace Charity.Infrastructure.Data.Migrations
                     b.HasIndex("BeneficiaryId");
 
                     b.HasIndex("NationalId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("[IsDeleted] = 0");
 
                     b.ToTable("BeneficiaryFamilyMembers", (string)null);
                 });

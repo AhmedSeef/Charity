@@ -375,24 +375,41 @@ public class BeneficiaryService : IBeneficiaryService
         await _headHistoryRepo.AddAsync(history);
 
         // 2. تحويل العائل السابق إلى فرد أسرة (عائل سابق / متوفى) للحفاظ على سجله داخل الملف
-        var formerHeadMember = new BeneficiaryFamilyMember
-        {
-            BeneficiaryId = existing.Id,
-            NationalId = existing.NationalId,
-            Name = existing.Name,
-            Relationship = string.IsNullOrWhiteSpace(dto.FormerHeadRelationship) ? "رب الأسرة السابق (متوفى)" : dto.FormerHeadRelationship,
-            MemberType = "معال",
-            SupportType = "سابق / متوفى",
-            Notes = $"عائل الأسرة السابق. سبب نقل الولاية: {history.Reason}",
-            IsFormerHead = true,
-            EducationStage = "غير محدد",
-            IsSchoolDropout = false,
-            IsChildLabor = false
-        };
-        await _familyMemberRepo.AddAsync(formerHeadMember);
+        var existingFormerMember = await _familyMemberRepo.FirstOrDefaultAsync(
+            m => m.BeneficiaryId == existing.Id && m.NationalId == existing.NationalId
+        );
 
-        // 3. حذف/ترقية الفرد المختار من جدول أفراد الأسرة (سوفت ديليت) لأنه أصبح هو رب الأسرة الأساسي
-        await _familyMemberRepo.DeleteAsync(newHeadMember);
+        if (existingFormerMember != null)
+        {
+            existingFormerMember.IsDeleted = false;
+            existingFormerMember.DeletedAt = null;
+            existingFormerMember.IsFormerHead = true;
+            existingFormerMember.Name = existing.Name;
+            existingFormerMember.Relationship = string.IsNullOrWhiteSpace(dto.FormerHeadRelationship) ? "رب الأسرة السابق (متوفى)" : dto.FormerHeadRelationship;
+            existingFormerMember.Notes = $"عائل الأسرة السابق. سبب نقل الولاية: {history.Reason}";
+            await _familyMemberRepo.UpdateAsync(existingFormerMember);
+        }
+        else
+        {
+            var formerHeadMember = new BeneficiaryFamilyMember
+            {
+                BeneficiaryId = existing.Id,
+                NationalId = existing.NationalId,
+                Name = existing.Name,
+                Relationship = string.IsNullOrWhiteSpace(dto.FormerHeadRelationship) ? "رب الأسرة السابق (متوفى)" : dto.FormerHeadRelationship,
+                MemberType = "معال",
+                SupportType = "سابق / متوفى",
+                Notes = $"عائل الأسرة السابق. سبب نقل الولاية: {history.Reason}",
+                IsFormerHead = true,
+                EducationStage = "غير محدد",
+                IsSchoolDropout = false,
+                IsChildLabor = false
+            };
+            await _familyMemberRepo.AddAsync(formerHeadMember);
+        }
+
+        // 3. ترقية الفرد المختار: إخراجه من جدول الأفراد التابعين لأنه ارتقى وأصبح هو صاحب الملف الأساسي
+        await _familyMemberRepo.HardDeleteAsync(newHeadMember);
 
         // 4. تحديث البيانات الأساسية للمستفيد بالاسم والرقم القومي للعائل الجديد
         existing.Name = newHeadMember.Name;
