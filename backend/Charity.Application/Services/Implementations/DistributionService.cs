@@ -73,7 +73,13 @@ public class DistributionService : IDistributionService
 
     public async Task<DistributionDto> CreateDistributionAsync(CreateDistributionDto dto)
     {
-        var charityId = _currentUserService.CharityId ?? "c1";
+        var charityId = _currentUserService.CharityId;
+        if (string.IsNullOrWhiteSpace(charityId)) throw new UnauthorizedDomainException("لا يوجد حساب جمعية صالح.");
+        if (!double.IsFinite(dto.Quantity) || dto.Quantity <= 0)
+            throw new ValidationDomainException("كمية الصرف يجب أن تكون أكبر من صفر.");
+        if (dto.Amount < 0) throw new ValidationDomainException("قيمة الصرف لا يمكن أن تكون سالبة.");
+        if (string.IsNullOrWhiteSpace(dto.InventoryItemId) && dto.Kind != "إعانة نقدية")
+            throw new ValidationDomainException("اختيار صنف أو خدمة مطلوب.");
         var charityName = _currentUserService.CharityName ?? "الجمعية المانحة";
 
         var beneficiary = await _beneficiaryRepo.GetByIdAsync(dto.BeneficiaryId)
@@ -95,7 +101,8 @@ public class DistributionService : IDistributionService
         // If tangible inventory item, auto deduct from active charity's warehouse
         if (!string.IsNullOrEmpty(dto.InventoryItemId))
         {
-            var item = await _inventoryRepo.GetByIdAsync(dto.InventoryItemId);
+            var item = await _inventoryRepo.GetByIdAsync(dto.InventoryItemId)
+                ?? throw new EntityNotFoundException(nameof(InventoryItem), dto.InventoryItemId);
             if (item != null)
             {
                 // Ensure the item belongs to THIS charity

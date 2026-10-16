@@ -142,7 +142,7 @@ export class ItemsCatalogComponent implements OnInit {
         kind: this.itemForm.kind,
         unit: this.itemForm.unit,
         type: this.itemForm.type,
-        minAlert: Number(this.itemForm.minAlert || 10),
+        minAlert: Number(this.itemForm.minAlert ?? 10),
         notes: this.itemForm.notes
       };
 
@@ -160,7 +160,7 @@ export class ItemsCatalogComponent implements OnInit {
         unit: this.itemForm.unit,
         type: this.itemForm.type,
         quantity: this.itemForm.kind === 'صنف ملموس' ? Number(this.itemForm.initialStock || 0) : 0,
-        minAlert: Number(this.itemForm.minAlert || 10),
+        minAlert: Number(this.itemForm.minAlert ?? 10),
         notes: this.itemForm.notes
       };
 

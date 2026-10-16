@@ -82,6 +82,8 @@ export class DonationsComponent implements OnInit {
   }
 
   onKindChange() {
+    this.newDonation.inventoryId = '';
+    this.newDonation.unit = '';
     if (this.newDonation.donationKind === 'عيني') {
       if (this.tangibleItems.length > 0 && !this.newDonation.inventoryId) {
         this.newDonation.inventoryId = this.tangibleItems[0].id;
@@ -168,11 +170,11 @@ export class DonationsComponent implements OnInit {
     const payload: any = { ...this.newDonation };
 
     if (payload.donationKind === 'نقدي') {
-      if (!payload.amount || Number(payload.amount) <= 0) return;
+      if (!Number.isFinite(Number(payload.amount)) || Number(payload.amount) <= 0) return;
       payload.amount = Number(payload.amount);
       payload.type = payload.cashCategory;
     } else if (payload.donationKind === 'عيني') {
-      if (!payload.inventoryId || !payload.quantity || Number(payload.quantity) <= 0) return;
+      if (!payload.inventoryId || !Number.isFinite(Number(payload.quantity)) || Number(payload.quantity) <= 0) return;
       const item = this.inventory.find(i => String(i.id) === String(payload.inventoryId));
       payload.itemName = item ? item.itemName : 'صنف ملموس';
       payload.unit = item ? item.unit : '';
@@ -180,7 +182,7 @@ export class DonationsComponent implements OnInit {
       payload.type = 'تبرع عيني (' + payload.itemName + ')';
       payload.amount = payload.estimatedValue ? Number(payload.estimatedValue) : 0;
     } else if (payload.donationKind === 'خدمة') {
-      if (!payload.inventoryId || !payload.quantity || Number(payload.quantity) <= 0) return;
+      if (!payload.inventoryId || !Number.isFinite(Number(payload.quantity)) || Number(payload.quantity) <= 0) return;
       const item = this.inventory.find(i => String(i.id) === String(payload.inventoryId));
       payload.itemName = item ? item.itemName : 'خدمة';
       payload.unit = item ? item.unit : '';

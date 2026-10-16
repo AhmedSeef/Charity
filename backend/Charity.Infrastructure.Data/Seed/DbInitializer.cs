@@ -97,6 +97,26 @@ public static class DbInitializer
             }
         }
 
+        // Additional demo staff accounts. Identity stores salted password hashes in SQL Server.
+        foreach (var u in new[]
+        {
+            (Username: "researcher", Password: "Research@123", FullName: "سلمى حسن - باحثة اجتماعية", CharityId: "c1"),
+            (Username: "amalstaff", Password: "AmalStaff@123", FullName: "ندى إسماعيل - منسقة كفالات", CharityId: "c2"),
+            (Username: "sedakastaff", Password: "SedakaStaff@123", FullName: "ليلى مراد - منسقة قوافل", CharityId: "c3")
+        })
+        {
+            if (await userManager.FindByNameAsync(u.Username) != null) continue;
+            var user = new ApplicationUser
+            {
+                UserName = u.Username, Email = $"{u.Username}@charity.demo",
+                FullName = u.FullName, CharityId = u.CharityId, EmailConfirmed = true
+            };
+            var created = await userManager.CreateAsync(user, u.Password);
+            if (!created.Succeeded)
+                throw new InvalidOperationException($"Could not seed demo user {u.Username}: {string.Join(", ", created.Errors.Select(e => e.Description))}");
+            await userManager.AddToRoleAsync(user, "Staff");
+        }
+
         // 4. Seed Beneficiaries (Shared CRM cases with ownership)
         if (!await context.Beneficiaries.AnyAsync())
         {
@@ -352,5 +372,7 @@ public static class DbInitializer
             await context.StaffMembers.AddRangeAsync(staff);
             await context.SaveChangesAsync();
         }
+
+        await RepresentativeDemoData.SeedAsync(context);
     }
 }

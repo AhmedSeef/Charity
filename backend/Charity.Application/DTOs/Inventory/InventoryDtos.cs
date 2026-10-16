@@ -33,7 +33,8 @@ public class UpdateInventoryItemDto
     public string Kind { get; set; } = "صنف ملموس";
     public string Unit { get; set; } = "كيلو";
     public string Type { get; set; } = "أغذية جافة";
-    public double Quantity { get; set; }
+    // Omitted quantity means catalog metadata update; stock changes use adjust-stock.
+    public double? Quantity { get; set; }
     public double MinAlert { get; set; }
     public string Notes { get; set; } = string.Empty;
 }

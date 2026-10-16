@@ -20,20 +20,20 @@ import { AuthService } from '../auth.service';
         <div style="background-color: #f5f5f5; border: 1px solid #e0e0e0; border-radius: 8px; padding: 12px; margin-bottom: 20px; text-align: right;">
           <div style="font-size: 12px; font-weight: bold; color: #333; margin-bottom: 8px;">🚀 تجربة الدخول المباشر بحساب الجمعية:</div>
           <div style="display: flex; flex-direction: column; gap: 6px;">
-            <button type="button" (click)="quickLogin('admin', 'admin')" 
+            <button type="button" (click)="quickLogin('admin', 'Admin@123')"
                     style="background: #e8f5e9; border: 1px solid #c8e6c9; color: #1b5e20; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold; text-align: right; display: flex; justify-content: space-between;">
               <span>🏢 جمعية أبواب الخير</span>
-              <span style="font-size: 11px; opacity: 0.8;">admin / admin</span>
+              <span style="font-size: 11px; opacity: 0.8;">حساب تجريبي</span>
             </button>
-            <button type="button" (click)="quickLogin('amal', 'amal')" 
+            <button type="button" (click)="quickLogin('amal', 'Amal@123')"
                     style="background: #e3f2fd; border: 1px solid #bbdefb; color: #0d47a1; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold; text-align: right; display: flex; justify-content: space-between;">
               <span>🤝 جمعية الأمل لرعاية الأيتام</span>
-              <span style="font-size: 11px; opacity: 0.8;">amal / amal</span>
+              <span style="font-size: 11px; opacity: 0.8;">حساب تجريبي</span>
             </button>
-            <button type="button" (click)="quickLogin('sedaka', 'sedaka')" 
+            <button type="button" (click)="quickLogin('sedaka', 'Sedaka@123')"
                     style="background: #f3e5f5; border: 1px solid #e1bee7; color: #4a148c; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold; text-align: right; display: flex; justify-content: space-between;">
               <span>🏥 جمعية رسالة الصداقة</span>
-              <span style="font-size: 11px; opacity: 0.8;">sedaka / sedaka</span>
+              <span style="font-size: 11px; opacity: 0.8;">حساب تجريبي</span>
             </button>
           </div>
         </div>

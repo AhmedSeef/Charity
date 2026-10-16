@@ -21,7 +21,8 @@ public class Repository<T> : IRepository<T> where T : class
 
     public virtual async Task<T?> GetByIdAsync(string id)
     {
-        return await _dbSet.FindAsync(id);
+        // FindAsync may return an already tracked soft-deleted entity and bypass filters.
+        return await _dbSet.Where(e => EF.Property<string>(e, "Id") == id).FirstOrDefaultAsync();
     }
 
     public virtual async Task<IReadOnlyList<T>> GetAllAsync()

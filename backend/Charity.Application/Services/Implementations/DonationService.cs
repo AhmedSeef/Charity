@@ -35,18 +35,38 @@ public class DonationService : IDonationService
 
     public async Task<DonationDto> CreateAsync(CreateDonationDto dto)
     {
-        var charityId = _currentUserService.CharityId ?? "c1";
+        var charityId = _currentUserService.CharityId;
+        if (string.IsNullOrWhiteSpace(charityId)) throw new UnauthorizedDomainException("لا يوجد حساب جمعية صالح.");
+        if (string.IsNullOrWhiteSpace(dto.DonorName)) throw new ValidationDomainException("اسم المتبرع مطلوب.");
+        if (dto.DonationKind is not ("نقدي" or "عيني" or "خدمة"))
+            throw new ValidationDomainException("نوع التبرع غير معروف.");
+        if (dto.DonationKind == "نقدي" && (!dto.Amount.HasValue || dto.Amount <= 0))
+            throw new ValidationDomainException("قيمة التبرع النقدي يجب أن تكون أكبر من صفر.");
+        if (dto.DonationKind == "عيني" && (!dto.Quantity.HasValue || !double.IsFinite(dto.Quantity.Value) || dto.Quantity <= 0))
+            throw new ValidationDomainException("كمية التبرع العيني يجب أن تكون أكبر من صفر.");
+        if (dto.EstimatedValue < 0) throw new ValidationDomainException("القيمة التقديرية لا يمكن أن تكون سالبة.");
+
+        InventoryItem? item = null;
+        if (dto.DonationKind is "عيني" or "خدمة")
+        {
+            if (string.IsNullOrWhiteSpace(dto.InventoryItemId)) throw new ValidationDomainException("اختيار الصنف أو الخدمة مطلوب.");
+            item = await _inventoryRepo.GetByIdAsync(dto.InventoryItemId)
+                ?? throw new EntityNotFoundException(nameof(InventoryItem), dto.InventoryItemId);
+            if (item.CharityId != charityId) throw new UnauthorizedDomainException("لا يمكنك ربط تبرع بمخزن جمعية أخرى.");
+            if ((dto.DonationKind == "عيني" && item.Kind != "صنف ملموس") || (dto.DonationKind == "خدمة" && item.Kind != "خدمة"))
+                throw new ValidationDomainException("نوع التبرع لا يطابق الصنف المختار.");
+        }
         var entity = dto.ToEntity(charityId);
+        if (dto.DonationKind == "نقدي") entity.InventoryItemId = null;
 
         // If in-kind donation, auto increase active charity inventory
-        if (dto.DonationKind == "عيني" && !string.IsNullOrEmpty(dto.InventoryItemId) && dto.Quantity.HasValue)
+        if (item != null)
         {
-            var item = await _inventoryRepo.GetByIdAsync(dto.InventoryItemId);
-            if (item != null && item.CharityId == charityId && item.Kind != "خدمة")
+            entity.ItemName = item.ItemName;
+            entity.Unit = item.Unit;
+            if (dto.DonationKind == "عيني")
             {
-                item.Quantity += dto.Quantity.Value;
-                entity.ItemName = item.ItemName;
-                entity.Unit = item.Unit;
+                item.Quantity += dto.Quantity!.Value;
                 await _inventoryRepo.UpdateAsync(item);
             }
         }

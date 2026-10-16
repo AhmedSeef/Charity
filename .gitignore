@@ -33,3 +33,9 @@ yarn-error.log*
 ## System files
 .DS_Store
 Thumbs.db
+
+## Local QA runtimes and generated evidence
+.qa/
+**/TestResults/
+qa/e2e/test-results/
+qa/e2e/playwright-report/

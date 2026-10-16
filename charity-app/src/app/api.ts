@@ -207,6 +207,10 @@ export class Api {
     return this.http.put<any>(`${this.apiUrl}/inventory/${data.id}`, data);
   }
 
+  adjustStock(id: string, newQuantity: number, reason: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/inventory/${id}/adjust-stock`, { newQuantity, reason });
+  }
+
   deleteInventory(id: string): Observable<any> {
     return this.http.delete<any>(`${this.apiUrl}/inventory/${id}`);
   }

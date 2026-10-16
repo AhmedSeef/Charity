@@ -165,6 +165,13 @@ public class CharityService : ICharityService
 
         await _unitOfWork.SaveChangesAsync();
 
-        return dto;
+        return new CharitySettingsDto
+        {
+            CharityId = charityId,
+            CharityName = existing.CharityName,
+            Logo = existing.Logo,
+            Phone = existing.Phone,
+            Details = existing.Details
+        };
     }
 }

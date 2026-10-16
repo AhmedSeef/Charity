@@ -3,4 +3,6 @@
   <Project Path="Charity.Application/Charity.Application.csproj" />
   <Project Path="Charity.Domain/Charity.Domain.csproj" />
   <Project Path="Charity.Infrastructure.Data/Charity.Infrastructure.Data.csproj" />
+  <Project Path="Charity.UnitTests/Charity.UnitTests.csproj" />
+  <Project Path="Charity.IntegrationTests/Charity.IntegrationTests.csproj" />
 </Solution>

@@ -88,7 +88,6 @@ public class BeneficiaryService : IBeneficiaryService
             foreach (var fmDto in dto.FamilyMembers)
             {
                 var fmEntity = fmDto.ToEntity(entity.Id);
-                await _familyMemberRepo.AddAsync(fmEntity);
                 entity.FamilyMembers.Add(fmEntity);
             }
             entity.FamilyCount = Math.Max(entity.FamilyCount, dto.FamilyMembers.Count + 1);
@@ -169,9 +168,10 @@ public class BeneficiaryService : IBeneficiaryService
 
         // مزامنة أفراد الأسرة
         var existingMembers = await _familyMemberRepo.FindAsync(m => m.BeneficiaryId == id);
+        var incomingIds = dto.FamilyMembers?.Where(m => !string.IsNullOrWhiteSpace(m.Id)).Select(m => m.Id).ToHashSet() ?? [];
         foreach (var oldMember in existingMembers)
         {
-            await _familyMemberRepo.DeleteAsync(oldMember);
+            if (!incomingIds.Contains(oldMember.Id)) await _familyMemberRepo.DeleteAsync(oldMember);
         }
 
         existing.FamilyMembers = new List<BeneficiaryFamilyMember>();
@@ -180,8 +180,10 @@ public class BeneficiaryService : IBeneficiaryService
             foreach (var fmDto in dto.FamilyMembers)
             {
                 var fmEntity = fmDto.ToEntity(existing.Id);
-                await _familyMemberRepo.AddAsync(fmEntity);
-                existing.FamilyMembers.Add(fmEntity);
+                if (existingMembers.Any(m => m.Id == fmEntity.Id))
+                    await _familyMemberRepo.UpdateAsync(fmEntity);
+                else
+                    await _familyMemberRepo.AddAsync(fmEntity);
             }
             existing.FamilyCount = Math.Max(existing.FamilyCount, dto.FamilyMembers.Count + 1);
         }
@@ -189,6 +191,7 @@ public class BeneficiaryService : IBeneficiaryService
         await _beneficiaryRepo.UpdateAsync(existing);
         await _unitOfWork.SaveChangesAsync();
 
+        existing.FamilyMembers = (await _familyMemberRepo.FindAsync(m => m.BeneficiaryId == id)).ToList();
         return existing.ToDto(currentCharityId);
     }
 

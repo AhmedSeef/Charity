@@ -1,22 +1,10 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { BeneficiariesComponent } from './beneficiaries';
 
-import { Beneficiaries } from './beneficiaries';
-
-describe('Beneficiaries', () => {
-  let component: Beneficiaries;
-  let fixture: ComponentFixture<Beneficiaries>;
-
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [Beneficiaries],
-    }).compileComponents();
-
-    fixture = TestBed.createComponent(Beneficiaries);
-    component = fixture.componentInstance;
-    await fixture.whenStable();
-  });
-
-  it('should create', () => {
-    expect(component).toBeTruthy();
+describe('Beneficiaries screen', () => {
+  it('starts with a new family form and no selected record', () => {
+    const page = new BeneficiariesComponent({} as any, {} as any, {} as any, { detectChanges: () => {} } as any);
+    expect(page.viewMode).toBe('list');
+    expect(page.currentBen.familyCount).toBe(1);
+    expect(page.currentBen.familyMembers).toEqual([]);
   });
 });

@@ -99,8 +99,14 @@ export class DistributionsComponent implements OnInit {
     this.errorMessage = '';
     this.successMessage = '';
 
-    if (!this.newDist.beneficiaryId || !this.newDist.inventoryId || !this.newDist.quantity) {
+    if (!this.newDist.beneficiaryId || !this.newDist.inventoryId ||
+        !Number.isFinite(Number(this.newDist.quantity)) || Number(this.newDist.quantity) <= 0) {
       this.errorMessage = 'يرجى اختيار المستفيد، والصنف أو الخدمة، وتحديد الكمية.';
+      return;
+    }
+
+    if (!this.selectedItem) {
+      this.errorMessage = 'الصنف أو الخدمة المختارة غير موجودة في مخزن جمعيتكم.';
       return;
     }
 

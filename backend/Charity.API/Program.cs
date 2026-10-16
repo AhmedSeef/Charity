@@ -185,3 +185,6 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+// Expose the API entry point to the integration test host.
+public partial class Program { }

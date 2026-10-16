@@ -38,9 +38,11 @@ public class BiAnalyticsService : IBiAnalyticsService
 
     public async Task<BiAnalyticsDto> GetCharityAnalyticsAsync(string? targetCharityId = null)
     {
-        var charityId = !string.IsNullOrWhiteSpace(targetCharityId) 
-            ? targetCharityId 
-            : (_currentUserService.CharityId ?? "c1");
+        var charityId = _currentUserService.CharityId;
+        if (string.IsNullOrWhiteSpace(charityId))
+            throw new Charity.Domain.Exceptions.UnauthorizedDomainException("لا يوجد حساب جمعية صالح.");
+        if (!string.IsNullOrWhiteSpace(targetCharityId) && targetCharityId != charityId)
+            throw new Charity.Domain.Exceptions.UnauthorizedDomainException("لا يمكن عرض التحليلات الخاصة بجمعية أخرى.");
 
         var charity = await _charityRepo.GetByIdAsync(charityId);
         var charityName = charity?.Name ?? _currentUserService.CharityName ?? "جمعيتكم";

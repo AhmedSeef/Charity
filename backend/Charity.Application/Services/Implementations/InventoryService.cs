@@ -40,7 +40,9 @@ public class InventoryService : IInventoryService
 
     public async Task<InventoryItemDto> CreateAsync(CreateInventoryItemDto dto)
     {
-        var charityId = _currentUserService.CharityId ?? "c1";
+        var charityId = _currentUserService.CharityId;
+        if (string.IsNullOrWhiteSpace(charityId)) throw new UnauthorizedDomainException("لا يوجد حساب جمعية صالح.");
+        ValidateStock(dto.Quantity, dto.MinAlert);
         var entity = dto.ToEntity(charityId);
 
         await _inventoryRepo.AddAsync(entity);
@@ -60,12 +62,14 @@ public class InventoryService : IInventoryService
             throw new UnauthorizedDomainException("غير مصرح: لا يمكنك تعديل صنف مخزني لجمعية أخرى!");
         }
 
+        ValidateStock(dto.Quantity ?? existing.Quantity, dto.MinAlert);
+
         existing.Code = dto.Code;
         existing.ItemName = dto.ItemName;
         existing.Kind = dto.Kind;
         existing.Unit = dto.Unit;
         existing.Type = dto.Type;
-        existing.Quantity = dto.Kind == "خدمة" ? 0 : dto.Quantity;
+        existing.Quantity = dto.Kind == "خدمة" ? 0 : dto.Quantity ?? existing.Quantity;
         existing.MinAlert = dto.MinAlert;
         existing.Notes = dto.Notes;
 
@@ -86,6 +90,10 @@ public class InventoryService : IInventoryService
             throw new UnauthorizedDomainException("غير مصرح: لا يمكنك جرد مخزن جمعية أخرى!");
         }
 
+        ValidateStock(dto.NewQuantity, existing.MinAlert);
+        if (existing.Kind == "خدمة" && dto.NewQuantity != 0)
+            throw new ValidationDomainException("الخدمات لا تملك رصيداً مخزنياً.");
+
         existing.Quantity = dto.NewQuantity;
         await _inventoryRepo.UpdateAsync(existing);
         await _unitOfWork.SaveChangesAsync();
@@ -104,5 +112,13 @@ public class InventoryService : IInventoryService
 
         await _inventoryRepo.DeleteAsync(existing);
         await _unitOfWork.SaveChangesAsync();
+    }
+
+    private static void ValidateStock(double quantity, double minAlert)
+    {
+        if (!double.IsFinite(quantity) || quantity < 0)
+            throw new ValidationDomainException("رصيد المخزن يجب أن يكون عدداً غير سالب.");
+        if (!double.IsFinite(minAlert) || minAlert < 0)
+            throw new ValidationDomainException("حد التنبيه يجب أن يكون عدداً غير سالب.");
     }
 }

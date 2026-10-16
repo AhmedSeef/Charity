@@ -50,7 +50,7 @@ export class InventoryComponent implements OnInit {
   }
 
   get lowStockCount(): number {
-    return this.tangibleItems.filter(i => Number(i.quantity) < Number(i.minAlert || 10)).length;
+    return this.tangibleItems.filter(i => Number(i.quantity) < Number(i.minAlert ?? 10)).length;
   }
 
   get availableCategories(): string[] {
@@ -95,6 +95,7 @@ export class InventoryComponent implements OnInit {
     if (!this.selectedStockItem) return;
     const oldQty = this.selectedStockItem.quantity;
     const newQty = Number(this.adjustedQuantity);
+    if (!Number.isFinite(newQty) || newQty < 0) return;
 
     const updatedItem = {
       ...this.selectedStockItem,
@@ -102,7 +103,7 @@ export class InventoryComponent implements OnInit {
       notes: this.adjustmentReason ? `${this.selectedStockItem.notes || ''} [تعديل رصيد: من ${oldQty} إلى ${newQty} - ${this.adjustmentReason}]` : this.selectedStockItem.notes
     };
 
-    this.api.updateInventory(updatedItem).subscribe(() => {
+    this.api.adjustStock(updatedItem.id, newQty, this.adjustmentReason).subscribe(() => {
       this.successMessage = `✅ تم تحديث رصيد (${updatedItem.itemName}) بالمخزن إلى (${newQty} ${updatedItem.unit}) بنجاح!`;
       this.closeAdjustModal();
       this.loadData();

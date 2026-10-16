@@ -42,18 +42,6 @@ public class AuthService : IAuthService
         bool isPasswordValid = await _userManager.CheckPasswordAsync(user, request.Password);
         if (!isPasswordValid)
         {
-            // Support quick login demo convenience (admin/admin, amal/amal, sedaka/sedaka, abwab/1234)
-            if ((request.Username.Equals("admin", StringComparison.OrdinalIgnoreCase) && request.Password == "admin") ||
-                (request.Username.Equals("amal", StringComparison.OrdinalIgnoreCase) && request.Password == "amal") ||
-                (request.Username.Equals("sedaka", StringComparison.OrdinalIgnoreCase) && request.Password == "sedaka") ||
-                (request.Username.Equals("abwab", StringComparison.OrdinalIgnoreCase) && request.Password == "1234"))
-            {
-                isPasswordValid = true;
-            }
-        }
-
-        if (!isPasswordValid)
-        {
             throw new UnauthorizedDomainException("اسم المستخدم أو كلمة المرور غير صحيحة.");
         }
 
