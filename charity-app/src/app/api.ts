@@ -127,6 +127,10 @@ export class Api {
     return this.http.post<any>(`${this.apiUrl}/beneficiaries/${beneficiaryId}/reactivate`, {});
   }
 
+  addFamilyMember(beneficiaryId: string, member: any): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/beneficiaries/${beneficiaryId}/members`, member);
+  }
+
   separateFamilyMember(beneficiaryId: string, memberId: string, createNewProfile: boolean = true, reason?: string): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/beneficiaries/${beneficiaryId}/members/separate`, {
       familyMemberId: memberId,

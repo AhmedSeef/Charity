@@ -340,6 +340,60 @@ public class BeneficiaryService : IBeneficiaryService
         return existing.ToDto(currentCharityId);
     }
 
+    public async Task<FamilyMemberDto> AddFamilyMemberAsync(string beneficiaryId, CreateFamilyMemberDto dto)
+    {
+        var existing = await _beneficiaryRepo.GetByIdAsync(beneficiaryId)
+            ?? throw new EntityNotFoundException(nameof(Beneficiary), beneficiaryId);
+
+        var currentCharityId = _currentUserService.CharityId ?? string.Empty;
+        if (!string.IsNullOrEmpty(existing.RegisteredByCharityId) && existing.RegisteredByCharityId != currentCharityId)
+        {
+            throw new UnauthorizedDomainException(
+                $"غير مصرح: إضافة أفراد مقصورة على الجمعية المسجلة للملف ({existing.RegisteredByCharityName})."
+            );
+        }
+
+        var nid = (dto.NationalId ?? string.Empty).Trim();
+        if (nid.Length != 14 || !nid.All(char.IsDigit))
+        {
+            throw new ValidationDomainException("الرقم القومي يجب أن يتكون من 14 رقماً صحيحاً.");
+        }
+
+        var name = (dto.Name ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            throw new ValidationDomainException("اسم فرد الأسرة مطلوب.");
+        }
+
+        var alreadyExistsInFamily = await _familyMemberRepo.FirstOrDefaultAsync(
+            m => m.BeneficiaryId == beneficiaryId && m.NationalId == nid
+        );
+        if (alreadyExistsInFamily != null)
+        {
+            throw new ValidationDomainException("الرقم القومي مسجل بالفعل كفرد في هذه الأسرة.");
+        }
+
+        if (existing.NationalId == nid)
+        {
+            throw new ValidationDomainException("هذا الرقم القومي مسجل كصاحب الملف الأساسي حالياً.");
+        }
+
+        var member = dto.ToEntity(beneficiaryId);
+        if (string.IsNullOrWhiteSpace(member.Id))
+        {
+            member.Id = "fm_" + Guid.NewGuid().ToString("N");
+        }
+
+        await _familyMemberRepo.AddAsync(member);
+
+        var activeCount = await _familyMemberRepo.CountAsync(m => m.BeneficiaryId == beneficiaryId && !m.IsDeleted);
+        existing.FamilyCount = Math.Max(existing.FamilyCount, activeCount + 2);
+        await _beneficiaryRepo.UpdateAsync(existing);
+        await _unitOfWork.SaveChangesAsync();
+
+        return member.ToDto();
+    }
+
     public async Task<BeneficiaryDto> TransferHeadshipAsync(string beneficiaryId, TransferHeadshipDto dto)
     {
         var existing = await _beneficiaryRepo.GetByIdAsync(beneficiaryId)

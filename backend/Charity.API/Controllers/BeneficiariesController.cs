@@ -68,6 +68,13 @@ public class BeneficiariesController : ControllerBase
         return Ok(result);
     }
 
+    [HttpPost("{id}/members")]
+    public async Task<ActionResult<FamilyMemberDto>> AddFamilyMember(string id, [FromBody] CreateFamilyMemberDto dto)
+    {
+        var result = await _beneficiaryService.AddFamilyMemberAsync(id, dto);
+        return Ok(result);
+    }
+
     [HttpPost("{id}/members/separate")]
     public async Task<ActionResult<BeneficiaryDto>> SeparateFamilyMember(string id, [FromBody] SeparateFamilyMemberDto dto)
     {

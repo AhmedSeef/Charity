@@ -155,6 +155,18 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
   formerHeadRelationship: string = 'رب الأسرة السابق (متوفى)';
   newFamilyNameInput: string = '';
   transferHeadNotes: string = '';
+  showAdvancedTransferOptions: boolean = false;
+  showAddMemberInline: boolean = false;
+  isAddingMember: boolean = false;
+  newMemberData: any = {
+    name: '',
+    nationalId: '',
+    relationship: 'زوجة',
+    memberType: 'معال',
+    supportType: 'ربة منزل',
+    educationStage: 'منتظم بالتعليم',
+    notes: ''
+  };
   transferReasons = [
     'وفاة رب الأسرة السابق 🕊️',
     'عجز كلي أو مرض مزمن مقعد ♿',
@@ -616,12 +628,19 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
     this.formerHeadRelationship = 'رب الأسرة السابق (متوفى)';
     this.newFamilyNameInput = `عائلة المرحوم ${this.selectedBen?.name || ''}`.trim();
     this.transferHeadNotes = '';
+    this.showAdvancedTransferOptions = false;
+    this.showAddMemberInline = eligibleMembers.length === 0;
+    this.resetNewMemberData();
+    if (eligibleMembers.length > 0) {
+      this.selectNewHeadMember(eligibleMembers[0]);
+    }
     this.showTransferHeadModal = true;
     this.cdr.detectChanges();
   }
 
   closeTransferHeadModal() {
     this.showTransferHeadModal = false;
+    this.showAddMemberInline = false;
     this.cdr.detectChanges();
   }
 
@@ -630,13 +649,97 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
     return this.selectedBen.familyMembers.filter((m: any) => !m.isFormerHead && !m.relationship?.includes('سابق') && !m.isSeparated);
   }
 
-  confirmTransferHeadship() {
-    if (!this.selectedBen || !this.selectedNewHeadMemberId) {
-      this.errorMessage = 'يرجى اختيار العائل الجديد من بين أفراد الأسرة المسجلين.';
+  resetNewMemberData() {
+    this.newMemberData = {
+      name: '',
+      nationalId: '',
+      relationship: 'زوجة',
+      memberType: 'معال',
+      supportType: 'ربة منزل',
+      educationStage: 'منتظم بالتعليم',
+      notes: ''
+    };
+  }
+
+  toggleAddMemberInline() {
+    this.showAddMemberInline = !this.showAddMemberInline;
+    if (this.showAddMemberInline) {
+      this.resetNewMemberData();
+    }
+    this.cdr.detectChanges();
+  }
+
+  selectNewHeadMember(member: any) {
+    if (!member) return;
+    this.selectedNewHeadMemberId = member.id;
+    if (member.relationship?.includes('زوج') || member.relationship?.includes('زوجة')) {
+      this.formerHeadRelationship = 'رب الأسرة السابق (متوفى)';
+      this.newFamilyNameInput = `عائلة المرحوم ${this.selectedBen?.name || ''}`.trim();
+    } else if (member.relationship?.includes('ابن') || member.relationship?.includes('ابنة')) {
+      this.formerHeadRelationship = 'الوالد (رب الأسرة السابق)';
+      this.newFamilyNameInput = `عائلة المرحوم ${this.selectedBen?.name || ''}`.trim();
+    } else {
+      this.formerHeadRelationship = 'رب الأسرة السابق';
+      this.newFamilyNameInput = `عائلة ${member.name || ''}`.trim();
+    }
+    this.cdr.detectChanges();
+  }
+
+  saveAndSelectNewMember() {
+    if (!this.selectedBen) return;
+    const name = (this.newMemberData.name || '').trim();
+    const nid = (this.newMemberData.nationalId || '').trim();
+
+    if (!name) {
+      this.errorMessage = 'يرجى إدخال اسم فرد الأسرة بالكامل.';
+      this.cdr.detectChanges();
       return;
     }
 
-    const chosenMember = (this.selectedBen.familyMembers || []).find((m: any) => String(m.id) === String(this.selectedNewHeadMemberId));
+    if (nid.length !== 14 || !/^\d{14}$/.test(nid)) {
+      this.errorMessage = 'الرقم القومي يجب أن يتكون من 14 رقماً صحيحاً.';
+      this.cdr.detectChanges();
+      return;
+    }
+
+    this.isAddingMember = true;
+    this.errorMessage = '';
+
+    this.api.addFamilyMember(this.selectedBen.id, this.newMemberData).subscribe({
+      next: (createdMember: any) => {
+        this.isAddingMember = false;
+        if (!this.selectedBen.familyMembers) {
+          this.selectedBen.familyMembers = [];
+        }
+        this.selectedBen.familyMembers.push(createdMember);
+        this.selectNewHeadMember(createdMember);
+        this.showAddMemberInline = false;
+        this.resetNewMemberData();
+        this.successMessage = `✅ تمت إضافة (${createdMember.name}) للأسرة بنجاح وتم اختياره تلقائياً كعائل جديد للملف.`;
+        this.cdr.detectChanges();
+        setTimeout(() => { this.successMessage = ''; this.cdr.detectChanges(); }, 4500);
+      },
+      error: (err: any) => {
+        this.isAddingMember = false;
+        this.errorMessage = err.error?.message || err.message || 'فشل في إضافة فرد الأسرة.';
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  getSelectedNewHeadMember(): any {
+    if (!this.selectedBen || !this.selectedBen.familyMembers) return null;
+    return this.selectedBen.familyMembers.find((m: any) => String(m.id) === String(this.selectedNewHeadMemberId));
+  }
+
+  confirmTransferHeadship() {
+    if (!this.selectedBen || !this.selectedNewHeadMemberId) {
+      this.errorMessage = 'يرجى اختيار العائل الجديد من بين أفراد الأسرة المسجلين.';
+      this.cdr.detectChanges();
+      return;
+    }
+
+    const chosenMember = this.getSelectedNewHeadMember();
 
     this.api.transferHeadship(this.selectedBen.id, {
       newHeadFamilyMemberId: this.selectedNewHeadMemberId,

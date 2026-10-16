@@ -1482,77 +1482,183 @@
           </div>
         </div>
 
-        <!-- اختيار العائل الجديد من بين أفراد الأسرة المسجلين -->
+        <!-- القسم الرئيسي: اختيار واحد من أفراد الأسرة فقط -->
         <div style="margin-bottom: 16px;">
-          <label style="display: block; font-size: 13px; font-weight: bold; color: #333; margin-bottom: 6px;">
-            👑 اختيار رب الأسرة الجديد (العائل البديل) *
-          </label>
-          <div *ngIf="getEligibleNewHeads().length === 0" 
-               style="background: #ffebee; border: 1px solid #ffcdd2; color: #c62828; padding: 10px; border-radius: 6px; font-size: 13px;">
-            ⚠️ لا يوجد أفراد أسرة مسجلين ومؤهلين في هذا الملف. يرجى الدخول إلى "تعديل الملف" وإضافة الزوجة أو الأبناء أولاً لتتمكن من نقل الولاية إليهم.
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <label style="font-size: 14px; font-weight: bold; color: #333; margin: 0; display: flex; align-items: center; gap: 6px;">
+              <span>👑</span> اختر رب الأسرة الجديد من أفراد الأسرة المسجلين:
+            </label>
+            <span style="font-size: 12px; color: #666;">
+              (متاح {{ getEligibleNewHeads().length }} فرد مؤهل)
+            </span>
           </div>
-          <select *ngIf="getEligibleNewHeads().length > 0" 
-                  [(ngModel)]="selectedNewHeadMemberId" 
-                  style="width: 100%; padding: 10px; border-radius: 6px; border: 2px solid #ffb74d; box-sizing: border-box; font-size: 14px; font-weight: bold; background: #fffde7; color: #333;">
-            <option value="" disabled selected>-- اضغط لاختيار فرد الأسرة الجديد (الزوجة / الابن الأكبر...) --</option>
-            <option *ngFor="let m of getEligibleNewHeads()" [value]="m.id">
-              {{ m.name }} — ({{ m.relationship }} | {{ m.memberType }} | الرقم القومي: {{ m.nationalId }})
-            </option>
-          </select>
+
+          <!-- بطاقات أفراد الأسرة للاختيار بضغطة واحدة -->
+          <div *ngIf="getEligibleNewHeads().length > 0" 
+               style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; margin-bottom: 12px;">
+            <div *ngFor="let m of getEligibleNewHeads()" 
+                 (click)="selectNewHeadMember(m)"
+                 [style.border]="selectedNewHeadMemberId === m.id ? '2px solid #e65100' : '1px solid #e0e0e0'"
+                 [style.background]="selectedNewHeadMemberId === m.id ? '#fff3e0' : 'white'"
+                 style="border-radius: 8px; padding: 12px 14px; cursor: pointer; transition: all 0.2s ease; position: relative; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                 
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                <span style="font-size: 20px;">
+                  {{ m.relationship?.includes('زوج') ? '👩' : (m.relationship?.includes('ابن') ? '👦' : (m.relationship?.includes('ابنة') ? '👧' : '👤')) }}
+                </span>
+                <span *ngIf="selectedNewHeadMemberId === m.id" 
+                      style="background: #e65100; color: white; font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: bold;">
+                  ✓ تم اختياره كعائل
+                </span>
+              </div>
+
+              <div style="font-weight: bold; font-size: 14px; color: #222; margin-bottom: 4px;">
+                {{ m.name }}
+              </div>
+              <div style="font-size: 12px; color: #666; margin-bottom: 2px;">
+                الصلة: <strong style="color: #004d40;">{{ m.relationship }}</strong> | {{ m.memberType }} ({{ m.supportType || 'معال' }})
+              </div>
+              <div style="font-size: 11px; color: #888;">
+                الرقم القومي: <code>{{ m.nationalId }}</code>
+              </div>
+            </div>
+          </div>
+
+          <!-- في حال عدم وجود أفراد مسجلين -->
+          <div *ngIf="getEligibleNewHeads().length === 0 && !showAddMemberInline" 
+               style="background: #fffde7; border: 1px solid #ffe082; color: #e65100; padding: 14px; border-radius: 8px; font-size: 13px; margin-bottom: 12px; text-align: center;">
+            ⚠️ لا يوجد حالياً أفراد أسرة مسجلين تحت هذا الملف. اضغط الزر أدناه لإضافة الزوجة أو الابن الأكبر للأسرة أولاً ثم اختياره فوراً.
+          </div>
+
+          <!-- زر: لو مش موجود ينضاف الأول وبعدين يتم اختياره -->
+          <div style="margin-bottom: 14px;">
+            <button type="button" (click)="toggleAddMemberInline()"
+                    style="background: #f9f9f9; border: 1px dashed #e65100; color: #e65100; padding: 9px 16px; border-radius: 6px; font-size: 13px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 6px; width: 100%; justify-content: center; transition: all 0.2s;">
+              <span>{{ showAddMemberInline ? '✕ إلغاء نموذج إضافة الفرد' : '➕ العائل البديل غير مسجل بالقائمة؟ اضغط هنا لإضافته للأسرة أولاً ثم اختياره' }}</span>
+            </button>
+          </div>
+
+          <!-- نموذج إضافة الفرد للأسرة واختياره مباشرة -->
+          <div *ngIf="showAddMemberInline" 
+               style="background: #fff8e1; border: 2px solid #ffb74d; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.06);">
+            <div style="font-weight: bold; font-size: 14px; color: #e65100; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+              <span>📝</span> إضافة فرد جديد للأسرة (ليصبح متاحاً للاختيار فوراً)
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+              <div>
+                <label style="display: block; font-size: 12px; font-weight: bold; color: #444; margin-bottom: 4px;">الاسم رباعي بالكامل *</label>
+                <input type="text" [(ngModel)]="newMemberData.name" placeholder="مثال: مريم كمال السيد إبراهيم"
+                       style="width: 100%; padding: 9px; border-radius: 6px; border: 1px solid #ccc; font-size: 13px; box-sizing: border-box; background: white;">
+              </div>
+              <div>
+                <label style="display: block; font-size: 12px; font-weight: bold; color: #444; margin-bottom: 4px;">الرقم القومي (14 رقماً) *</label>
+                <input type="text" maxlength="14" [(ngModel)]="newMemberData.nationalId" placeholder="28804041234568"
+                       style="width: 100%; padding: 9px; border-radius: 6px; border: 1px solid #ccc; font-size: 13px; box-sizing: border-box; background: white;">
+              </div>
+              <div>
+                <label style="display: block; font-size: 12px; font-weight: bold; color: #444; margin-bottom: 4px;">صلة القرابة بالعائلة *</label>
+                <select [(ngModel)]="newMemberData.relationship"
+                        style="width: 100%; padding: 9px; border-radius: 6px; border: 1px solid #ccc; font-size: 13px; box-sizing: border-box; background: white;">
+                  <option value="زوجة">زوجة (أم الأبناء)</option>
+                  <option value="ابن">ابن أكبر</option>
+                  <option value="ابنة">ابنة كبرى</option>
+                  <option value="والدة">والدة</option>
+                  <option value="أخ/أخت">أخ / أخت</option>
+                  <option value="أخرى">أخرى</option>
+                </select>
+              </div>
+              <div>
+                <label style="display: block; font-size: 12px; font-weight: bold; color: #444; margin-bottom: 4px;">الدور الإعالي</label>
+                <select [(ngModel)]="newMemberData.memberType"
+                        style="width: 100%; padding: 9px; border-radius: 6px; border: 1px solid #ccc; font-size: 13px; box-sizing: border-box; background: white;">
+                  <option value="معال">معال (يعوله الملف)</option>
+                  <option value="معيل">معيل (يساعد في إعالة إخوته)</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 8px;">
+              <button type="button" (click)="toggleAddMemberInline()"
+                      style="background: white; border: 1px solid #ccc; padding: 7px 16px; border-radius: 5px; font-size: 13px; cursor: pointer;">
+                إلغاء
+              </button>
+              <button type="button" (click)="saveAndSelectNewMember()" [disabled]="isAddingMember"
+                      style="background: #2e7d32; color: white; border: none; padding: 8px 18px; border-radius: 5px; font-size: 13px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                <span>💾</span> {{ isAddingMember ? 'جاري الحفظ...' : 'حفظ وإضافته للأسرة واختياره فوراً' }}
+              </button>
+            </div>
+          </div>
         </div>
 
-        <!-- سبب نقل الولاية -->
-        <div style="margin-bottom: 16px;">
-          <label style="display: block; font-size: 13px; font-weight: bold; color: #333; margin-bottom: 6px;">
-            📋 سبب نقل ولاية الملف وعائل الأسرة *
-          </label>
-          <select [(ngModel)]="transferHeadReason" 
-                  style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; font-size: 14px;">
-            <option *ngFor="let tr of transferReasons" [value]="tr">{{ tr }}</option>
-          </select>
+        <!-- ملخص الاختيار التأكيدي -->
+        <div *ngIf="getSelectedNewHeadMember()" 
+             style="background: #e8f5e9; border: 1px solid #a5d6a7; border-radius: 8px; padding: 12px 16px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <div style="font-size: 14px; font-weight: bold; color: #1b5e20; margin-bottom: 2px;">
+              👑 ستنتقل ولاية الملف إلى: {{ getSelectedNewHeadMember()?.name }} ({{ getSelectedNewHeadMember()?.relationship }})
+            </div>
+            <div style="font-size: 12px; color: #2e7d32;">
+              الرقم القومي الماستر الجديد: <code>{{ getSelectedNewHeadMember()?.nationalId }}</code> — سيتم أرشفة العائل السابق ({{ selectedBen?.name }}) كـ رب أسرة سابق مع حفظ كامل سجل الصرف.
+            </div>
+          </div>
+          <span style="font-size: 26px;">✅</span>
         </div>
 
-        <!-- صفة العائل السابق في السجل -->
-        <div style="margin-bottom: 16px;">
-          <label style="display: block; font-size: 13px; font-weight: bold; color: #333; margin-bottom: 6px;">
-            🕊️ صفة ومسمى العائل السابق بعد النقل
-          </label>
-          <input type="text" [(ngModel)]="formerHeadRelationship" placeholder="مثال: رب الأسرة السابق (متوفى)" 
-                 style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; font-size: 14px;">
-        </div>
+        <!-- خيارات إضافية متقدمة (قابلة للطي لعدم التشويش) -->
+        <div style="border-top: 1px solid #eee; padding-top: 12px; margin-bottom: 10px;">
+          <button type="button" (click)="showAdvancedTransferOptions = !showAdvancedTransferOptions"
+                  style="background: none; border: none; color: #1565c0; font-size: 13px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 4px; padding: 0;">
+            <span>{{ showAdvancedTransferOptions ? '▲ إخفاء الخيارات الإضافية' : '⚙️ تعديل سبب النقل أو مسمى العائلة (اختياري)' }}</span>
+          </button>
 
-        <!-- مسمى الأسرة الجديد -->
-        <div style="margin-bottom: 16px;">
-          <label style="display: block; font-size: 13px; font-weight: bold; color: #333; margin-bottom: 6px;">
-            🏠 مسمى الأسرة الجديد (اختياري)
-          </label>
-          <input type="text" [(ngModel)]="newFamilyNameInput" placeholder="مثال: عائلة سعاد إبراهيم (أو تترك لتتحدث تلقائياً)" 
-                 style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; font-size: 14px;">
-        </div>
+          <div *ngIf="showAdvancedTransferOptions" 
+               style="background: #fafafa; border: 1px solid #eee; border-radius: 6px; padding: 12px; margin-top: 10px;">
+            
+            <div style="margin-bottom: 12px;">
+              <label style="display: block; font-size: 12px; font-weight: bold; color: #444; margin-bottom: 4px;">سبب نقل ولاية الملف</label>
+              <select [(ngModel)]="transferHeadReason" 
+                      style="width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #ccc; font-size: 13px;">
+                <option *ngFor="let tr of transferReasons" [value]="tr">{{ tr }}</option>
+              </select>
+            </div>
 
-        <!-- ملاحظات إضافية وتوثيق البحث الاجتماعي -->
-        <div style="margin-bottom: 10px;">
-          <label style="display: block; font-size: 13px; font-weight: bold; color: #333; margin-bottom: 6px;">
-            📝 ملاحظات البحث الميداني وتوثيق القرار
-          </label>
-          <textarea [(ngModel)]="transferHeadNotes" rows="3" placeholder="وثّق سبب القرار، رقم شهادة الوفاة أو تفاصيل تقرير البحث الاجتماعي المعتمد..." 
-                    style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; font-size: 13px;"></textarea>
+            <div style="margin-bottom: 12px;">
+              <label style="display: block; font-size: 12px; font-weight: bold; color: #444; margin-bottom: 4px;">صفة العائل السابق في السجل</label>
+              <input type="text" [(ngModel)]="formerHeadRelationship" placeholder="رب الأسرة السابق (متوفى)" 
+                     style="width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #ccc; font-size: 13px;">
+            </div>
+
+            <div style="margin-bottom: 12px;">
+              <label style="display: block; font-size: 12px; font-weight: bold; color: #444; margin-bottom: 4px;">مسمى الأسرة الجديد (اختياري)</label>
+              <input type="text" [(ngModel)]="newFamilyNameInput" placeholder="عائلة المرحوم..." 
+                     style="width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #ccc; font-size: 13px;">
+            </div>
+
+            <div>
+              <label style="display: block; font-size: 12px; font-weight: bold; color: #444; margin-bottom: 4px;">ملاحظات البحث الميداني</label>
+              <textarea [(ngModel)]="transferHeadNotes" rows="2" placeholder="رقم شهادة الوفاة أو تفاصيل تقرير البحث الاجتماعي..." 
+                        style="width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #ccc; font-size: 12px;"></textarea>
+            </div>
+          </div>
         </div>
 
       </div>
 
       <!-- Footer -->
-      <div style="background-color: #fafafa; border-top: 1px solid #eee; padding: 12px 20px; display: flex; justify-content: flex-end; gap: 10px;">
+      <div style="background-color: #fafafa; border-top: 1px solid #eee; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center;">
         <button type="button" (click)="closeTransferHeadModal()" 
-                style="background: white; border: 1px solid #ccc; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px;">
+                style="background: white; border: 1px solid #ccc; padding: 8px 18px; border-radius: 6px; cursor: pointer; font-size: 13px;">
           إلغاء
         </button>
+
         <button type="button" (click)="confirmTransferHeadship()" 
-                [disabled]="!selectedNewHeadMemberId || getEligibleNewHeads().length === 0"
-                [style.opacity]="(!selectedNewHeadMemberId || getEligibleNewHeads().length === 0) ? '0.5' : '1'"
-                [style.cursor]="(!selectedNewHeadMemberId || getEligibleNewHeads().length === 0) ? 'not-allowed' : 'pointer'"
-                style="background-color: #e65100; color: white; border: none; padding: 10px 22px; border-radius: 6px; font-size: 14px; font-weight: bold; display: flex; align-items: center; gap: 6px;">
-          <span>👑</span> تأكيد نقل ولاية الملف وحفظ التاريخ
+                [disabled]="!selectedNewHeadMemberId"
+                [style.opacity]="!selectedNewHeadMemberId ? '0.5' : '1'"
+                [style.cursor]="!selectedNewHeadMemberId ? 'not-allowed' : 'pointer'"
+                style="background-color: #e65100; color: white; border: none; padding: 10px 24px; border-radius: 6px; font-size: 14px; font-weight: bold; display: flex; align-items: center; gap: 8px;">
+          <span>👑</span> 
+          <span>تأكيد نقل ولاية الملف {{ getSelectedNewHeadMember() ? 'إلى (' + getSelectedNewHeadMember().name + ')' : '' }}</span>
         </button>
       </div>
     </div>
