@@ -45,10 +45,10 @@ public class AuthService : IAuthService
             throw new UnauthorizedDomainException("اسم المستخدم أو كلمة المرور غير صحيحة.");
         }
 
-        var charity = await _charityRepo.GetByIdAsync(user.CharityId);
-        var charityName = charity?.Name ?? "جمعية خيرية";
         var roles = await _userManager.GetRolesAsync(user);
         var role = roles.FirstOrDefault() ?? "CharityManager";
+        var charity = !string.IsNullOrEmpty(user.CharityId) ? await _charityRepo.GetByIdAsync(user.CharityId) : null;
+        var charityName = charity?.Name ?? (role == "Admin" ? "إدارة شبكة الجمعيات" : string.Empty);
 
         var token = GenerateJwtToken(user, charityName, role);
 
@@ -58,7 +58,7 @@ public class AuthService : IAuthService
             UserId = user.Id,
             Username = user.UserName ?? string.Empty,
             FullName = user.FullName,
-            CharityId = user.CharityId,
+            CharityId = user.CharityId ?? string.Empty,
             CharityName = charityName,
             Role = role
         };
@@ -72,16 +72,19 @@ public class AuthService : IAuthService
         var user = await _userManager.FindByIdAsync(_currentUserService.UserId);
         if (user == null) return null;
 
-        var charity = await _charityRepo.GetByIdAsync(user.CharityId);
+        var roles = await _userManager.GetRolesAsync(user);
+        var role = roles.FirstOrDefault() ?? _currentUserService.Role ?? "User";
+        var charity = !string.IsNullOrEmpty(user.CharityId) ? await _charityRepo.GetByIdAsync(user.CharityId) : null;
+        var charityName = charity?.Name ?? (role == "Admin" ? "إدارة شبكة الجمعيات" : string.Empty);
 
         return new CurrentUserDto
         {
             UserId = user.Id,
             Username = user.UserName ?? string.Empty,
             FullName = user.FullName,
-            CharityId = user.CharityId,
-            CharityName = charity?.Name ?? string.Empty,
-            Role = _currentUserService.Role ?? "User"
+            CharityId = user.CharityId ?? string.Empty,
+            CharityName = charityName,
+            Role = role
         };
     }
 
@@ -96,7 +99,7 @@ public class AuthService : IAuthService
             new(ClaimTypes.NameIdentifier, user.Id),
             new(ClaimTypes.Name, user.UserName ?? string.Empty),
             new("FullName", user.FullName ?? string.Empty),
-            new("CharityId", user.CharityId),
+            new("CharityId", user.CharityId ?? string.Empty),
             new("CharityName", charityName),
             new(ClaimTypes.Role, role)
         };

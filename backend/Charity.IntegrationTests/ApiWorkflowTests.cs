@@ -50,6 +50,7 @@ public sealed class ApiWorkflowTests(CharityApiFactory app)
     [InlineData("/api/staff")]
     [InlineData("/api/analytics/bi")]
     [InlineData("/api/charities/my-settings")]
+    [InlineData("/api/charities")]
     public async Task Protected_data_requires_authentication(string path)
     {
         using var client = app.CreateClient();
@@ -64,11 +65,15 @@ public sealed class ApiWorkflowTests(CharityApiFactory app)
         Assert.Equal("amal", user.Username);
         Assert.Equal("c2", user.CharityId);
         Assert.Equal("CharityManager", user.Role);
+        var charities = await Read<List<CharityDto>>(await client.GetAsync("/api/charities"));
+        Assert.Single(charities);
+        Assert.Equal("c2", charities[0].Id);
     }
 
     [Theory]
     [InlineData("admin", "wrong-password")]
-    [InlineData("non-existent-user", "Admin@123")]
+    [InlineData("non-existent-user", "admin")]
+    [InlineData("admin", "Admin@123")]
     public async Task Invalid_credentials_are_rejected(string username, string password)
     {
         using var client = app.CreateClient();
@@ -77,12 +82,13 @@ public sealed class ApiWorkflowTests(CharityApiFactory app)
     }
 
     [Fact]
-    public async Task Demo_shortcut_must_not_bypass_the_stored_identity_password()
+    public async Task Demo_admin_password_is_stored_in_identity()
     {
         using var client = app.CreateClient();
         var response = await client.PostAsJsonAsync("/api/auth/login", new { username = "admin", password = "admin" });
-        Assert.True(response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden,
-            $"Expected a rejected login, received {(int)response.StatusCode}.");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var user = await app.WithDb(db => db.Users.SingleAsync(u => u.UserName == "admin"));
+        Assert.NotEqual("admin", user.PasswordHash);
     }
 
     [Fact]
@@ -301,18 +307,17 @@ public sealed class ApiWorkflowTests(CharityApiFactory app)
     }
 
     [Fact]
-    public async Task Cash_donation_updates_only_the_current_charity_dashboard()
+    public async Task Cash_donation_updates_admin_dashboard_while_charity_user_is_denied()
     {
         using var owner = await app.Login();
         using var other = await app.Login("amal", "Amal@123");
         var before = await Read<DashboardStatsDto>(await owner.GetAsync("/api/dashboard/stats"));
-        var otherBefore = await Read<DashboardStatsDto>(await other.GetAsync("/api/dashboard/stats"));
+        Assert.Equal(HttpStatusCode.Forbidden, (await other.GetAsync("/api/dashboard/stats")).StatusCode);
         await Read<DonationDto>(await owner.PostAsJsonAsync("/api/donations", new CreateDonationDto
         { DonorName = "QA cash donor", DonationKind = "نقدي", Amount = 123.45m }));
         var after = await Read<DashboardStatsDto>(await owner.GetAsync("/api/dashboard/stats"));
-        var otherAfter = await Read<DashboardStatsDto>(await other.GetAsync("/api/dashboard/stats"));
         Assert.Equal(before.TotalCashDonations + 123.45m, after.TotalCashDonations);
-        Assert.Equal(otherBefore.TotalCashDonations, otherAfter.TotalCashDonations);
+        Assert.Equal(HttpStatusCode.Forbidden, (await other.GetAsync("/api/analytics/bi")).StatusCode);
     }
 
     [Fact]
@@ -352,8 +357,9 @@ public sealed class ApiWorkflowTests(CharityApiFactory app)
     {
         using var client = await app.Login();
         var report = await Read<JsonElement>(await client.GetAsync("/api/analytics/bi"));
-        Assert.Equal(JsonValueKind.Object, report.ValueKind);
-        Assert.True(report.EnumerateObject().Any());
+        Assert.Equal("شبكة الجمعيات بالكامل", report.GetProperty("charityName").GetString());
+        var c2 = await Read<JsonElement>(await client.GetAsync("/api/analytics/bi?charityId=c2"));
+        Assert.Equal("c2", c2.GetProperty("charityId").GetString());
     }
 
     [Fact]
@@ -407,10 +413,114 @@ public sealed class ApiWorkflowTests(CharityApiFactory app)
     }
 
     [Fact]
-    public async Task Analytics_query_cannot_read_another_charitys_report()
+    public async Task Charity_user_cannot_read_analytics_even_with_a_charity_query()
     {
         using var client = await app.Login("amal", "Amal@123");
         Assert.Equal(HttpStatusCode.Forbidden, (await client.GetAsync("/api/analytics/bi?charityId=c1")).StatusCode);
+    }
+
+    [Fact]
+    public async Task Only_admin_can_create_charity_with_an_isolated_primary_user()
+    {
+        using var manager = await app.Login("amal", "Amal@123");
+        var request = new CreateCharityDto
+        {
+            Name = "جمعية اختبار " + Guid.NewGuid().ToString("N"),
+            ManagerUsername = "qa" + Guid.NewGuid().ToString("N")[..12],
+            ManagerPassword = "Secure@123", ManagerFullName = "مدير الاختبار",
+            Address = "القاهرة", Phone = "01000000000", RoleDesc = "رعاية أسر"
+        };
+        Assert.Equal(HttpStatusCode.Forbidden, (await manager.PostAsJsonAsync("/api/charities", request)).StatusCode);
+
+        using var admin = await app.Login();
+        var beforeUsers = await app.WithDb(db => db.Users.CountAsync());
+        var created = await Read<CharityDto>(await admin.PostAsJsonAsync("/api/charities", request));
+        Assert.Equal(request.Name, created.Name);
+        Assert.True(await app.WithDb(db => db.Charities.AnyAsync(c => c.Id == created.Id)));
+        using var newManager = await app.Login(request.ManagerUsername, request.ManagerPassword);
+        var me = await Read<CurrentUserDto>(await newManager.GetAsync("/api/auth/me"));
+        Assert.Equal(created.Id, me.CharityId);
+        Assert.Equal("CharityManager", me.Role);
+        var donation = await Read<DonationDto>(await newManager.PostAsJsonAsync("/api/donations", new CreateDonationDto
+        { DonorName = "QA network admin", DonationKind = "نقدي", Amount = 10 }));
+        Assert.Equal(created.Id, donation.CharityId);
+        Assert.Equal(HttpStatusCode.Forbidden, (await newManager.GetAsync("/api/dashboard/stats")).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await newManager.GetAsync("/api/analytics/bi")).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await newManager.PostAsJsonAsync("/api/charities", request)).StatusCode);
+        Assert.Equal(beforeUsers + 1, await app.WithDb(db => db.Users.CountAsync()));
+    }
+
+    [Fact]
+    public async Task Charity_creation_rejects_empty_or_duplicate_name_without_orphan_records()
+    {
+        using var admin = await app.Login();
+        var name = "جمعية اختبار " + Guid.NewGuid().ToString("N");
+        var before = await app.WithDb(db => db.Charities.CountAsync());
+        var invalid = new CreateCharityDto
+        {
+            Name = "  ", ManagerUsername = "qa" + Guid.NewGuid().ToString("N")[..12],
+            ManagerPassword = "Secure@123", ManagerFullName = "مدير الاختبار"
+        };
+        Assert.Equal(HttpStatusCode.BadRequest, (await admin.PostAsJsonAsync("/api/charities", invalid)).StatusCode);
+        Assert.Equal(before, await app.WithDb(db => db.Charities.CountAsync()));
+
+        invalid.Name = name;
+        await Read<CharityDto>(await admin.PostAsJsonAsync("/api/charities", invalid));
+        var after = await app.WithDb(db => db.Charities.CountAsync());
+        Assert.Equal(HttpStatusCode.BadRequest, (await admin.PostAsJsonAsync("/api/charities", invalid)).StatusCode);
+        Assert.Equal(after, await app.WithDb(db => db.Charities.CountAsync()));
+    }
+
+    [Fact]
+    public async Task Admin_can_assign_one_primary_user_to_an_existing_charity()
+    {
+        var request = new CreateCharityManagerDto
+        {
+            Username = "sedakaqa" + Guid.NewGuid().ToString("N")[..8],
+            Password = "Secure@123", FullName = "مسؤول الجمعية"
+        };
+        using var admin = await app.Login();
+        Assert.Equal(HttpStatusCode.Created,
+            (await admin.PostAsJsonAsync("/api/charities/c3/manager", request)).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest,
+            (await admin.PostAsJsonAsync("/api/charities/c3/manager", new CreateCharityManagerDto
+            { Username = "other" + Guid.NewGuid().ToString("N")[..8], Password = "Secure@123", FullName = "آخر" })).StatusCode);
+
+        using var manager = await app.Login(request.Username, request.Password);
+        manager.DefaultRequestHeaders.Add("X-Charity-Id", "c1");
+        var me = await Read<CurrentUserDto>(await manager.GetAsync("/api/auth/me"));
+        Assert.Equal("c3", me.CharityId);
+        var donation = await Read<DonationDto>(await manager.PostAsJsonAsync("/api/donations", new CreateDonationDto
+        { DonorName = "متبرع الجمعية الثالثة", DonationKind = "نقدي", Amount = 15 }));
+        Assert.Equal("c3", donation.CharityId);
+        Assert.Equal(HttpStatusCode.Forbidden, (await manager.GetAsync("/api/analytics/bi")).StatusCode);
+    }
+
+    [Fact]
+    public async Task Deleting_a_user_revokes_their_existing_token()
+    {
+        var username = "deleted" + Guid.NewGuid().ToString("N")[..10];
+        using (var scope = app.Services.CreateScope())
+        {
+            var users = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+            var created = await users.CreateAsync(new ApplicationUser
+            { UserName = username, FullName = "اختبار حذف", CharityId = "c1" }, "Secure@123");
+            Assert.True(created.Succeeded);
+            var user = await users.FindByNameAsync(username);
+            Assert.NotNull(user);
+            Assert.True((await users.AddToRoleAsync(user, "CharityManager")).Succeeded);
+        }
+
+        using var client = await app.Login(username, "Secure@123");
+        Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/api/auth/me")).StatusCode);
+        using (var scope = app.Services.CreateScope())
+        {
+            var users = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+            var user = await users.FindByNameAsync(username);
+            Assert.NotNull(user);
+            Assert.True((await users.DeleteAsync(user)).Succeeded);
+        }
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/api/auth/me")).StatusCode);
     }
 
     [Fact]

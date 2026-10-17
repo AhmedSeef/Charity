@@ -14,7 +14,6 @@ public class DashboardService : IDashboardService
     private readonly IRepository<StaffMember> _staffRepo;
     private readonly IRepository<Beneficiary> _beneficiaryRepo;
     private readonly IRepository<Charity.Domain.Entities.Charity> _charityRepo;
-    private readonly ICurrentUserService _currentUserService;
 
     public DashboardService(
         IRepository<Donation> donationRepo,
@@ -22,8 +21,7 @@ public class DashboardService : IDashboardService
         IRepository<Distribution> distributionRepo,
         IRepository<StaffMember> staffRepo,
         IRepository<Beneficiary> beneficiaryRepo,
-        IRepository<Charity.Domain.Entities.Charity> charityRepo,
-        ICurrentUserService currentUserService)
+        IRepository<Charity.Domain.Entities.Charity> charityRepo)
     {
         _donationRepo = donationRepo;
         _inventoryRepo = inventoryRepo;
@@ -31,27 +29,26 @@ public class DashboardService : IDashboardService
         _staffRepo = staffRepo;
         _beneficiaryRepo = beneficiaryRepo;
         _charityRepo = charityRepo;
-        _currentUserService = currentUserService;
     }
 
     public async Task<DashboardStatsDto> GetDashboardStatsAsync()
     {
-        var charityId = _currentUserService.CharityId ?? "c1";
-        var charityName = _currentUserService.CharityName ?? "الجمعية";
+        var charityId = "network";
+        var charityName = "شبكة الجمعيات بالكامل";
 
-        // Active charity isolated stats
-        var myDonations = await _donationRepo.FindAsync(d => d.CharityId == charityId);
+        // This endpoint is restricted to the system administrator and reports the whole network.
+        var myDonations = await _donationRepo.GetAllAsync();
         var cashTotal = myDonations
             .Where(d => (d.DonationKind == "نقدي" || string.IsNullOrEmpty(d.DonationKind)) && d.Amount.HasValue)
             .Sum(d => d.Amount!.Value);
         var inKindCount = myDonations.Count(d => d.DonationKind == "عيني");
 
-        var myInventory = await _inventoryRepo.FindAsync(i => i.CharityId == charityId);
+        var myInventory = await _inventoryRepo.GetAllAsync();
         var tangibleCount = myInventory.Count(i => i.Kind == "صنف ملموس");
         var servicesCount = myInventory.Count(i => i.Kind == "خدمة");
 
-        var myDistributionsCount = await _distributionRepo.CountAsync(d => d.CharityId == charityId);
-        var myStaffCount = await _staffRepo.CountAsync(s => s.CharityId == charityId);
+        var myDistributionsCount = await _distributionRepo.CountAsync();
+        var myStaffCount = await _staffRepo.CountAsync();
 
         // Shared Federation Network stats
         var totalBeneficiaries = await _beneficiaryRepo.CountAsync();
@@ -96,7 +93,9 @@ public class CharityService : ICharityService
 
     public async Task<IReadOnlyList<CharityDto>> GetAllCharitiesAsync()
     {
-        var charities = await _charityRepo.GetAllAsync();
+        var charities = _currentUserService.Role == "Admin"
+            ? await _charityRepo.GetAllAsync()
+            : await _charityRepo.FindAsync(c => c.Id == _currentUserService.CharityId);
         return charities.Select(c => c.ToDto()).ToList();
     }
 

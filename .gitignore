@@ -1,41 +1,69 @@
-## .NET / Visual Studio
+## ========================================================
+## .NET / ASP.NET Core Build & Publishing
+## ========================================================
 [Bb]in/
 [Oo]bj/
 [Ll]og/
 [Ll]ogs/
+publish/
+deploy/
+**/wwwroot/*.js
+**/wwwroot/*.css
+**/wwwroot/*.br
+**/wwwroot/*.gz
+**/wwwroot/*.ico
+**/wwwroot/*.html
+backend/Charity.API/wwwroot/
+
+## Visual Studio & Rider & VS Code
 .vs/
-*.user
-*.userosscache
-*.sln.docstates
-*.suo
-*.ide/
-
-## Angular / Node.js
-**/dist/
-**/tmp/
-**/out-tsc/
-**/bazel-out/
-**/node_modules/
-**/.angular/cache/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-## IDEs and editors
 .idea/
 .vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
-*.sublime-workspace
+*.user
+*.userosscache
+*.sln.docstates
+*.suo
+*.ide/
 
-## System files
+## User-specific / Local Configuration
+*.local.json
+appsettings.Production.json
+appsettings.*.local.json
+.env
+.env.*
+
+## ========================================================
+## Angular & Node.js Frontend
+## ========================================================
+**/node_modules/
+**/dist/
+**/tmp/
+**/out-tsc/
+**/bazel-out/
+**/.angular/
+.angular/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+## ========================================================
+## OS & System Artifacts
+## ========================================================
 .DS_Store
 Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
 
-## Local QA runtimes and generated evidence
+## ========================================================
+## Testing, Coverage & QA Reports
+## ========================================================
 .qa/
 **/TestResults/
 qa/e2e/test-results/
 qa/e2e/playwright-report/
+playwright-report/
+test-results/

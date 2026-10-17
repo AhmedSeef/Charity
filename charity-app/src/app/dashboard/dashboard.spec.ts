@@ -5,6 +5,7 @@ describe('Dashboard tenant statistics', () => {
   it('shows shared network counts and tenant cash, stock and aid', () => {
     const api: any = {
       getActiveCharity: () => ({ id: 'c1' }),
+      getDashboardStats: () => of({ totalPartnerCharitiesCount: 3, totalCashDonations: 500 }),
       getBeneficiaries: () => of([{ id: 'b1' }, { id: 'b2' }]),
       getDonations: () => of([{ donationKind: 'نقدي', amount: 100 }, { donationKind: 'عيني', amount: 900 }]),
       getInventory: () => of([{ kind: 'صنف ملموس' }, { kind: 'خدمة' }]),
@@ -20,5 +21,6 @@ describe('Dashboard tenant statistics', () => {
     expect(dashboard.tangibleItemsCount).toBe(1);
     expect(dashboard.distributionsCount).toBe(1);
     expect(dashboard.totalNetworkDistributionsCount).toBe(2);
+    expect(dashboard.networkStats.totalCashDonations).toBe(500);
   });
 });

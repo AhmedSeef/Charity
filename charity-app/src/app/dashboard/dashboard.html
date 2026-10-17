@@ -6,7 +6,7 @@
         <span [style.color]="activeCharity?.color || '#004d40'">{{ activeCharity?.name }}</span>
       </h2>
       <p style="color: #666; margin: 5px 0 0 0; font-size: 14px;">
-        إحصائيات الخزينة والمخزون الداخلي والتبرعات والموظفين معزولة لجمعيتكم، بينما قاعدة المستفيدين وسجل الصرف مشتركة في الشبكة.
+        الملخص العلوي لكل الشبكة، والتفاصيل أدناه للجمعية المرتبطة بحساب الأدمن.
       </p>
     </div>
 
@@ -31,16 +31,20 @@
 
     <div style="display: flex; gap: 20px; flex-wrap: wrap;">
       <div style="text-align: center; background: rgba(255,255,255,0.15); padding: 10px 18px; border-radius: 8px;">
-        <div style="font-size: 22px; font-weight: bold; color: #ffeb3b;">{{ charitiesCount }}</div>
+        <div style="font-size: 22px; font-weight: bold; color: #ffeb3b;">{{ networkStats?.totalPartnerCharitiesCount ?? charitiesCount }}</div>
         <div style="font-size: 12px; color: #e0f2f1;">جمعيات شريكة</div>
       </div>
       <div style="text-align: center; background: rgba(255,255,255,0.15); padding: 10px 18px; border-radius: 8px;">
-        <div style="font-size: 22px; font-weight: bold; color: #ffeb3b;">{{ beneficiariesCount }}</div>
+        <div style="font-size: 22px; font-weight: bold; color: #ffeb3b;">{{ networkStats?.totalNetworkBeneficiariesCount ?? beneficiariesCount }}</div>
         <div style="font-size: 12px; color: #e0f2f1;">مستفيد بالشبكة</div>
       </div>
       <div style="text-align: center; background: rgba(255,255,255,0.15); padding: 10px 18px; border-radius: 8px;">
-        <div style="font-size: 22px; font-weight: bold; color: #ffeb3b;">{{ totalNetworkDistributionsCount }}</div>
+        <div style="font-size: 22px; font-weight: bold; color: #ffeb3b;">{{ networkStats?.totalNetworkDistributionsCount ?? totalNetworkDistributionsCount }}</div>
         <div style="font-size: 12px; color: #e0f2f1;">مساعدات متبادلة</div>
+      </div>
+      <div style="text-align: center; background: rgba(255,255,255,0.15); padding: 10px 18px; border-radius: 8px;">
+        <div style="font-size: 22px; font-weight: bold; color: #ffeb3b;">{{ networkStats?.totalCashDonations | number:'1.0-0' }}</div>
+        <div style="font-size: 12px; color: #e0f2f1;">إجمالي التبرعات النقدية بالشبكة</div>
       </div>
     </div>
   </div>
@@ -51,7 +55,7 @@
     <!-- الخزينة النقدية للجمعية -->
     <div style="padding: 20px; background-color: #fff8e1; border: 1px solid #ffe082; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
       <div style="display: flex; justify-content: space-between; align-items: center;">
-        <span style="font-size: 13px; font-weight: bold; color: #f57f17;">💵 رصيد خزينة الجمعية</span>
+        <span style="font-size: 13px; font-weight: bold; color: #f57f17;">💵 إجمالي التبرعات النقدية</span>
         <span style="background: #ffecb3; padding: 2px 6px; border-radius: 10px; font-size: 11px; color: #e65100;">تبرعات نقدية</span>
       </div>
       <p style="font-size: 26px; font-weight: bold; color: #e65100; margin: 12px 0 0 0;">

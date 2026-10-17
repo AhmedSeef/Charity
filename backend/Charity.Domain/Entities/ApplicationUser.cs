@@ -5,7 +5,7 @@ namespace Charity.Domain.Entities;
 public class ApplicationUser : IdentityUser
 {
     public string FullName { get; set; } = string.Empty;
-    public string CharityId { get; set; } = string.Empty;
+    public string? CharityId { get; set; }
     public Charity? Charity { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }

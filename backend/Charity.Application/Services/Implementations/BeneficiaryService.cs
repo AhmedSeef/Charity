@@ -74,7 +74,11 @@ public class BeneficiaryService : IBeneficiaryService
 
     public async Task<BeneficiaryDto> CreateAsync(CreateBeneficiaryDto dto)
     {
-        var charityId = _currentUserService.CharityId ?? "c1";
+        var charityId = _currentUserService.CharityId;
+        if (string.IsNullOrWhiteSpace(charityId))
+        {
+            throw new UnauthorizedDomainException("غير مصرح: لا يمكن إضافة مستفيد بدون جمعية مسجلة.");
+        }
         var charityName = _currentUserService.CharityName ?? "الجمعية المسجلة";
 
         // التدقيق في عدم تكرار الرقم القومي سواء لصاحب الملف أو لأفراد الأسرة
@@ -106,7 +110,7 @@ public class BeneficiaryService : IBeneficiaryService
         var currentCharityId = _currentUserService.CharityId ?? string.Empty;
 
         // Strict Authorization Rule: ONLY the registering charity can update beneficiary CRM profile!
-        if (!string.IsNullOrEmpty(existing.RegisteredByCharityId) && existing.RegisteredByCharityId != currentCharityId)
+        if (string.IsNullOrWhiteSpace(currentCharityId) || (!string.IsNullOrEmpty(existing.RegisteredByCharityId) && existing.RegisteredByCharityId != currentCharityId))
         {
             throw new UnauthorizedDomainException(
                 $"غير مصرح: لا تملك صلاحية تعديل بيانات هذا المستفيد. التعديل مقصور قانونياً على الجمعية التي قامت بفتح الملف ({existing.RegisteredByCharityName})."
@@ -229,7 +233,7 @@ public class BeneficiaryService : IBeneficiaryService
 
         var currentCharityId = _currentUserService.CharityId ?? string.Empty;
 
-        if (!string.IsNullOrEmpty(existing.RegisteredByCharityId) && existing.RegisteredByCharityId != currentCharityId)
+        if (string.IsNullOrWhiteSpace(currentCharityId) || (!string.IsNullOrEmpty(existing.RegisteredByCharityId) && existing.RegisteredByCharityId != currentCharityId))
         {
             throw new UnauthorizedDomainException(
                 $"غير مصرح: إيقاف الملف مقصور على الجمعية المسجلة له ({existing.RegisteredByCharityName})."
@@ -261,7 +265,7 @@ public class BeneficiaryService : IBeneficiaryService
 
         var currentCharityId = _currentUserService.CharityId ?? string.Empty;
 
-        if (!string.IsNullOrEmpty(existing.RegisteredByCharityId) && existing.RegisteredByCharityId != currentCharityId)
+        if (string.IsNullOrWhiteSpace(currentCharityId) || (!string.IsNullOrEmpty(existing.RegisteredByCharityId) && existing.RegisteredByCharityId != currentCharityId))
         {
             throw new UnauthorizedDomainException(
                 $"غير مصرح: إعادة تفعيل الملف مقصورة على الجمعية المسجلة له ({existing.RegisteredByCharityName})."
@@ -288,7 +292,7 @@ public class BeneficiaryService : IBeneficiaryService
 
         var currentCharityId = _currentUserService.CharityId ?? string.Empty;
 
-        if (!string.IsNullOrEmpty(existing.RegisteredByCharityId) && existing.RegisteredByCharityId != currentCharityId)
+        if (string.IsNullOrWhiteSpace(currentCharityId) || (!string.IsNullOrEmpty(existing.RegisteredByCharityId) && existing.RegisteredByCharityId != currentCharityId))
         {
             throw new UnauthorizedDomainException(
                 $"غير مصرح: إدارة وفصل أفراد الأسرة مقصورة على الجمعية المسجلة للملف ({existing.RegisteredByCharityName})."
@@ -346,7 +350,7 @@ public class BeneficiaryService : IBeneficiaryService
             ?? throw new EntityNotFoundException(nameof(Beneficiary), beneficiaryId);
 
         var currentCharityId = _currentUserService.CharityId ?? string.Empty;
-        if (!string.IsNullOrEmpty(existing.RegisteredByCharityId) && existing.RegisteredByCharityId != currentCharityId)
+        if (string.IsNullOrWhiteSpace(currentCharityId) || (!string.IsNullOrEmpty(existing.RegisteredByCharityId) && existing.RegisteredByCharityId != currentCharityId))
         {
             throw new UnauthorizedDomainException(
                 $"غير مصرح: إضافة أفراد مقصورة على الجمعية المسجلة للملف ({existing.RegisteredByCharityName})."
@@ -402,7 +406,7 @@ public class BeneficiaryService : IBeneficiaryService
         var currentCharityId = _currentUserService.CharityId ?? string.Empty;
         var currentCharityName = _currentUserService.CharityName ?? "الجمعية المسجلة";
 
-        if (!string.IsNullOrEmpty(existing.RegisteredByCharityId) && existing.RegisteredByCharityId != currentCharityId)
+        if (string.IsNullOrWhiteSpace(currentCharityId) || (!string.IsNullOrEmpty(existing.RegisteredByCharityId) && existing.RegisteredByCharityId != currentCharityId))
         {
             throw new UnauthorizedDomainException(
                 $"غير مصرح: نقل ولاية الملف مقصورة على الجمعية المسجلة له ({existing.RegisteredByCharityName})."
@@ -412,6 +416,10 @@ public class BeneficiaryService : IBeneficiaryService
         var newHeadMember = await _familyMemberRepo.FirstOrDefaultAsync(m => m.Id == dto.NewHeadFamilyMemberId && m.BeneficiaryId == beneficiaryId)
             ?? throw new EntityNotFoundException(nameof(BeneficiaryFamilyMember), dto.NewHeadFamilyMemberId);
 
+        bool keepFormerHeadInFamily = dto.FormerHeadAction != "RemoveFromFamily";
+        bool isDeath = (dto.Reason ?? string.Empty).Contains("وفاة");
+        var actionDescription = keepFormerHeadInFamily ? "نقل ولاية مع بقاء العائل السابق بالأسرة (حي ومعال)" : "نقل ولاية مع حذف واستبعاد العائل السابق من الأسرة";
+
         // 1. تسجيل سجل التعاقب التاريخي للأسرة
         var history = new BeneficiaryHeadHistory
         {
@@ -420,46 +428,67 @@ public class BeneficiaryService : IBeneficiaryService
             PreviousHeadNationalId = existing.NationalId,
             NewHeadName = newHeadMember.Name,
             NewHeadNationalId = newHeadMember.NationalId,
-            Reason = string.IsNullOrWhiteSpace(dto.Reason) ? "وفاة رب الأسرة السابق" : dto.Reason,
-            Notes = dto.Notes ?? string.Empty,
+            Reason = string.IsNullOrWhiteSpace(dto.Reason) ? (keepFormerHeadInFamily ? "عجز أو ظروف خاصة (مع بقائه بالأسرة)" : "وفاة أو خروج من الأسرة") : dto.Reason,
+            Notes = $"[{actionDescription}] " + (dto.Notes ?? string.Empty).Trim(),
             TransferredAt = DateTime.UtcNow,
             TransferredByCharityId = currentCharityId,
             TransferredByCharityName = currentCharityName
         };
         await _headHistoryRepo.AddAsync(history);
 
-        // 2. تحويل العائل السابق إلى فرد أسرة (عائل سابق / متوفى) للحفاظ على سجله داخل الملف
+        // 2. معالجة العائل السابق بناءً على الاختيار (بقاء كفرد معال حي بالأسرة vs حذف واستبعاد)
         var existingFormerMember = await _familyMemberRepo.FirstOrDefaultAsync(
             m => m.BeneficiaryId == existing.Id && m.NationalId == existing.NationalId
         );
 
-        if (existingFormerMember != null)
+        if (keepFormerHeadInFamily)
         {
-            existingFormerMember.IsDeleted = false;
-            existingFormerMember.DeletedAt = null;
-            existingFormerMember.IsFormerHead = true;
-            existingFormerMember.Name = existing.Name;
-            existingFormerMember.Relationship = string.IsNullOrWhiteSpace(dto.FormerHeadRelationship) ? "رب الأسرة السابق (متوفى)" : dto.FormerHeadRelationship;
-            existingFormerMember.Notes = $"عائل الأسرة السابق. سبب نقل الولاية: {history.Reason}";
-            await _familyMemberRepo.UpdateAsync(existingFormerMember);
+            string defaultRelationship = !string.IsNullOrWhiteSpace(dto.FormerHeadRelationship) 
+                ? dto.FormerHeadRelationship 
+                : "زوج (عائل سابق / مريض معال)";
+            string defaultSupportType = !string.IsNullOrWhiteSpace(dto.FormerHeadSupportType) 
+                ? dto.FormerHeadSupportType 
+                : "مريض / عاجز عن العمل";
+
+            if (existingFormerMember != null)
+            {
+                existingFormerMember.IsDeleted = false;
+                existingFormerMember.DeletedAt = null;
+                existingFormerMember.IsFormerHead = true;
+                existingFormerMember.Name = existing.Name;
+                existingFormerMember.Relationship = defaultRelationship;
+                existingFormerMember.MemberType = "معال";
+                existingFormerMember.SupportType = defaultSupportType;
+                existingFormerMember.Notes = $"عائل الأسرة السابق (حي ومقيم بالأسرة كمعال). سبب نقل الولاية: {history.Reason}";
+                await _familyMemberRepo.UpdateAsync(existingFormerMember);
+            }
+            else
+            {
+                var formerHeadMember = new BeneficiaryFamilyMember
+                {
+                    BeneficiaryId = existing.Id,
+                    NationalId = existing.NationalId,
+                    Name = existing.Name,
+                    Relationship = defaultRelationship,
+                    MemberType = "معال",
+                    SupportType = defaultSupportType,
+                    Notes = $"عائل الأسرة السابق (حي ومقيم بالأسرة كمعال). سبب نقل الولاية: {history.Reason}",
+                    IsFormerHead = true,
+                    EducationStage = "غير محدد",
+                    IsSchoolDropout = false,
+                    IsChildLabor = false,
+                    IsDeleted = false
+                };
+                await _familyMemberRepo.AddAsync(formerHeadMember);
+            }
         }
         else
         {
-            var formerHeadMember = new BeneficiaryFamilyMember
+            // حذف / استبعاد العائل السابق من جدول أفراد الأسرة النشطين
+            if (existingFormerMember != null)
             {
-                BeneficiaryId = existing.Id,
-                NationalId = existing.NationalId,
-                Name = existing.Name,
-                Relationship = string.IsNullOrWhiteSpace(dto.FormerHeadRelationship) ? "رب الأسرة السابق (متوفى)" : dto.FormerHeadRelationship,
-                MemberType = "معال",
-                SupportType = "سابق / متوفى",
-                Notes = $"عائل الأسرة السابق. سبب نقل الولاية: {history.Reason}",
-                IsFormerHead = true,
-                EducationStage = "غير محدد",
-                IsSchoolDropout = false,
-                IsChildLabor = false
-            };
-            await _familyMemberRepo.AddAsync(formerHeadMember);
+                await _familyMemberRepo.DeleteAsync(existingFormerMember); // Soft delete
+            }
         }
 
         // 3. ترقية الفرد المختار: إخراجه من جدول الأفراد التابعين لأنه ارتقى وأصبح هو صاحب الملف الأساسي
@@ -473,9 +502,17 @@ public class BeneficiaryService : IBeneficiaryService
         {
             existing.FamilyName = dto.NewFamilyName.Trim();
         }
-        else if (history.Reason.Contains("وفاة") && !existing.FamilyName.Contains("المرحوم"))
+        else if (!keepFormerHeadInFamily && isDeath && !existing.FamilyName.Contains("المرحوم"))
         {
             existing.FamilyName = $"عائلة المرحوم {history.PreviousHeadName}";
+        }
+        else if (keepFormerHeadInFamily && existing.FamilyName.Contains("المرحوم"))
+        {
+            existing.FamilyName = existing.FamilyName.Replace("المرحوم ", "").Trim();
+        }
+        else if (string.IsNullOrWhiteSpace(existing.FamilyName))
+        {
+            existing.FamilyName = $"عائلة {history.PreviousHeadName}";
         }
 
         // إذا كان الملف موقوفاً بسبب وفاة العائل السابق، يتم فك الإيقاف واستئناف الصرف للعائل الجديد
@@ -486,12 +523,19 @@ public class BeneficiaryService : IBeneficiaryService
             existing.SuspensionNotes = (existing.SuspensionNotes ?? "") + $" [تم استئناف النشاط ونقل الولاية للعائل الجديد ({newHeadMember.Name}) بتاريخ {DateTime.Now:yyyy-MM-dd}]";
         }
 
-        existing.ResearchNotes = (existing.ResearchNotes ?? "") + $"\n[تم نقل ولاية الأسرة بتاريخ {DateTime.Now:yyyy-MM-dd} من ({history.PreviousHeadName}) إلى ({newHeadMember.Name}). السبب: {history.Reason}]";
+        existing.ResearchNotes = (existing.ResearchNotes ?? "") + $"\n[تم نقل ولاية الأسرة بتاريخ {DateTime.Now:yyyy-MM-dd} من ({history.PreviousHeadName}) إلى ({newHeadMember.Name}). " +
+            $"موقف العائل السابق: {(keepFormerHeadInFamily ? "بقاء بالأسرة كمعال حي ومقيم" : "حذف واستبعاد من أفراد الأسرة")}. السبب: {history.Reason}]";
 
         await _beneficiaryRepo.UpdateAsync(existing);
         await _unitOfWork.SaveChangesAsync();
 
-        var remainingMembers = await _familyMemberRepo.FindAsync(m => m.BeneficiaryId == beneficiaryId);
+        // تحديث عدد أفراد الأسرة الفعلي
+        var activeCount = await _familyMemberRepo.CountAsync(m => m.BeneficiaryId == beneficiaryId && !m.IsDeleted);
+        existing.FamilyCount = Math.Max(1, activeCount + 1);
+        await _beneficiaryRepo.UpdateAsync(existing);
+        await _unitOfWork.SaveChangesAsync();
+
+        var remainingMembers = await _familyMemberRepo.FindAsync(m => m.BeneficiaryId == beneficiaryId && !m.IsDeleted);
         existing.FamilyMembers = remainingMembers.ToList();
 
         var histories = await _headHistoryRepo.FindAsync(h => h.BeneficiaryId == beneficiaryId);
@@ -506,7 +550,7 @@ public class BeneficiaryService : IBeneficiaryService
             ?? throw new EntityNotFoundException(nameof(Beneficiary), id);
 
         var currentCharityId = _currentUserService.CharityId ?? string.Empty;
-        if (!string.IsNullOrEmpty(existing.RegisteredByCharityId) && existing.RegisteredByCharityId != currentCharityId)
+        if (string.IsNullOrWhiteSpace(currentCharityId) || (!string.IsNullOrEmpty(existing.RegisteredByCharityId) && existing.RegisteredByCharityId != currentCharityId))
         {
             throw new UnauthorizedDomainException(
                 $"غير مصرح: حذف أو أرشفة ملف الحالة مقصورة على الجمعية المسجلة له ({existing.RegisteredByCharityName})."

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { Api } from '../api';
+import { AuthService } from '../auth.service';
 import { PaginationComponent } from '../pagination/pagination';
 
 @Component({
@@ -37,7 +38,7 @@ export class DistributionsComponent implements OnInit {
   errorMessage: string = '';
   successMessage: string = '';
 
-  constructor(public api: Api, private cdr: ChangeDetectorRef) {}
+  constructor(public api: Api, private cdr: ChangeDetectorRef, public auth: AuthService) {}
 
   ngOnInit(): void {
     this.activeCharity = this.api.getActiveCharity();
@@ -46,9 +47,10 @@ export class DistributionsComponent implements OnInit {
 
   loadData() {
     this.activeCharity = this.api.getActiveCharity();
+    const isPlatformAdmin = this.auth.getCurrentUser()?.role === 'Admin';
 
-    // 1. Current charity distributions (isolated to this charity)
-    this.api.getDistributions(true).subscribe((data: any) => { 
+    // Current charity distributions or whole network for platform Admin
+    this.api.getDistributions(!isPlatformAdmin).subscribe((data: any) => { 
       this.distributions = data; 
       this.cdr.detectChanges(); 
     });
@@ -98,6 +100,11 @@ export class DistributionsComponent implements OnInit {
   onSubmit() {
     this.errorMessage = '';
     this.successMessage = '';
+
+    if (this.auth.getCurrentUser()?.role === 'Admin') {
+      this.errorMessage = '🔒 غير مصرح لمدير المنصة تسجيل حركات صرف؛ الصرف مقصور على مسؤولي الجمعيات.';
+      return;
+    }
 
     if (!this.newDist.beneficiaryId || !this.newDist.inventoryId ||
         !Number.isFinite(Number(this.newDist.quantity)) || Number(this.newDist.quantity) <= 0) {

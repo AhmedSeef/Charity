@@ -23,6 +23,7 @@ export class DashboardComponent implements OnInit {
   charitiesCount = 0;
   totalNetworkDistributionsCount = 0;
   activeCharity: any = null;
+  networkStats: any = null;
 
   beneficiaries: any[] = [];
   inventory: any[] = [];
@@ -33,6 +34,10 @@ export class DashboardComponent implements OnInit {
 
   ngOnInit(): void {
     this.activeCharity = this.api.getActiveCharity();
+    this.api.getDashboardStats().subscribe((stats: any) => {
+      this.networkStats = stats;
+      this.cdr.detectChanges();
+    });
 
     // 1. Beneficiaries (Shared across network)
     this.api.getBeneficiaries().subscribe((data: any[]) => { 

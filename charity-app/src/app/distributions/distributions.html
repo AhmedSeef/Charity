@@ -1,8 +1,12 @@
 <div dir="rtl" style="text-align: right;">
   <div style="margin-bottom: 20px;">
-    <h2 style="color: #004d40; margin: 0;">🔄 حركات صرف ومساعدات: {{ activeCharity?.name }}</h2>
+    <h2 style="color: #004d40; margin: 0;">
+      🔄 {{ auth.getCurrentUser()?.role === 'Admin' ? 'سجل حركات الصرف لشبكة الجمعيات' : 'حركات صرف ومساعدات: ' + (activeCharity?.name || 'جمعيتنا') }}
+    </h2>
     <p style="color: #666; margin: 5px 0 0 0; font-size: 14px;">
-      تسجيل حركات الصرف الخاصة بجمعيتكم وخصمها من رصيد المخزن الداخلي. تظهر هذه الحركة فوراً في الملف المشترك للمستفيد لتراها الجمعيات الشريكة.
+      {{ auth.getCurrentUser()?.role === 'Admin'
+         ? 'استعراض ومتابعة حركات المساعدات والصرف المنفذة عبر مختلف الجمعيات المشتركة بالشبكة (عرض واطلاع فقط).'
+         : 'تسجيل حركات الصرف الخاصة بجمعيتكم وخصمها من رصيد المخزن الداخلي. تظهر هذه الحركة فوراً في الملف المشترك للمستفيد لتراها الجمعيات الشريكة.' }}
     </p>
   </div>
 
@@ -15,8 +19,8 @@
     {{ errorMessage }}
   </div>
 
-  <!-- فورم صرف مساعدة جديدة -->
-  <div style="background-color: #f9f9f9; padding: 20px; border-radius: 8px; margin-bottom: 25px; border: 1px solid #ddd; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+  <!-- فورم صرف مساعدة جديدة (متاح للجمعيات فقط) -->
+  <div *ngIf="auth.getCurrentUser()?.role !== 'Admin'" style="background-color: #f9f9f9; padding: 20px; border-radius: 8px; margin-bottom: 25px; border: 1px solid #ddd; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
     <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #bf360c; padding-bottom: 10px; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
       <h3 style="margin: 0; color: #bf360c;">
         📤 إضافة حركة صرف جديدة من مخازن: <strong>{{ activeCharity?.name }}</strong>
@@ -124,6 +128,7 @@
     <table border="1" cellpadding="10" cellspacing="0" style="width: 100%; border-collapse: collapse; background-color: white; font-size: 14px;">
       <thead>
         <tr style="background-color: #fbe9e7; color: #bf360c;">
+          <th *ngIf="auth.getCurrentUser()?.role === 'Admin'">الجمعية الصارفة</th>
           <th>المستفيد المستحق</th>
           <th>نوع المساعدة</th>
           <th>الصنف / الخدمة المصروفة</th>
@@ -134,6 +139,12 @@
       </thead>
       <tbody>
         <tr *ngFor="let d of paginatedDistributions">
+          <td *ngIf="auth.getCurrentUser()?.role === 'Admin'">
+            <span style="background: #e0f2f1; color: #004d40; padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 12px;">
+              {{ d.charityName || 'جمعية بالشبكة' }}
+            </span>
+          </td>
+
           <td>
             <strong style="color: #004d40; font-size: 15px;">{{ getBenName(d.beneficiaryId) }}</strong>
           </td>
@@ -170,8 +181,8 @@
         </tr>
 
         <tr *ngIf="distributions.length === 0">
-          <td colspan="6" style="text-align: center; padding: 25px; color: #888;">
-            لا توجد حركات صرف مسجلة لجمعيتكم حتى الآن.
+          <td [attr.colspan]="auth.getCurrentUser()?.role === 'Admin' ? 7 : 6" style="text-align: center; padding: 25px; color: #888;">
+            {{ auth.getCurrentUser()?.role === 'Admin' ? 'لا توجد حركات صرف مسجلة بالشبكة حتى الآن.' : 'لا توجد حركات صرف مسجلة لجمعيتكم حتى الآن.' }}
           </td>
         </tr>
       </tbody>

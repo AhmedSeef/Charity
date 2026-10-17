@@ -31,7 +31,6 @@ namespace Charity.Infrastructure.Data.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("CharityId")
-                        .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("ConcurrencyStamp")
@@ -841,12 +840,10 @@ namespace Charity.Infrastructure.Data.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("CharityId")
-                        .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("CharityName")
-                        .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
@@ -1015,8 +1012,7 @@ namespace Charity.Infrastructure.Data.Migrations
                     b.HasOne("Charity.Domain.Entities.Charity", "Charity")
                         .WithMany("Users")
                         .HasForeignKey("CharityId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Charity");
                 });

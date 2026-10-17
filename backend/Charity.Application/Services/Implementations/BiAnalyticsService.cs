@@ -38,14 +38,11 @@ public class BiAnalyticsService : IBiAnalyticsService
 
     public async Task<BiAnalyticsDto> GetCharityAnalyticsAsync(string? targetCharityId = null)
     {
-        var charityId = _currentUserService.CharityId;
-        if (string.IsNullOrWhiteSpace(charityId))
-            throw new Charity.Domain.Exceptions.UnauthorizedDomainException("لا يوجد حساب جمعية صالح.");
-        if (!string.IsNullOrWhiteSpace(targetCharityId) && targetCharityId != charityId)
-            throw new Charity.Domain.Exceptions.UnauthorizedDomainException("لا يمكن عرض التحليلات الخاصة بجمعية أخرى.");
-
-        var charity = await _charityRepo.GetByIdAsync(charityId);
-        var charityName = charity?.Name ?? _currentUserService.CharityName ?? "جمعيتكم";
+        var charityId = targetCharityId;
+        if (!string.IsNullOrWhiteSpace(charityId) && await _charityRepo.GetByIdAsync(charityId) == null)
+            throw new Charity.Domain.Exceptions.EntityNotFoundException("Charity", charityId);
+        var charity = string.IsNullOrWhiteSpace(charityId) ? null : await _charityRepo.GetByIdAsync(charityId);
+        var charityName = charity?.Name ?? "شبكة الجمعيات بالكامل";
 
         // Load network datasets
         var allBeneficiaries = (await _beneficiaryRepo.GetAllAsync()).ToList();
@@ -53,7 +50,7 @@ public class BiAnalyticsService : IBiAnalyticsService
 
         // Filter tenant-specific datasets
         var myRegisteredBeneficiaries = allBeneficiaries
-            .Where(b => b.RegisteredByCharityId == charityId || string.IsNullOrEmpty(b.RegisteredByCharityId))
+            .Where(b => string.IsNullOrWhiteSpace(charityId) || b.RegisteredByCharityId == charityId || string.IsNullOrEmpty(b.RegisteredByCharityId))
             .ToList();
 
         var myBeneficiaryIds = myRegisteredBeneficiaries.Select(b => b.Id).ToHashSet();
@@ -62,12 +59,12 @@ public class BiAnalyticsService : IBiAnalyticsService
             : new List<BeneficiaryFamilyMember>();
 
         var myDistributions = allDistributions
-            .Where(d => d.CharityId == charityId)
+            .Where(d => string.IsNullOrWhiteSpace(charityId) || d.CharityId == charityId)
             .ToList();
 
-        var myDonations = (await _donationRepo.FindAsync(d => d.CharityId == charityId)).ToList();
-        var myInventory = (await _inventoryRepo.FindAsync(i => i.CharityId == charityId)).ToList();
-        var myStaff = (await _staffRepo.FindAsync(s => s.CharityId == charityId)).ToList();
+        var myDonations = (await _donationRepo.FindAsync(d => string.IsNullOrEmpty(charityId) || d.CharityId == charityId)).ToList();
+        var myInventory = (await _inventoryRepo.FindAsync(i => string.IsNullOrEmpty(charityId) || i.CharityId == charityId)).ToList();
+        var myStaff = (await _staffRepo.FindAsync(s => string.IsNullOrEmpty(charityId) || s.CharityId == charityId)).ToList();
 
         // 1. Executive KPIs
         var registeredCount = myRegisteredBeneficiaries.Count;
@@ -90,7 +87,7 @@ public class BiAnalyticsService : IBiAnalyticsService
         var partnerCasesServed = myDistributions
             .Where(d => {
                 var ben = allBeneficiaries.FirstOrDefault(b => b.Id == d.BeneficiaryId);
-                return ben != null && !string.IsNullOrEmpty(ben.RegisteredByCharityId) && ben.RegisteredByCharityId != charityId;
+                return ben != null && !string.IsNullOrEmpty(ben.RegisteredByCharityId) && ben.RegisteredByCharityId != d.CharityId;
             })
             .Select(d => d.BeneficiaryId)
             .Distinct()
@@ -311,7 +308,7 @@ public class BiAnalyticsService : IBiAnalyticsService
 
         return new BiAnalyticsDto
         {
-            CharityId = charityId,
+            CharityId = charityId ?? string.Empty,
             CharityName = charityName,
             RegisteredBeneficiariesCount = registeredCount,
             TotalBeneficiariesInNetwork = totalNetworkCount,

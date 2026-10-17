@@ -10,13 +10,15 @@ import { StaffComponent } from './staff/staff';
 import { SuspensionReasonsComponent } from './suspension-reasons/suspension-reasons';
 import { BiAnalyticsComponent } from './bi-analytics/bi-analytics';
 import { LoginComponent } from './login/login';
-import { authGuard } from './auth.guard';
+import { authGuard, adminGuard } from './auth.guard';
+import { CharitiesAdminComponent } from './charities-admin/charities-admin';
 
 export const routes: Routes = [
-  { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+  { path: '', redirectTo: 'beneficiaries', pathMatch: 'full' },
   { path: 'login', component: LoginComponent },
-  { path: 'dashboard', component: DashboardComponent, canActivate: [authGuard] },
-  { path: 'bi-analytics', component: BiAnalyticsComponent, canActivate: [authGuard] },
+  { path: 'dashboard', component: DashboardComponent, canActivate: [adminGuard] },
+  { path: 'bi-analytics', component: BiAnalyticsComponent, canActivate: [adminGuard] },
+  { path: 'charities-admin', component: CharitiesAdminComponent, canActivate: [adminGuard] },
   { path: 'beneficiaries', component: BeneficiariesComponent, canActivate: [authGuard] },
   { path: 'suspension-reasons', component: SuspensionReasonsComponent, canActivate: [authGuard] },
   { path: 'items-catalog', component: ItemsCatalogComponent, canActivate: [authGuard] },

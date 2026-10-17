@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { Api } from '../api';
+import { AuthService } from '../auth.service';
 import { PaginationComponent } from '../pagination/pagination';
 
 @Component({
@@ -151,8 +152,26 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
   // نقل ولاية الملف (تعيين عائل جديد للأسرة)
   showTransferHeadModal: boolean = false;
   selectedNewHeadMemberId: string = '';
-  transferHeadReason: string = 'وفاة رب الأسرة السابق 🕊️';
-  formerHeadRelationship: string = 'رب الأسرة السابق (متوفى)';
+  formerHeadAction: 'KeepAsFamilyMember' | 'RemoveFromFamily' = 'KeepAsFamilyMember';
+  keepReasons = [
+    'عجز كلي أو مرض مزمن مقعد ♿ (العائل حي ومقيم كمعال)',
+    'كبر سن وعدم قدرة على السعي أو العمل 🧓',
+    'ظروف صحية تمنعه من الخروج والمتابعة 🩺',
+    'تنازل اختياري للزوجة أو الابن لإدارة شؤون الأسرة 🤝',
+    'سفر مؤقت للعمل مع بقاء مسؤوليته بالأسرة 🧳',
+    'سبب آخر (مع بقائه كفرد معال بالأسرة)'
+  ];
+  removeReasons = [
+    'وفاة رب الأسرة السابق 🕊️ (رحمه الله)',
+    'انفصال وطلاق وهجر الأسرة بشكل دائم 🚪',
+    'سفر دائم وانقطاع الصلة بالأسرة تماماً ✈️',
+    'خروج نهائي واستقلال عن الأسرة',
+    'سبب آخر (مع استبعاده من أفراد الأسرة)'
+  ];
+  transferHeadReason: string = 'عجز كلي أو مرض مزمن مقعد ♿ (العائل حي ومقيم كمعال)';
+  formerHeadRelationship: string = 'زوج (عائل سابق / مريض معال)';
+  formerHeadIsAlive: boolean = true;
+  formerHeadSupportType: string = 'مريض / عاجز عن العمل';
   newFamilyNameInput: string = '';
   transferHeadNotes: string = '';
   showAdvancedTransferOptions: boolean = false;
@@ -167,13 +186,9 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
     educationStage: 'منتظم بالتعليم',
     notes: ''
   };
-  transferReasons = [
-    'وفاة رب الأسرة السابق 🕊️',
-    'عجز كلي أو مرض مزمن مقعد ♿',
-    'انفصال / غياب وهجر الأسرة 🚪',
-    'بلوغ الابن الأكبر وتوليه الإعالة الكاملة 👨‍👩‍👧‍👦',
-    'أخرى'
-  ];
+  get currentTransferReasons(): string[] {
+    return this.formerHeadAction === 'KeepAsFamilyMember' ? this.keepReasons : this.removeReasons;
+  }
 
   private querySub?: Subscription;
 
@@ -181,7 +196,8 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
     private api: Api, 
     private cdr: ChangeDetectorRef,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    public auth: AuthService
   ) {}
 
   ngOnInit(): void {
@@ -233,7 +249,9 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
         const found = this.beneficiaries.find(b => String(b.id) === String(id));
         if (found) {
           if (!this.canEditBeneficiary(found)) {
-            this.errorMessage = `🔒 غير مصرح: لا تملك صلاحية تعديل هذا المستفيد! الملف مسجل ومملوك لـ (${found.registeredByCharityName || 'الجمعية الأصلية'}). صلاحيتكم تقتصر على الاطلاع وسجل المساعدات وإضافة حركات صرف جديدة.`;
+            this.errorMessage = this.auth.getCurrentUser()?.role === 'Admin'
+              ? '🔒 صلاحية مدير المنصة تقتصر على الاطلاع والبحث؛ التعديل مقصور على الجمعيات المسجلة.'
+              : `🔒 غير مصرح: لا تملك صلاحية تعديل هذا المستفيد! الملف مسجل ومملوك لـ (${found.registeredByCharityName || 'الجمعية الأصلية'}).`;
             this.router.navigate([], { relativeTo: this.route, queryParams: { mode: 'detail', id: found.id } });
             return;
           }
@@ -247,6 +265,11 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
           this.viewMode = 'list';
         }
       } else if (mode === 'add') {
+        if (this.auth.getCurrentUser()?.role === 'Admin') {
+          this.errorMessage = '🔒 غير مصرح لمدير المنصة إضافة مستفيدين، الإضافة مقصورة على مسؤولي الجمعيات.';
+          this.router.navigate([], { relativeTo: this.route, queryParams: {} });
+          return;
+        }
         this.resetForm();
         this.formMode = 'add';
         this.viewMode = 'form';
@@ -258,9 +281,10 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
     });
   }
 
-  // Authorization helper: ONLY the registering charity has edit permissions
+  // Authorization helper: ONLY the registering charity has edit permissions (Admin is strictly read-only)
   canEditBeneficiary(b: any): boolean {
     if (!b) return false;
+    if (this.auth.getCurrentUser()?.role === 'Admin') return false;
     const activeId = this.api.getActiveCharityId();
     return !b.registeredByCharityId || b.registeredByCharityId === activeId;
   }
@@ -271,6 +295,11 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
   }
 
   openAdd() {
+    if (this.auth.getCurrentUser()?.role === 'Admin') {
+      this.errorMessage = '🔒 غير مصرح لمدير المنصة إضافة مستفيدين، الإضافة مقصورة على مسؤولي الجمعيات.';
+      this.cdr.detectChanges();
+      return;
+    }
     this.router.navigate([], { relativeTo: this.route, queryParams: { mode: 'add' } });
   }
 
@@ -324,7 +353,11 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
         (b.familyCode && b.familyCode.toLowerCase().includes(term)) ||
         (b.familyName && b.familyName.toLowerCase().includes(term)) ||
         (b.phone && b.phone.includes(term)) ||
-        (b.address && b.address.toLowerCase().includes(term));
+        (b.address && b.address.toLowerCase().includes(term)) ||
+        (b.familyMembers && b.familyMembers.some((m: any) =>
+          (m.name && m.name.toLowerCase().includes(term)) ||
+          (m.nationalId && m.nationalId.includes(term))
+        ));
       return matchCat && matchSearch;
     });
   }
@@ -427,6 +460,12 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
   }
 
   onSubmit() {
+    if (this.auth.getCurrentUser()?.role === 'Admin') {
+      this.errorMessage = '🔒 غير مصرح لمدير المنصة إضافة أو تعديل مستفيدين.';
+      this.cdr.detectChanges();
+      return;
+    }
+
     if (!this.currentBen.name || !this.currentBen.nationalId) {
       this.errorMessage = 'يرجى إدخال اسم المستفيد والرقم القومي بشكل صحيح.';
       return;
@@ -622,18 +661,15 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
       setTimeout(() => { this.errorMessage = ''; this.cdr.detectChanges(); }, 4000);
       return;
     }
+    this.formerHeadAction = 'KeepAsFamilyMember';
     const eligibleMembers = this.getEligibleNewHeads();
     this.selectedNewHeadMemberId = eligibleMembers.length > 0 ? eligibleMembers[0].id : '';
-    this.transferHeadReason = 'وفاة رب الأسرة السابق 🕊️';
-    this.formerHeadRelationship = 'رب الأسرة السابق (متوفى)';
-    this.newFamilyNameInput = `عائلة المرحوم ${this.selectedBen?.name || ''}`.trim();
+    this.transferHeadReason = this.keepReasons[0];
     this.transferHeadNotes = '';
     this.showAdvancedTransferOptions = false;
     this.showAddMemberInline = eligibleMembers.length === 0;
     this.resetNewMemberData();
-    if (eligibleMembers.length > 0) {
-      this.selectNewHeadMember(eligibleMembers[0]);
-    }
+    this.updateFormerHeadDetails(eligibleMembers.length > 0 ? eligibleMembers[0] : null);
     this.showTransferHeadModal = true;
     this.cdr.detectChanges();
   }
@@ -644,9 +680,20 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
+  setFormerHeadAction(action: 'KeepAsFamilyMember' | 'RemoveFromFamily') {
+    this.formerHeadAction = action;
+    this.transferHeadReason = action === 'KeepAsFamilyMember' ? this.keepReasons[0] : this.removeReasons[0];
+    this.updateFormerHeadDetails();
+    this.cdr.detectChanges();
+  }
+
   getEligibleNewHeads(): any[] {
     if (!this.selectedBen || !this.selectedBen.familyMembers) return [];
-    return this.selectedBen.familyMembers.filter((m: any) => !m.isFormerHead && !m.relationship?.includes('سابق') && !m.isSeparated);
+    return this.selectedBen.familyMembers.filter((m: any) => 
+      !m.relationship?.includes('متوفى') && 
+      !m.supportType?.includes('متوفى') && 
+      !m.isSeparated
+    );
   }
 
   resetNewMemberData() {
@@ -669,19 +716,46 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
+  onTransferReasonChange() {
+    this.updateFormerHeadDetails();
+    this.cdr.detectChanges();
+  }
+
+  updateFormerHeadDetails(member?: any) {
+    member = member || this.getSelectedNewHeadMember();
+    const isDeath = this.formerHeadAction === 'RemoveFromFamily' && this.transferHeadReason?.includes('وفاة');
+    this.formerHeadIsAlive = !isDeath;
+
+    if (this.formerHeadAction === 'KeepAsFamilyMember') {
+      this.formerHeadSupportType = 'مريض / عاجز عن العمل';
+      const originalFamilyName = (this.selectedBen?.familyName || `عائلة ${this.selectedBen?.name || ''}`).replace('المرحوم ', '').trim();
+      this.newFamilyNameInput = originalFamilyName;
+
+      if (member?.relationship?.includes('زوج')) {
+        this.formerHeadRelationship = 'زوج (عائل سابق / مريض معال)';
+      } else if (member?.relationship?.includes('ابن') || member?.relationship?.includes('ابنة')) {
+        this.formerHeadRelationship = 'والد (عائل سابق / كبير سن)';
+      } else {
+        this.formerHeadRelationship = 'عائل سابق (حي ومعال بالأسرة)';
+      }
+    } else {
+      // RemoveFromFamily (حذف / استبعاد العائل السابق)
+      if (isDeath) {
+        this.formerHeadRelationship = 'رب الأسرة السابق (متوفى)';
+        this.formerHeadSupportType = 'متوفى';
+        this.newFamilyNameInput = `عائلة المرحوم ${this.selectedBen?.name || ''}`.trim();
+      } else {
+        this.formerHeadRelationship = 'عائل سابق (منفصل / خارج الأسرة)';
+        this.formerHeadSupportType = 'منفصل / خارج الأسرة';
+        this.newFamilyNameInput = (this.selectedBen?.familyName || `عائلة ${this.selectedBen?.name || ''}`).replace('المرحوم ', '').trim();
+      }
+    }
+  }
+
   selectNewHeadMember(member: any) {
     if (!member) return;
     this.selectedNewHeadMemberId = member.id;
-    if (member.relationship?.includes('زوج') || member.relationship?.includes('زوجة')) {
-      this.formerHeadRelationship = 'رب الأسرة السابق (متوفى)';
-      this.newFamilyNameInput = `عائلة المرحوم ${this.selectedBen?.name || ''}`.trim();
-    } else if (member.relationship?.includes('ابن') || member.relationship?.includes('ابنة')) {
-      this.formerHeadRelationship = 'الوالد (رب الأسرة السابق)';
-      this.newFamilyNameInput = `عائلة المرحوم ${this.selectedBen?.name || ''}`.trim();
-    } else {
-      this.formerHeadRelationship = 'رب الأسرة السابق';
-      this.newFamilyNameInput = `عائلة ${member.name || ''}`.trim();
-    }
+    this.updateFormerHeadDetails(member);
     this.cdr.detectChanges();
   }
 
@@ -743,13 +817,18 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
 
     this.api.transferHeadship(this.selectedBen.id, {
       newHeadFamilyMemberId: this.selectedNewHeadMemberId,
+      formerHeadAction: this.formerHeadAction,
       reason: this.transferHeadReason,
       formerHeadRelationship: this.formerHeadRelationship,
+      formerHeadSupportType: this.formerHeadSupportType,
       newFamilyName: this.newFamilyNameInput,
       notes: this.transferHeadNotes
     }).subscribe({
       next: (updated: any) => {
-        this.successMessage = `👑 تم بنجاح نقل ولاية الملف وتعيين (${chosenMember?.name || 'العائل الجديد'}) كرب أسرة، مع حفظ كامل سجل الصرف والمساعدات التاريخية للأسرة.`;
+        const actionNote = this.formerHeadAction === 'KeepAsFamilyMember'
+          ? 'مع إبقاء العائل السابق بالأسرة كفرد معال حي ومقيم مع كامل إمكانية التحكم فيه ومتابعته.'
+          : 'مع استبعاد العائل السابق وتوثيق سبب الخروج بالسجل التاريخي المعتمد للأسرة.';
+        this.successMessage = `👑 تم بنجاح نقل ولاية الملف وتعيين (${chosenMember?.name || 'العائل الجديد'}) كرب أسرة، ${actionNote}`;
         this.closeTransferHeadModal();
         this.loadData();
         this.selectedBen = updated;

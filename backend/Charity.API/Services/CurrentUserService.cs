@@ -18,9 +18,9 @@ public class CurrentUserService : ICurrentUserService
 
     public string? Username => User?.Identity?.Name;
 
-    public string? CharityId => User?.FindFirstValue("CharityId") ?? "c1";
+    public string? CharityId => User?.FindFirstValue("CharityId");
 
-    public string? CharityName => User?.FindFirstValue("CharityName") ?? "جمعية أبواب الخير";
+    public string? CharityName => User?.FindFirstValue("CharityName");
 
     public string? Role => User?.FindFirstValue(ClaimTypes.Role);
 

@@ -30,9 +30,11 @@ public class CharityDbContext : IdentityDbContext<ApplicationUser, IdentityRole,
         builder.Entity<ApplicationUser>(b =>
         {
             b.ToTable("Users");
+            b.Property(u => u.CharityId).IsRequired(false);
             b.HasOne(u => u.Charity)
              .WithMany(c => c.Users)
              .HasForeignKey(u => u.CharityId)
+             .IsRequired(false)
              .OnDelete(DeleteBehavior.Restrict);
         });
 
@@ -120,8 +122,8 @@ public class CharityDbContext : IdentityDbContext<ApplicationUser, IdentityRole,
             b.HasKey(x => x.Id);
             b.Property(x => x.Title).IsRequired().HasMaxLength(200);
             b.Property(x => x.Description).HasMaxLength(500);
-            b.Property(x => x.CharityId).HasMaxLength(50);
-            b.Property(x => x.CharityName).HasMaxLength(200);
+            b.Property(x => x.CharityId).HasMaxLength(50).IsRequired(false);
+            b.Property(x => x.CharityName).HasMaxLength(200).IsRequired(false);
         });
 
         // InventoryItem configuration (Tenant isolated)

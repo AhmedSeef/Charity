@@ -1,4 +1,5 @@
 using System.Text;
+using System.Security.Claims;
 using Charity.API.Middleware;
 using Charity.API.Services;
 using Charity.Application.Services.Implementations;
@@ -8,6 +9,7 @@ using Charity.Domain.Interfaces;
 using Charity.Infrastructure.Data.Context;
 using Charity.Infrastructure.Data.Repositories;
 using Charity.Infrastructure.Data.Seed;
+using Charity.Infrastructure.Data.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -30,7 +32,7 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
     options.Password.RequireLowercase = false;
     options.Password.RequireUppercase = false;
     options.Password.RequireNonAlphanumeric = false;
-    options.Password.RequiredLength = 6;
+    options.Password.RequiredLength = 3;
     options.User.RequireUniqueEmail = false;
 })
 .AddEntityFrameworkStores<CharityDbContext>()
@@ -61,6 +63,16 @@ builder.Services.AddAuthentication(options =>
         ValidateLifetime = true,
         ClockSkew = TimeSpan.Zero
     };
+    options.Events = new JwtBearerEvents
+    {
+        OnTokenValidated = async context =>
+        {
+            var userId = context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier);
+            var db = context.HttpContext.RequestServices.GetRequiredService<CharityDbContext>();
+            if (string.IsNullOrEmpty(userId) || !await db.Users.AnyAsync(u => u.Id == userId))
+                context.Fail("User no longer exists.");
+        }
+    };
 });
 
 builder.Services.AddAuthorization();
@@ -82,6 +94,7 @@ builder.Services.AddScoped<IDonationService, DonationService>();
 builder.Services.AddScoped<IStaffService, StaffService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<ICharityService, CharityService>();
+builder.Services.AddScoped<ICharityProvisioningService, CharityProvisioningService>();
 builder.Services.AddScoped<ISuspensionReasonService, SuspensionReasonService>();
 builder.Services.AddScoped<IBiAnalyticsService, BiAnalyticsService>();
 
@@ -154,9 +167,13 @@ using (var scope = app.Services.CreateScope())
         logger.LogInformation("Ensuring database is created and migrating...");
         await db.Database.MigrateAsync();
 
-        logger.LogInformation("Seeding initial federation charities, roles, users and initial data...");
-        await DbInitializer.SeedAsync(db, userManager, roleManager);
-        logger.LogInformation("Database seeded successfully.");
+        if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Testing") ||
+            builder.Configuration.GetValue<bool>("DemoData:Enabled"))
+        {
+            logger.LogInformation("Seeding demo charities, roles, users and sample data...");
+            await DbInitializer.SeedAsync(db, userManager, roleManager);
+            logger.LogInformation("Demo data seeded successfully.");
+        }
     }
     catch (Exception ex)
     {
@@ -167,13 +184,16 @@ using (var scope = app.Services.CreateScope())
 // 9. Middleware Pipeline
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "Charity Federation API v1");
-        c.RoutePrefix = string.Empty; // Swagger at root URL
+        c.RoutePrefix = "swagger"; // Swagger at /swagger
     });
 }
 
@@ -183,6 +203,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapFallbackToFile("index.html");
 
 app.Run();
 

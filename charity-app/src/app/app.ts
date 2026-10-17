@@ -12,7 +12,7 @@ import { AuthService } from './auth.service';
   styleUrls: ['./app.css']
 })
 export class App implements OnInit {
-  title = signal('جمعية أبواب الخير');
+  title = signal('إدارة شبكة الجمعيات');
   logo = signal('');
   activeCharity = signal<any>(null);
 
@@ -24,7 +24,8 @@ export class App implements OnInit {
 
   initUserCharity() {
     const user = this.auth.getCurrentUser();
-    if (user && user.charityId) {
+    const isAdmin = user?.role === 'Admin';
+    if (user && user.charityId && user.role !== 'Admin') {
       this.api.setActiveCharityId(user.charityId);
     }
 
@@ -32,13 +33,15 @@ export class App implements OnInit {
       const activeId = this.api.getActiveCharityId();
       const current = list.find(c => c.id === activeId) || list[0];
       this.activeCharity.set(current);
-      if (current) {
+      if (current && !isAdmin) {
         this.title.set(current.name);
         this.logo.set(current.logo || '');
       }
+      if (isAdmin) this.title.set('إدارة شبكة الجمعيات');
       this.cdr.detectChanges();
     });
 
+    if (isAdmin) return;
     this.api.getSettings().subscribe((data: any) => {
       if (data && data.charityName) {
         this.title.set(data.charityName);
@@ -49,4 +52,5 @@ export class App implements OnInit {
       this.cdr.detectChanges();
     });
   }
+
 }

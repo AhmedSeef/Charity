@@ -15,7 +15,7 @@ async function login(page: Page, username: string, password: string) {
   await page.locator('input[name="username"]').fill(username);
   await page.locator('input[name="password"]').fill(password);
   await page.getByRole('button', { name: 'دخول للنظام' }).click();
-  await expect(page).toHaveURL(/\/dashboard$/);
+  await expect(page).toHaveURL(username === 'admin' ? /\/dashboard$/ : /\/beneficiaries$/);
 }
 
 test.beforeEach(async ({ page }) => connectRealBackend(page));
@@ -23,14 +23,14 @@ test.beforeEach(async ({ page }) => connectRealBackend(page));
 test('real SQL identity rejects invalid credentials', async ({ page }) => {
   await page.goto('/login');
   await page.locator('input[name="username"]').fill('admin');
-  await page.locator('input[name="password"]').fill('admin');
+  await page.locator('input[name="password"]').fill('wrong-password');
   await page.getByRole('button', { name: 'دخول للنظام' }).click();
   await expect(page.getByText('اسم المستخدم أو كلمة المرور غير صحيحة')).toBeVisible();
   await expect(page).toHaveURL(/\/login$/);
 });
 
 test('admin signs in, sees persisted representative data, and refresh keeps session', async ({ page }) => {
-  await login(page, 'admin', 'Admin@123');
+  await login(page, 'admin', 'admin');
   await expect(page.getByText('جمعية أبواب الخير').first()).toBeVisible();
   await page.getByRole('link', { name: /إدارة المستفيدين/ }).click();
   await expect(page.getByText('هدى عبد الله علي')).toBeVisible();
@@ -43,21 +43,32 @@ test('admin signs in, sees persisted representative data, and refresh keeps sess
   expect((await response.json()).charityId).toBe('c1');
 });
 
-test('another charity sees shared families and only its own stock and donations', async ({ page }) => {
-  await login(page, 'amal', 'Amal@123');
+test('charity user sees shared families but no other charity stock or donations', async ({ page }) => {
+  await login(page, 'admin', 'admin');
+  await page.getByRole('link', { name: /إدارة الجمعيات/ }).click();
+  const suffix = Date.now().toString();
+  await page.locator('input[name="name"]').fill(`جمعية عزل ${suffix}`);
+  await page.locator('input[name="managerFullName"]').fill('مسؤول العزل');
+  await page.locator('input[name="managerUsername"]').fill(`tenant${suffix}`);
+  await page.locator('input[name="managerPassword"]').fill('Secure@123');
+  await page.getByRole('button', { name: 'إضافة الجمعية' }).click();
+  await expect(page.getByText(`تمت إضافة جمعية عزل ${suffix} وحساب المستخدم الأساسي tenant${suffix}.`)).toBeVisible();
+  await page.getByRole('button', { name: /خروج/ }).first().click();
+  await login(page, `tenant${suffix}`, 'Secure@123');
   const token = await page.evaluate(() => localStorage.getItem('token'));
-  const headers = { Authorization: `Bearer ${token}` };
+  const headers = { Authorization: `Bearer ${token}`, 'X-Charity-Id': 'c1' };
   const stock = await (await page.request.get(`${realApi}/api/inventory`, { headers })).json();
   const donations = await (await page.request.get(`${realApi}/api/donations`, { headers })).json();
-  expect(stock.length).toBeGreaterThan(0);
-  expect(stock.every((item: any) => item.charityId === 'c2')).toBe(true);
-  expect(donations.every((donation: any) => donation.charityId === 'c2')).toBe(true);
+  expect(stock).toEqual([]);
+  expect(donations).toEqual([]);
+  await expect(page.getByRole('link', { name: /لوحة التحكم/ })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: /ذكاء الأعمال/ })).toHaveCount(0);
   await page.getByRole('link', { name: /إدارة المستفيدين/ }).click();
   await expect(page.getByText('هدى عبد الله علي')).toBeVisible();
 });
 
 test('cash donation entered in the UI remains in SQL after page reload', async ({ page }) => {
-  await login(page, 'admin', 'Admin@123');
+  await login(page, 'admin', 'admin');
   await page.getByRole('link', { name: /إدارة التبرعات/ }).click();
   const donor = `متبرع اختبار ${Date.now()}`;
   await page.locator('input[name="donorName"]').fill(donor);
@@ -69,4 +80,26 @@ test('cash donation entered in the UI remains in SQL after page reload', async (
   const token = await page.evaluate(() => localStorage.getItem('token'));
   const result = await page.request.get(`${realApi}/api/donations`, { headers: { Authorization: `Bearer ${token}` } });
   expect((await result.json()).some((d: any) => d.donorName === donor && d.amount === 275)).toBe(true);
+});
+
+test('system admin creates a charity and its primary user can manage it', async ({ page }) => {
+  await login(page, 'admin', 'admin');
+  await page.getByRole('link', { name: /إدارة الجمعيات/ }).click();
+  const suffix = Date.now().toString();
+  const name = `جمعية تجربة ${suffix}`;
+  const username = `manager${suffix}`;
+  await page.locator('input[name="name"]').fill(name);
+  await page.locator('input[name="managerFullName"]').fill('مدير التجربة');
+  await page.locator('input[name="managerUsername"]').fill(username);
+  await page.locator('input[name="managerPassword"]').fill('Secure@123');
+  await page.getByRole('button', { name: 'إضافة الجمعية' }).click();
+  await expect(page.getByText(`تمت إضافة ${name} وحساب المستخدم الأساسي ${username}.`)).toBeVisible();
+  await page.getByRole('button', { name: /خروج/ }).first().click();
+  await login(page, username, 'Secure@123');
+  await page.getByRole('link', { name: /إدارة التبرعات/ }).click();
+  const donor = `تبرع للجمعية الجديدة ${suffix}`;
+  await page.locator('input[name="donorName"]').fill(donor);
+  await page.locator('input[name="amount"]').fill('50');
+  await page.locator('form button[type="submit"]').click();
+  await expect(page.getByText(donor)).toBeVisible();
 });

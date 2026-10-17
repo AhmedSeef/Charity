@@ -7,45 +7,13 @@ import { tap, catchError } from 'rxjs/operators';
   providedIn: 'root'
 })
 export class Api {
-  private apiUrl = 'http://localhost:5072/api';
+  private apiUrl = (typeof window !== 'undefined' && window.location.port === '4200')
+    ? 'http://localhost:5072/api'
+    : '/api';
   private activeCharitySubject: BehaviorSubject<string>;
   public activeCharity$: Observable<string>;
 
-  private cachedCharities: any[] = [
-    {
-      id: 'c1',
-      name: 'جمعية أبواب الخير',
-      roleDesc: 'رعاية عامة وإطعام ومساعدات للأسر الأكثر احتياجاً',
-      logo: '',
-      color: '#004d40',
-      icon: '🏢',
-      phone: '01012345678',
-      address: 'الجيزة، العمرانية',
-      license: 'مشهرة برقم 1234 لسنة 2015'
-    },
-    {
-      id: 'c2',
-      name: 'جمعية الأمل لرعاية الأيتام',
-      roleDesc: 'كفالة الأيتام والإعانات النقدية وتجهيز العرائس',
-      logo: '',
-      color: '#1565c0',
-      icon: '🤝',
-      phone: '01122334455',
-      address: 'القاهرة، المعادي',
-      license: 'مشهرة برقم 5678 لسنة 2018'
-    },
-    {
-      id: 'c3',
-      name: 'جمعية رسالة الصداقة',
-      roleDesc: 'رعاية طبية وقوافل علاجية وكراسي متحركة',
-      logo: '',
-      color: '#6a1b9a',
-      icon: '🏥',
-      phone: '01233445566',
-      address: 'الإسكندرية، سموحة',
-      license: 'مشهرة برقم 9012 لسنة 2020'
-    }
-  ];
+  private cachedCharities: any[] = [];
 
   constructor(private http: HttpClient) {
     const savedActiveId = localStorage.getItem('active_charity_id') || 'c1';
@@ -78,6 +46,16 @@ export class Api {
     );
   }
 
+  createCharity(data: any): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/charities`, data).pipe(
+      tap(() => this.fetchCharities())
+    );
+  }
+
+  createCharityManager(charityId: string, data: any): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/charities/${charityId}/manager`, data);
+  }
+
   getActiveCharityId(): string {
     return this.activeCharitySubject.value;
   }
@@ -85,7 +63,7 @@ export class Api {
   getActiveCharity(): any {
     const id = this.getActiveCharityId();
     const found = this.cachedCharities.find((c: any) => c.id === id);
-    return found || this.cachedCharities[0] || { id: 'c1', name: 'جمعية أبواب الخير', color: '#004d40', icon: '🏢' };
+    return found || this.cachedCharities[0] || { id, name: 'الجمعية', color: '#004d40', icon: '🏢' };
   }
 
   setActiveCharityId(id: string): void {
@@ -141,8 +119,10 @@ export class Api {
 
   transferHeadship(beneficiaryId: string, dto: {
     newHeadFamilyMemberId: string;
+    formerHeadAction?: 'KeepAsFamilyMember' | 'RemoveFromFamily';
     reason: string;
     formerHeadRelationship?: string;
+    formerHeadSupportType?: string;
     newFamilyName?: string;
     notes?: string;
   }): Observable<any> {
@@ -270,5 +250,9 @@ export class Api {
   getBiAnalytics(charityId?: string): Observable<any> {
     const query = charityId ? `?charityId=${charityId}` : '';
     return this.http.get<any>(`${this.apiUrl}/analytics/bi${query}`);
+  }
+
+  getDashboardStats(): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/dashboard/stats`);
   }
 }

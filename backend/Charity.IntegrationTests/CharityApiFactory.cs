@@ -52,6 +52,33 @@ public sealed class CharityApiFactory : WebApplicationFactory<Program>, IAsyncLi
             var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
             var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
             await DbInitializer.SeedAsync(db, userManager, roleManager);
+            await DbInitializer.SeedTestFixturesAsync(db);
+
+            var adminUser = await userManager.FindByNameAsync("admin");
+            if (adminUser != null)
+            {
+                adminUser.CharityId = "c1";
+                await userManager.UpdateAsync(adminUser);
+            }
+
+            // Test-only accounts exercise tenant isolation; application seeding creates admin only.
+            foreach (var sample in new[]
+            {
+                (Username: "amal", Password: "Amal@123", CharityId: "c2", Role: "CharityManager"),
+                (Username: "researcher", Password: "Research@123", CharityId: "c1", Role: "Staff")
+            })
+            {
+                if (await userManager.FindByNameAsync(sample.Username) != null) continue;
+                var user = new ApplicationUser
+                {
+                    UserName = sample.Username, FullName = sample.Username,
+                    CharityId = sample.CharityId, EmailConfirmed = true
+                };
+                var created = await userManager.CreateAsync(user, sample.Password);
+                Assert.True(created.Succeeded);
+                var assigned = await userManager.AddToRoleAsync(user, sample.Role);
+                Assert.True(assigned.Succeeded);
+            }
 
             Assert.Equal(DatabaseName, db.Database.GetDbConnection().Database);
             Assert.Empty(await db.Database.GetPendingMigrationsAsync());
@@ -60,7 +87,7 @@ public sealed class CharityApiFactory : WebApplicationFactory<Program>, IAsyncLi
         });
     }
 
-    public async Task<HttpClient> Login(string username = "admin", string password = "Admin@123")
+    public async Task<HttpClient> Login(string username = "admin", string password = "admin")
     {
         var client = CreateClient();
         var response = await client.PostAsJsonAsync("/api/auth/login", new LoginRequestDto { Username = username, Password = password });

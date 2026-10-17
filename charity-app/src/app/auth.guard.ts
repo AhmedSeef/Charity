@@ -12,3 +12,10 @@ export const authGuard = () => {
   
   return router.parseUrl('/login');
 };
+
+export const adminGuard = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  if (!auth.isLoggedIn()) return router.parseUrl('/login');
+  return auth.getCurrentUser()?.role === 'Admin' ? true : router.parseUrl('/beneficiaries');
+};

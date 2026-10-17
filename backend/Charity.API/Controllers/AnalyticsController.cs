@@ -7,7 +7,7 @@ namespace Charity.API.Controllers;
 
 [ApiController]
 [Route("api/analytics")]
-[Authorize]
+[Authorize(Roles = "Admin")]
 public class AnalyticsController : ControllerBase
 {
     private readonly IBiAnalyticsService _service;

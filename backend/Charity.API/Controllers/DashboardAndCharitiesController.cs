@@ -7,7 +7,7 @@ namespace Charity.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
+[Authorize(Roles = "Admin")]
 public class DashboardController : ControllerBase
 {
     private readonly IDashboardService _dashboardService;
@@ -36,6 +36,7 @@ public class CharitiesController : ControllerBase
         _charityService = charityService;
     }
 
+    [Authorize]
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<CharityDto>>> GetAll()
     {

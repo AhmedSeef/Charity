@@ -251,8 +251,10 @@ public class BeneficiaryHeadHistoryDto
 public class TransferHeadshipDto
 {
     public string NewHeadFamilyMemberId { get; set; } = string.Empty; // الفرد المراد ترقيته كعائل جديد
-    public string Reason { get; set; } = "وفاة رب الأسرة السابق"; // وفاة، عجز كامل أو مرض، انفصال...
-    public string? FormerHeadRelationship { get; set; } = "رب الأسرة السابق (متوفى)";
+    public string FormerHeadAction { get; set; } = "KeepAsFamilyMember"; // "KeepAsFamilyMember" (نقل مع بقاء) أو "RemoveFromFamily" (نقل مع حذف/استبعاد)
+    public string Reason { get; set; } = "عجز كلي أو مرض مقعد"; // وفاة، عجز كامل أو مرض، انفصال...
+    public string? FormerHeadRelationship { get; set; } = "زوج (عائل سابق)";
+    public string? FormerHeadSupportType { get; set; } = "مريض / عاجز عن العمل";
     public string? NewFamilyName { get; set; } // مسمى العائلة المحدث اختياري
     public string? Notes { get; set; }
 }

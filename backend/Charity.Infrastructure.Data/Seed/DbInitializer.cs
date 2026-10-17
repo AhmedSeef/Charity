@@ -9,7 +9,7 @@ public static class DbInitializer
 {
     public static async Task SeedAsync(CharityDbContext context, UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager)
     {
-        // 1. Seed Roles
+        // 1. Seed Roles (Lookups)
         string[] roles = ["Admin", "CharityManager", "Staff"];
         foreach (var role in roles)
         {
@@ -19,7 +19,74 @@ public static class DbInitializer
             }
         }
 
-        // 2. Seed Charities
+        // 2. Seed Universal Suspension Reasons (Lookups - أسباب الإيقاف العامة بالشبكة)
+        if (!await context.SuspensionReasons.AnyAsync())
+        {
+            var reasons = new List<SuspensionReason>
+            {
+                new() { Id = "sr1", Title = "وفاة صاحب الحالة", Description = "وفاة المستفيد المسجل بالملف وانتقال الرعاية أو إغلاق الملف", IsActive = true, CharityId = null, CharityName = "النظام العام" },
+                new() { Id = "sr2", Title = "تحسن الحالة المادية ووجود دخل كافٍ", Description = "تحسن الوضع الاقتصادي للأسرة وتوفر مصدر دخل ثابت ومستقر", IsActive = true, CharityId = null, CharityName = "النظام العام" },
+                new() { Id = "sr3", Title = "تغيير محل الإقامة خارج النطاق الجغرافي", Description = "انتقال الأسرة لمحافظة أو منطقة سكنية خارج النطاق الجغرافي للجمعية", IsActive = true, CharityId = null, CharityName = "النظام العام" },
+                new() { Id = "sr4", Title = "ازدواجية الصرف والاستفادة من جهات أخرى", Description = "ثبوت استلام مساعدات متكررة وكافية من جهات أو جمعيات شريكة أخرى", IsActive = true, CharityId = null, CharityName = "النظام العام" },
+                new() { Id = "sr5", Title = "زواج الفتاة / استقلال الحالة", Description = "زواج الحالة المستفيدة أو استقلالها بأسرة جديدة", IsActive = true, CharityId = null, CharityName = "النظام العام" },
+                new() { Id = "sr6", Title = "عدم صحة البيانات المقدمة في البحث", Description = "اكتشاف تضارب أو عدم دقة في بيانات الدخل أو الممتلكات", IsActive = true, CharityId = null, CharityName = "النظام العام" },
+                new() { Id = "sr7", Title = "عدم التجاوب مع البحث الميداني الدوري", Description = "تعذر التواصل مع الحالة ورفض استقبال الباحث الاجتماعي لإعادة البحث", IsActive = true, CharityId = null, CharityName = "النظام العام" }
+            };
+
+            await context.SuspensionReasons.AddRangeAsync(reasons);
+            await context.SaveChangesAsync();
+        }
+
+        // 3. Seed ONLY the platform super administrator ("كبير مسؤولي المنصة")
+        var adminUser = await userManager.FindByNameAsync("admin");
+        if (adminUser == null)
+        {
+            var superAdmin = new ApplicationUser
+            {
+                UserName = "admin",
+                Email = "admin@charity.org",
+                FullName = "مدير شبكة الجمعيات",
+                CharityId = null,
+                EmailConfirmed = true
+            };
+
+            var createRes = await userManager.CreateAsync(superAdmin);
+            if (!createRes.Succeeded)
+            {
+                throw new InvalidOperationException($"Could not create admin: {string.Join(", ", createRes.Errors.Select(e => e.Description))}");
+            }
+            superAdmin.PasswordHash = userManager.PasswordHasher.HashPassword(superAdmin, "admin");
+            superAdmin.SecurityStamp = Guid.NewGuid().ToString();
+            await userManager.UpdateAsync(superAdmin);
+            await userManager.AddToRoleAsync(superAdmin, "Admin");
+        }
+        else
+        {
+            if (string.IsNullOrEmpty(adminUser.FullName))
+            {
+                adminUser.FullName = "مدير شبكة الجمعيات";
+            }
+            if (await userManager.CheckPasswordAsync(adminUser, "Admin@123"))
+            {
+                adminUser.PasswordHash = userManager.PasswordHasher.HashPassword(adminUser, "admin");
+                adminUser.SecurityStamp = Guid.NewGuid().ToString();
+            }
+            await userManager.UpdateAsync(adminUser);
+
+            if (!await userManager.IsInRoleAsync(adminUser, "Admin"))
+            {
+                await userManager.AddToRoleAsync(adminUser, "Admin");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Seeds disposable test fixtures used exclusively by integration tests (e.g., CharityApiFactory).
+    /// The production/application database never calls this method.
+    /// </summary>
+    public static async Task SeedTestFixturesAsync(CharityDbContext context)
+    {
+        // 1. Seed Test Charities
         if (!await context.Charities.AnyAsync())
         {
             var charities = new List<Charity.Domain.Entities.Charity>
@@ -66,58 +133,7 @@ public static class DbInitializer
             await context.SaveChangesAsync();
         }
 
-        // 3. Seed Users for each charity
-        var usersToSeed = new[]
-        {
-            (Username: "admin", Password: "Admin@123", FullName: "مدير أبواب الخير", CharityId: "c1", Role: "Admin"),
-            (Username: "abwab", Password: "User@123", FullName: "مسؤول أبواب الخير", CharityId: "c1", Role: "CharityManager"),
-            (Username: "amal", Password: "Amal@123", FullName: "مدير جمعية الأمل", CharityId: "c2", Role: "CharityManager"),
-            (Username: "sedaka", Password: "Sedaka@123", FullName: "مدير جمعية الصداقة", CharityId: "c3", Role: "CharityManager")
-        };
-
-        foreach (var u in usersToSeed)
-        {
-            var existing = await userManager.FindByNameAsync(u.Username);
-            if (existing == null)
-            {
-                var newUser = new ApplicationUser
-                {
-                    UserName = u.Username,
-                    Email = $"{u.Username}@charity.org",
-                    FullName = u.FullName,
-                    CharityId = u.CharityId,
-                    EmailConfirmed = true
-                };
-
-                var createRes = await userManager.CreateAsync(newUser, u.Password);
-                if (createRes.Succeeded)
-                {
-                    await userManager.AddToRoleAsync(newUser, u.Role);
-                }
-            }
-        }
-
-        // Additional demo staff accounts. Identity stores salted password hashes in SQL Server.
-        foreach (var u in new[]
-        {
-            (Username: "researcher", Password: "Research@123", FullName: "سلمى حسن - باحثة اجتماعية", CharityId: "c1"),
-            (Username: "amalstaff", Password: "AmalStaff@123", FullName: "ندى إسماعيل - منسقة كفالات", CharityId: "c2"),
-            (Username: "sedakastaff", Password: "SedakaStaff@123", FullName: "ليلى مراد - منسقة قوافل", CharityId: "c3")
-        })
-        {
-            if (await userManager.FindByNameAsync(u.Username) != null) continue;
-            var user = new ApplicationUser
-            {
-                UserName = u.Username, Email = $"{u.Username}@charity.demo",
-                FullName = u.FullName, CharityId = u.CharityId, EmailConfirmed = true
-            };
-            var created = await userManager.CreateAsync(user, u.Password);
-            if (!created.Succeeded)
-                throw new InvalidOperationException($"Could not seed demo user {u.Username}: {string.Join(", ", created.Errors.Select(e => e.Description))}");
-            await userManager.AddToRoleAsync(user, "Staff");
-        }
-
-        // 4. Seed Beneficiaries (Shared CRM cases with ownership)
+        // 2. Seed Test Beneficiaries
         if (!await context.Beneficiaries.AnyAsync())
         {
             var beneficiaries = new List<Beneficiary>
@@ -240,7 +256,7 @@ public static class DbInitializer
             await context.SaveChangesAsync();
         }
 
-        // 4.1 Seed Beneficiary Family Members (Dependents & Supporters)
+        // 3. Seed Test Beneficiary Family Members
         if (!await context.BeneficiaryFamilyMembers.AnyAsync())
         {
             var familyMembers = new List<BeneficiaryFamilyMember>
@@ -301,41 +317,18 @@ public static class DbInitializer
             await context.SaveChangesAsync();
         }
 
-        // 4.2 Seed Suspension Reasons (أسباب الإيقاف)
-        if (!await context.SuspensionReasons.AnyAsync())
-        {
-            var reasons = new List<SuspensionReason>
-            {
-                new() { Id = "sr1", Title = "وفاة صاحب الحالة", Description = "وفاة المستفيد المسجل بالملف وانتقال الرعاية أو إغلاق الملف", IsActive = true, CharityId = "c1", CharityName = "جمعية أبواب الخير" },
-                new() { Id = "sr2", Title = "تحسن الحالة المادية ووجود دخل كافٍ", Description = "تحسن الوضع الاقتصادي للأسرة وتوفر مصدر دخل ثابت ومستقر", IsActive = true, CharityId = "c1", CharityName = "جمعية أبواب الخير" },
-                new() { Id = "sr3", Title = "تغيير محل الإقامة خارج النطاق الجغرافي", Description = "انتقال الأسرة لمحافظة أو منطقة سكنية خارج النطاق الجغرافي للجمعية", IsActive = true, CharityId = "c1", CharityName = "جمعية أبواب الخير" },
-                new() { Id = "sr4", Title = "ازدواجية الصرف والاستفادة من جهات أخرى", Description = "ثبوت استلام مساعدات متكررة وكافية من جهات أو جمعيات شريكة أخرى", IsActive = true, CharityId = "c1", CharityName = "جمعية أبواب الخير" },
-                new() { Id = "sr5", Title = "زواج الفتاة / استقلال الحالة", Description = "زواج الحالة المستفيدة أو استقلالها بأسرة جديدة", IsActive = true, CharityId = "c1", CharityName = "جمعية أبواب الخير" },
-                new() { Id = "sr6", Title = "عدم صحة البيانات المقدمة في البحث", Description = "اكتشاف تضارب أو عدم دقة في بيانات الدخل أو الممتلكات", IsActive = true, CharityId = "c1", CharityName = "جمعية أبواب الخير" },
-                new() { Id = "sr7", Title = "عدم التجاوب مع البحث الميداني الدوري", Description = "تعذر التواصل مع الحالة ورفض استقبال الباحث الاجتماعي لإعادة البحث", IsActive = true, CharityId = "c1", CharityName = "جمعية أبواب الخير" }
-            };
-
-            await context.SuspensionReasons.AddRangeAsync(reasons);
-            await context.SaveChangesAsync();
-        }
-
-        // 5. Seed Inventory Items (Tenant isolated)
+        // 4. Seed Test Inventory Items
         if (!await context.InventoryItems.AnyAsync())
         {
             var items = new List<InventoryItem>
             {
-                // c1 (أبواب الخير)
                 new() { Id = "i1", CharityId = "c1", ItemName = "أرز مصري ممتاز", Quantity = 450, Unit = "كيلو", Type = "أغذية جافة", Kind = "صنف ملموس", Code = "ITM-001" },
                 new() { Id = "i2", CharityId = "c1", ItemName = "سكر أبيض نقي", Quantity = 300, Unit = "كيلو", Type = "أغذية جافة", Kind = "صنف ملموس", Code = "ITM-002" },
                 new() { Id = "i7", CharityId = "c1", ItemName = "زيت طعام ممتاز", Quantity = 95, Unit = "زجاجة", Type = "أغذية جافة", Kind = "صنف ملموس", Code = "ITM-007" },
                 new() { Id = "s_abwab_1", CharityId = "c1", ItemName = "سداد ديون غارم/غارمة", Quantity = 0, Unit = "حالة", Type = "خدمات اجتماعية", Kind = "خدمة", Code = "SRV-014" },
-
-                // c2 (الأمل)
                 new() { Id = "i_amal_1", CharityId = "c2", ItemName = "بطاطين شتوية مبطنة", Quantity = 180, Unit = "قطعة", Type = "ملابس وبطاطين", Kind = "صنف ملموس", Code = "ITM-201" },
                 new() { Id = "i_amal_2", CharityId = "c2", ItemName = "شنطة أدوات مدرسية للأيتام", Quantity = 75, Unit = "شنطة", Type = "متنوع", Kind = "صنف ملموس", Code = "ITM-202" },
                 new() { Id = "s_amal_1", CharityId = "c2", ItemName = "إعانة مالية نقدية عاجلة", Quantity = 0, Unit = "دفعة نقدية", Type = "خدمات اجتماعية وتجهيز", Kind = "خدمة", Code = "SRV-201" },
-
-                // c3 (الصداقة)
                 new() { Id = "i_sedaka_1", CharityId = "c3", ItemName = "كرسي متحرك للمرضى", Quantity = 8, Unit = "قطعة", Type = "أجهزة تعويضية وكراسي", Kind = "صنف ملموس", Code = "ITM-301" },
                 new() { Id = "i_sedaka_2", CharityId = "c3", ItemName = "أدوية سكر وضغط", Quantity = 60, Unit = "علبة", Type = "أدوية ومستلزمات طبية", Kind = "صنف ملموس", Code = "ITM-302" },
                 new() { Id = "s_sedaka_1", CharityId = "c3", ItemName = "كشف رمد وعيون ونظارة طبية", Quantity = 0, Unit = "كشف ونظارة", Type = "خدمات طبية وعلاجية", Kind = "خدمة", Code = "SRV-301" }
@@ -345,12 +338,11 @@ public static class DbInitializer
             await context.SaveChangesAsync();
         }
 
-        // 6. Seed Distributions (Cross-charity aid history on beneficiaries)
+        // 5. Seed Test Distributions
         if (!await context.Distributions.AnyAsync())
         {
             var distributions = new List<Distribution>
             {
-                // Ahmed Mahmoud (b1) received aid from c1, c2, and c3!
                 new()
                 {
                     Id = "dist1",
@@ -402,7 +394,7 @@ public static class DbInitializer
             await context.SaveChangesAsync();
         }
 
-        // 7. Seed Staff (Tenant isolated)
+        // 6. Seed Test Staff
         if (!await context.StaffMembers.AnyAsync())
         {
             var staff = new List<StaffMember>

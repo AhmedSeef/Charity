@@ -16,7 +16,6 @@ export class BiAnalyticsComponent implements OnInit, OnDestroy {
   activeCharity: any = null;
   biData: any = null;
   isLoading: boolean = true;
-  selectedTimeframe: 'all' | 'year' | 'half' | 'month' = 'all';
 
   private charitySub?: Subscription;
 
@@ -51,11 +50,6 @@ export class BiAnalyticsComponent implements OnInit, OnDestroy {
         this.cdr.detectChanges();
       }
     });
-  }
-
-  setTimeframe(tf: 'all' | 'year' | 'half' | 'month'): void {
-    this.selectedTimeframe = tf;
-    this.loadAnalytics();
   }
 
   printReport(): void {

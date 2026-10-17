@@ -17,19 +17,29 @@
     </div>
 
     <div class="nav-links">
-      <a routerLink="/dashboard" routerLinkActive="active-link">📊 لوحة التحكم</a>
-      <a routerLink="/bi-analytics" routerLinkActive="active-link" style="background: rgba(255, 235, 59, 0.12); border: 1px solid rgba(255, 235, 59, 0.35); font-weight: bold;">
+      <!-- لوحات الإدارة والرقابة للأدمن العام فقط -->
+      <a *ngIf="auth.getCurrentUser()?.role === 'Admin'" routerLink="/dashboard" routerLinkActive="active-link">📊 لوحة التحكم</a>
+      <a *ngIf="auth.getCurrentUser()?.role === 'Admin'" routerLink="/bi-analytics" routerLinkActive="active-link" style="background: rgba(255, 235, 59, 0.12); border: 1px solid rgba(255, 235, 59, 0.35); font-weight: bold;">
         📈 ذكاء الأعمال والتحليلات (BI)
       </a>
-      <a routerLink="/beneficiaries" routerLinkActive="active-link">👨‍👩‍👧‍👦 إدارة المستفيدين (الشبكة المشتركة)</a>
+      <a *ngIf="auth.getCurrentUser()?.role === 'Admin'" routerLink="/charities-admin" routerLinkActive="active-link">🏢 إدارة الجمعيات</a>
+      <a routerLink="/beneficiaries" routerLinkActive="active-link">
+        👨‍👩‍👧‍👦 {{ auth.getCurrentUser()?.role === 'Admin' ? 'سجل المستفيدين (عرض وبحث)' : 'إدارة المستفيدين (الشبكة المشتركة)' }}
+      </a>
+      <a routerLink="/distributions" routerLinkActive="active-link">
+        🔄 {{ auth.getCurrentUser()?.role === 'Admin' ? 'سجل حركات الصرف (عرض فقط)' : 'حركات صرف الجمعية' }}
+      </a>
       <a routerLink="/suspension-reasons" routerLinkActive="active-link">⛔ أسباب إيقاف الملفات</a>
-      <a routerLink="/items-catalog" routerLinkActive="active-link">🏷️ أصناف وخدمات جمعيتنا</a>
-      <a routerLink="/inventory" routerLinkActive="active-link">📦 مخازن الجمعية والأرصدة</a>
-      <a routerLink="/donations" routerLinkActive="active-link">💰 إدارة التبرعات</a>
-      <a routerLink="/distributions" routerLinkActive="active-link">🔄 حركات صرف الجمعية</a>
-      <a routerLink="/staff" routerLinkActive="active-link">👥 فريق العمل والمتطوعين</a>
-      <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.15); width: 100%; margin: 8px 0;">
-      <a routerLink="/settings" routerLinkActive="active-link">⚙️ إعدادات الجمعية</a>
+
+      <!-- حركات وتشغيل الجمعيات فقط (مخازن، تبرعات، موظفين، أصناف، إعدادات) -->
+      <ng-container *ngIf="auth.getCurrentUser()?.role !== 'Admin'">
+        <a routerLink="/items-catalog" routerLinkActive="active-link">🏷️ أصناف وخدمات جمعيتنا</a>
+        <a routerLink="/inventory" routerLinkActive="active-link">📦 مخازن الجمعية والأرصدة</a>
+        <a routerLink="/donations" routerLinkActive="active-link">💰 إدارة التبرعات</a>
+        <a routerLink="/staff" routerLinkActive="active-link">👥 فريق العمل والمتطوعين</a>
+        <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.15); width: 100%; margin: 8px 0;">
+        <a routerLink="/settings" routerLinkActive="active-link">⚙️ إعدادات الجمعية</a>
+      </ng-container>
       
       <div style="flex-grow: 1;"></div>
       <button (click)="auth.logout()" style="background-color: #d32f2f; color: white; border: none; padding: 10px 14px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 15px; margin-top: 15px; font-weight: bold;">
@@ -47,10 +57,12 @@
         <span style="font-size: 26px;">{{ activeCharity()?.icon || '🏢' }}</span>
         <div>
           <div style="font-weight: bold; color: #333; font-size: 16px;">
-            أنت مسجل الدخول بحساب: <span [style.color]="activeCharity()?.color || '#004d40'">{{ activeCharity()?.name }}</span>
+            <ng-container *ngIf="auth.getCurrentUser()?.role === 'Admin'; else charityAccount">أنت مسجل الدخول كأدمن شبكة الجمعيات</ng-container>
+            <ng-template #charityAccount>أنت مسجل الدخول بحساب: <span [style.color]="activeCharity()?.color || '#004d40'">{{ activeCharity()?.name }}</span></ng-template>
           </div>
           <div style="font-size: 12px; color: #666; margin-top: 2px;">
-            {{ activeCharity()?.license }} — حركات الصرف والمخازن والتبرعات خاصة بجمعيتكم فقط، بينما قاعدة المستفيدين وسجل استحقاقهم مشتركة بالشبكة.
+            <ng-container *ngIf="auth.getCurrentUser()?.role === 'Admin'; else charityNotice">لوحة التحكم وذكاء الأعمال يعرضان مؤشرات الشبكة، ويمكنك إضافة الجمعيات ومستخدميها الأساسيين.</ng-container>
+            <ng-template #charityNotice>{{ activeCharity()?.license }} — حركات الصرف والمخازن والتبرعات خاصة بجمعيتكم فقط، بينما قاعدة المستفيدين وسجل استحقاقهم مشتركة بالشبكة.</ng-template>
           </div>
         </div>
       </div>

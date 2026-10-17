@@ -49,8 +49,8 @@ public class SuspensionReasonService : ISuspensionReasonService
             throw new ValidationDomainException("عنوان أو سبب الإيقاف مطلوب!");
         }
 
-        var charityId = _currentUserService.CharityId ?? "c1";
-        var charityName = _currentUserService.CharityName ?? "الجمعية العامة";
+        var charityId = _currentUserService.CharityId;
+        var charityName = _currentUserService.CharityName ?? "النظام العام";
 
         var entity = new SuspensionReason
         {

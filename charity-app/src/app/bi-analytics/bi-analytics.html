@@ -15,29 +15,8 @@
       </p>
     </div>
 
-    <!-- أزرار التصفية والطباعة التنفيذية -->
+    <!-- طباعة التقرير التنفيذي -->
     <div class="no-print" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-      <div style="background: white; border: 1px solid #ccc; border-radius: 20px; padding: 3px 6px; display: flex; gap: 4px;">
-        <button type="button" (click)="setTimeframe('all')" 
-                [style.background]="selectedTimeframe === 'all' ? '#004d40' : 'transparent'"
-                [style.color]="selectedTimeframe === 'all' ? 'white' : '#555'"
-                style="border: none; padding: 6px 12px; border-radius: 15px; cursor: pointer; font-size: 12px; font-weight: bold;">
-          الكل
-        </button>
-        <button type="button" (click)="setTimeframe('year')" 
-                [style.background]="selectedTimeframe === 'year' ? '#004d40' : 'transparent'"
-                [style.color]="selectedTimeframe === 'year' ? 'white' : '#555'"
-                style="border: none; padding: 6px 12px; border-radius: 15px; cursor: pointer; font-size: 12px; font-weight: bold;">
-          هذا العام
-        </button>
-        <button type="button" (click)="setTimeframe('half')" 
-                [style.background]="selectedTimeframe === 'half' ? '#004d40' : 'transparent'"
-                [style.color]="selectedTimeframe === 'half' ? 'white' : '#555'"
-                style="border: none; padding: 6px 12px; border-radius: 15px; cursor: pointer; font-size: 12px; font-weight: bold;">
-          آخر 6 أشهر
-        </button>
-      </div>
-
       <button type="button" (click)="printReport()" 
               style="background-color: #37474f; color: white; border: none; padding: 9px 18px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
         🖨️ طباعة تقرير الأداء التنفيذي
