@@ -1,13 +1,25 @@
-<div dir="rtl" style="text-align: right;">
-  <div style="margin-bottom: 20px;">
-    <h2 style="color: #004d40; margin: 0;">
-      🔄 {{ auth.getCurrentUser()?.role === 'Admin' ? 'سجل حركات الصرف لشبكة الجمعيات' : 'حركات صرف ومساعدات: ' + (activeCharity?.name || 'جمعيتنا') }}
-    </h2>
-    <p style="color: #666; margin: 5px 0 0 0; font-size: 14px;">
-      {{ auth.getCurrentUser()?.role === 'Admin'
-         ? 'استعراض ومتابعة حركات المساعدات والصرف المنفذة عبر مختلف الجمعيات المشتركة بالشبكة (عرض واطلاع فقط).'
-         : 'تسجيل حركات الصرف الخاصة بجمعيتكم وخصمها من رصيد المخزن الداخلي. تظهر هذه الحركة فوراً في الملف المشترك للمستفيد لتراها الجمعيات الشريكة.' }}
-    </p>
+<div dir="rtl" class="distributions-page" style="text-align: right;">
+  
+  <!-- رأس الشاشة وشريط الإجراءات -->
+  <div style="background: white; border-radius: 10px; padding: 20px 24px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; border-right: 5px solid #004d40;">
+    <div>
+      <h2 style="color: #004d40; margin: 0; font-size: 22px;">
+        🔄 {{ auth.getCurrentUser()?.role === 'Admin' ? 'سجل حركات الصرف لشبكة الجمعيات' : 'سجل حركات الصرف: ' + (activeCharity?.name || 'جمعيتنا') }}
+      </h2>
+      <p style="color: #666; margin: 5px 0 0 0; font-size: 14px;">
+        {{ auth.getCurrentUser()?.role === 'Admin'
+           ? 'استعراض ومتابعة حركات المساعدات والصرف المنفذة عبر مختلف الجمعيات المشتركة بالشبكة (عرض واطلاع فقط).'
+           : 'سجل كامل وتدقيق لحركات المساعدات المنفذة، مع توثيق وبيان دقيق للمستلم الفعلي باليد لكل حركة صرف.' }}
+      </p>
+    </div>
+
+    <!-- زر الانتقال لشاشة الصرف المستقلة -->
+    <div *ngIf="auth.getCurrentUser()?.role !== 'Admin'">
+      <a routerLink="/disbursement" 
+         style="background-color: #d84315; color: white; text-decoration: none; padding: 12px 22px; border-radius: 8px; font-weight: bold; font-size: 15px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 6px rgba(216, 67, 21, 0.3);">
+        <span>➕</span> تسجيل حركة صرف جديدة ←
+      </a>
+    </div>
   </div>
 
   <!-- تنبيهات النجاح والخطأ -->
@@ -19,136 +31,88 @@
     {{ errorMessage }}
   </div>
 
-  <!-- فورم صرف مساعدة جديدة (متاح للجمعيات فقط) -->
-  <div *ngIf="auth.getCurrentUser()?.role !== 'Admin'" style="background-color: #f9f9f9; padding: 20px; border-radius: 8px; margin-bottom: 25px; border: 1px solid #ddd; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #bf360c; padding-bottom: 10px; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
-      <h3 style="margin: 0; color: #bf360c;">
-        📤 إضافة حركة صرف جديدة من مخازن: <strong>{{ activeCharity?.name }}</strong>
-      </h3>
-      <span style="background: #efebe9; color: #4e342e; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: bold;">
-        🏢 الخصم يتم من رصيدكم الداخلي فقط
-      </span>
+  <!-- شريط البحث والفلترة السريعة في السجل -->
+  <div style="background: white; padding: 16px 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #e0e0e0; display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+    <div style="position: relative; flex: 1; min-width: 280px;">
+      <span style="position: absolute; right: 12px; top: 12px; font-size: 16px; color: #888;">🔎</span>
+      <input type="text" 
+             [(ngModel)]="searchFilter" 
+             (input)="currentPage = 1"
+             placeholder="بحث في السجل (اسم رب الأسرة، اسم المستلم الفعلي، الرقم القومي، أو الصنف المصروف)..."
+             style="width: 100%; padding: 10px 40px 10px 12px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 14px;">
     </div>
 
-    <form (ngSubmit)="onSubmit()">
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px; margin-bottom: 15px;">
-        <!-- اختيار المستفيد (مشترك من الشبكة الموحدة) -->
-        <div>
-          <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">المستفيد المستحق (قاعدة المستفيدين المشتركة) *</label>
-          <select [(ngModel)]="newDist.beneficiaryId" name="beneficiaryId" required 
-                  style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; font-weight: bold;">
-            <option value="" disabled selected>-- اختر المستفيد من الشبكة --</option>
-            <option *ngFor="let b of beneficiaries" [value]="b.id" [disabled]="b.isSuspended || b.status === 'موقوف'" [style.color]="(b.isSuspended || b.status === 'موقوف') ? '#d32f2f' : 'inherit'">
-              {{ b.name }} ({{ b.category }} - {{ b.nationalId }}) {{ (b.isSuspended || b.status === 'موقوف') ? '⛔ [موقوف: ' + (b.suspensionReasonTitle || 'محظور الصرف') + ']' : '' }}
-            </option>
-          </select>
-        </div>
-
-        <!-- اختيار الصنف أو الخدمة (معزول من مخزن الجمعية الحالية) -->
-        <div>
-          <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">الصنف أو الخدمة (مخزن {{ activeCharity?.name }}) *</label>
-          <select [(ngModel)]="newDist.inventoryId" name="inventoryId" required 
-                  style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; font-weight: bold;">
-            <option value="" disabled selected>-- اختر من مخزن الجمعية --</option>
-            <optgroup label="📦 الأصناف الملموسة المتاحة بالمخزن">
-              <ng-container *ngFor="let i of inventory">
-                <option *ngIf="i.kind === 'صنف ملموس'" [value]="i.id">
-                  {{ i.itemName }} [المتوفر لديكم: {{ i.quantity }} {{ i.unit }}]
-                </option>
-              </ng-container>
-            </optgroup>
-            <optgroup label="🩺 الخدمات والمساعدات">
-              <ng-container *ngFor="let s of inventory">
-                <option *ngIf="s.kind === 'خدمة'" [value]="s.id">
-                  {{ s.itemName }} [خدمة - {{ s.unit }}]
-                </option>
-              </ng-container>
-            </optgroup>
-          </select>
-        </div>
-
-        <!-- الكمية -->
-        <div>
-          <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">الكمية / العدد *</label>
-          <div style="display: flex; gap: 8px;">
-            <input type="number" [(ngModel)]="newDist.quantity" name="quantity" min="1" placeholder="1" required 
-                   style="flex: 1; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; font-weight: bold; font-size: 16px;">
-            <span style="background: #efebe9; color: #4e342e; padding: 10px 14px; border-radius: 5px; font-weight: bold; display: flex; align-items: center;">
-              {{ selectedItem?.unit || 'وحدة' }}
-            </span>
-          </div>
-        </div>
-
-        <!-- تاريخ الصرف -->
-        <div>
-          <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">تاريخ الصرف *</label>
-          <input type="date" [(ngModel)]="newDist.date" name="date" required 
-                 style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box;">
-        </div>
-      </div>
-
-      <!-- تنبيه حالة الرصيد المباشر -->
-      <div *ngIf="selectedItem && selectedItem.kind === 'صنف ملموس'" style="margin-bottom: 15px;">
-        <div *ngIf="!isStockInsufficient" style="background-color: #fbe9e7; border-right: 4px solid #d84315; padding: 10px 15px; border-radius: 4px; font-size: 13px; color: #bf360c;">
-          💡 <strong>حركة المخزن الداخلي:</strong> الرصيد المتاح هو <strong>{{ selectedItem.quantity }} {{ selectedItem.unit }}</strong>. سيتبقى بعد الصرف: <strong>{{ selectedItem.quantity - newDist.quantity }} {{ selectedItem.unit }}</strong>.
-        </div>
-        <div *ngIf="isStockInsufficient" style="background-color: #ffebee; border-right: 4px solid #c62828; padding: 10px 15px; border-radius: 4px; font-size: 13px; color: #c62828; font-weight: bold;">
-          ⚠️ تحذير: الكمية المطلوبة ({{ newDist.quantity }}) تتجاوز الرصيد المتوفر بمخزن جمعيتكم ({{ selectedItem.quantity }})!
-        </div>
-      </div>
-
-      <!-- ملاحظات -->
-      <div style="margin-bottom: 15px;">
-        <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">ملاحظات الصرف (اختياري)</label>
-        <input type="text" [(ngModel)]="newDist.notes" name="notes" placeholder="ملاحظات حول استلام الحالة، أو رقم إذن الصرف..." 
-               style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box;">
-      </div>
-
-      <button type="submit" [disabled]="isStockInsufficient" 
-              style="padding: 12px 25px; background-color: #d84315; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 15px; font-weight: bold; width: 100%;"
-              [style.opacity]="isStockInsufficient ? '0.6' : '1'"
-              [style.cursor]="isStockInsufficient ? 'not-allowed' : 'pointer'">
-        📤 صرف وإتمام الحركة وتحديث مخزن {{ activeCharity?.name }}
-      </button>
-    </form>
+    <div style="color: #666; font-size: 13px;">
+      إجمالي الحركات: <strong>{{ filteredDistributions.length }}</strong> حركة صرف
+    </div>
   </div>
 
-  <!-- كارت التوجيه لسجل المستفيدين المشترك -->
+  <!-- كارت التوجيه لملفات المستفيدين المشتركة -->
   <div style="background-color: #e0f2f1; border-right: 4px solid #004d40; border-radius: 6px; padding: 12px 18px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
     <div style="font-size: 13px; color: #004d40;">
-      ℹ️ <strong>سجل استحقاق المستفيدين المشترك:</strong> يعرض الجدول أدناه حركات الصرف المنفذة من جمعيتكم فقط. لمشاهدة ما تسلّمه المستفيد من الجمعيات الأخرى بالشبكة، توجه لـ:
+      ℹ️ <strong>سجل المستفيدين المشترك:</strong> لمشاهدة كافة المساعدات التي تسلمتها الأسرة من الجمعيات الأخرى في الشبكة، توجه لـ:
     </div>
     <a routerLink="/beneficiaries" style="background-color: #004d40; color: white; text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: bold;">
-      👨‍👩‍👧‍👦 ملفات المستفيدين والحركات عليهم ←
+      👨‍👩‍👧‍👦 ملفات المستفيدين المشتركة ←
     </a>
   </div>
 
-  <!-- جدول حركات الصرف الخاصة بالجمعية -->
-  <div style="overflow-x: auto; width: 100%; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-    <table border="1" cellpadding="10" cellspacing="0" style="width: 100%; border-collapse: collapse; background-color: white; font-size: 14px;">
+  <!-- جدول حركات الصرف مع عمود المستلم الفعلي -->
+  <div style="overflow-x: auto; width: 100%; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); background: white;">
+    <table border="1" cellpadding="12" cellspacing="0" style="width: 100%; border-collapse: collapse; background-color: white; font-size: 14px; text-align: right;">
       <thead>
         <tr style="background-color: #fbe9e7; color: #bf360c;">
           <th *ngIf="auth.getCurrentUser()?.role === 'Admin'">الجمعية الصارفة</th>
-          <th>المستفيد المستحق</th>
+          <th>كود الملف</th>
+          <th>ملف الأسرة (رب الأسرة)</th>
+          <th style="background-color: #ffe0b2; color: #e65100;">👤 المستلم الفعلي (من حضر واستلم)</th>
           <th>نوع المساعدة</th>
-          <th>الصنف / الخدمة المصروفة</th>
-          <th>الكمية</th>
+          <th>الصنف / الخدمة</th>
+          <th>الكمية / القيمة</th>
           <th>تاريخ الصرف</th>
           <th>ملاحظات</th>
+          <th>إجراء</th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let d of paginatedDistributions">
+        <tr *ngFor="let d of paginatedDistributions" style="border-bottom: 1px solid #eee;">
+          <!-- الجمعية الصارفة للأدمن -->
           <td *ngIf="auth.getCurrentUser()?.role === 'Admin'">
             <span style="background: #e0f2f1; color: #004d40; padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 12px;">
               {{ d.charityName || 'جمعية بالشبكة' }}
             </span>
           </td>
 
+          <!-- كود الملف -->
           <td>
-            <strong style="color: #004d40; font-size: 15px;">{{ getBenName(d.beneficiaryId) }}</strong>
+            <span style="background: #eceff1; color: #37474f; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">
+              {{ getBenFamilyCode(d.beneficiaryId) }}
+            </span>
           </td>
 
+          <!-- ملف الأسرة -->
+          <td>
+            <strong style="color: #004d40; font-size: 15px;">{{ d.beneficiaryName || getBenName(d.beneficiaryId) }}</strong>
+          </td>
+
+          <!-- المستلم الفعلي (مين جه وخد) -->
+          <td style="background-color: #fffde7;">
+            <div>
+              <strong style="color: #d84315; font-size: 14px;">
+                {{ d.receivedByName || d.beneficiaryName || getBenName(d.beneficiaryId) }}
+              </strong>
+              <div style="margin-top: 3px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                <span style="background: #e8f5e9; color: #2e7d32; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold;">
+                  {{ d.receivedByRelationship || 'صاحب الملف (رب الأسرة)' }}
+                </span>
+                <span *ngIf="d.receivedByNationalId" style="color: #757575; font-size: 11px;">
+                  بطاقة: {{ d.receivedByNationalId }}
+                </span>
+              </div>
+            </div>
+          </td>
+
+          <!-- نوع المساعدة -->
           <td>
             <span *ngIf="d.kind === 'خدمة'" style="background-color: #e3f2fd; color: #1565c0; padding: 4px 8px; border-radius: 10px; font-size: 12px; font-weight: bold;">
               🩺 خدمة
@@ -161,28 +125,41 @@
             </span>
           </td>
 
+          <!-- الصنف المصروف -->
           <td>
             <strong>{{ getItemName(d) }}</strong>
           </td>
 
+          <!-- الكمية أو المبلغ -->
           <td>
             <span *ngIf="d.amount" style="color: #2e7d32; font-weight: bold; font-size: 15px;">
               {{ d.amount | number:'1.0-0' }} ج.م
             </span>
             <span *ngIf="!d.amount">
-              <strong style="font-size: 16px; color: #bf360c;">{{ d.quantity }}</strong>
-              <span style="color: #666; font-size: 12px; margin-right: 4px;">{{ d.unit || getItem(d.inventoryId)?.unit || '' }}</span>
+              <strong style="font-size: 15px; color: #bf360c;">{{ d.quantity }}</strong>
+              <span style="color: #666; font-size: 12px; margin-right: 4px;">{{ d.unit || getItem(d.inventoryItemId || d.inventoryId)?.unit || '' }}</span>
             </span>
           </td>
 
+          <!-- تاريخ الصرف -->
           <td style="color: #555; white-space: nowrap;">{{ d.date }}</td>
 
-          <td style="color: #555;">{{ d.notes || '—' }}</td>
+          <!-- ملاحظات -->
+          <td style="color: #555; max-width: 180px;">{{ d.notes || '—' }}</td>
+
+          <!-- زر التفاصيل والسند -->
+          <td>
+            <button type="button" 
+                    (click)="openDetails(d)" 
+                    style="background: #004d40; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold; display: flex; align-items: center; gap: 4px;">
+              <span>🔍</span> التفاصيل
+            </button>
+          </td>
         </tr>
 
-        <tr *ngIf="distributions.length === 0">
-          <td [attr.colspan]="auth.getCurrentUser()?.role === 'Admin' ? 7 : 6" style="text-align: center; padding: 25px; color: #888;">
-            {{ auth.getCurrentUser()?.role === 'Admin' ? 'لا توجد حركات صرف مسجلة بالشبكة حتى الآن.' : 'لا توجد حركات صرف مسجلة لجمعيتكم حتى الآن.' }}
+        <tr *ngIf="filteredDistributions.length === 0">
+          <td [attr.colspan]="auth.getCurrentUser()?.role === 'Admin' ? 10 : 9" style="text-align: center; padding: 30px; color: #888;">
+            لا توجد حركات صرف تطابق البحث المحدد.
           </td>
         </tr>
       </tbody>
@@ -190,10 +167,113 @@
   </div>
 
   <app-pagination 
-    [totalItems]="distributions.length" 
+    [totalItems]="filteredDistributions.length" 
     [pageSize]="pageSize" 
     [currentPage]="currentPage" 
     (pageChange)="currentPage = $event" 
     (pageSizeChange)="pageSize = $event">
   </app-pagination>
+
+  <!-- نافذة تفاصيل حركة الصرف وسند الاستلام (Details Modal) -->
+  <div *ngIf="selectedDistForDetails" 
+       style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.65); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 20px; box-sizing: border-box;">
+    
+    <div style="background: white; border-radius: 12px; max-width: 760px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); text-align: right;">
+      
+      <!-- محتوى السند الرسمي القابل للطباعة -->
+      <div id="distDetailsPrintable" style="border: 2px solid #004d40; padding: 20px 24px; border-radius: 8px; background: white;">
+        
+        <!-- الترويسة -->
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #004d40; padding-bottom: 12px; margin-bottom: 16px;">
+          <div>
+            <h3 style="margin: 0; font-size: 18px; color: #004d40;">{{ selectedDistForDetails.charityName || activeCharity?.name || 'الجمعية الخيرية' }}</h3>
+            <div style="font-size: 11px; color: #666;">منظومة تتبع وتوزيع المساعدات بالشبكة الموحدة</div>
+          </div>
+          <div style="text-align: center;">
+            <h2 style="margin: 0; color: #d84315; font-size: 20px;">سند تسليم مساعدة</h2>
+            <div style="font-size: 12px; color: #555; margin-top: 2px;">رقم القيد: #{{ selectedDistForDetails.id?.substring(0, 8) }}</div>
+          </div>
+          <div style="text-align: left; font-size: 12px; color: #555;">
+            <div>التاريخ: <strong>{{ selectedDistForDetails.date }}</strong></div>
+          </div>
+        </div>
+
+        <!-- تفاصيل الأسرة والمستلم الفعلي -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px;">
+          
+          <!-- صندوق ملف الأسرة -->
+          <div style="background: #f9f9f9; border: 1px solid #e0e0e0; border-radius: 6px; padding: 12px; font-size: 13px;">
+            <div style="font-weight: bold; color: #004d40; margin-bottom: 6px; border-bottom: 1px dashed #ccc; padding-bottom: 4px;">
+              📁 بيانات ملف الأسرة:
+            </div>
+            <div style="margin-bottom: 4px;">كود الملف: <strong>{{ selectedDistForDetails.familyCode }}</strong></div>
+            <div style="margin-bottom: 4px;">اسم الأسرة: <strong>{{ selectedDistForDetails.familyName }}</strong></div>
+            <div>رب الأسرة: <strong>{{ selectedDistForDetails.headName }} ({{ selectedDistForDetails.headNationalId }})</strong></div>
+          </div>
+
+          <!-- صندوق المستلم الفعلي (مين جه واستلم) -->
+          <div style="background: #fff8e1; border: 1px solid #ffe082; border-radius: 6px; padding: 12px; font-size: 13px;">
+            <div style="font-weight: bold; color: #bf360c; margin-bottom: 6px; border-bottom: 1px dashed #ffb74d; padding-bottom: 4px;">
+              👤 المستلم الفعلي (من حضر واستلم باليد):
+            </div>
+            <div style="margin-bottom: 4px;">الاسم: <strong style="color: #bf360c; font-size: 14px;">{{ selectedDistForDetails.recipientName }}</strong></div>
+            <div style="margin-bottom: 4px;">الرقم القومي: <strong>{{ selectedDistForDetails.recipientNationalId }}</strong></div>
+            <div>الصفة / الصلة: <strong style="background: #fff3e0; color: #e65100; padding: 2px 6px; border-radius: 4px;">{{ selectedDistForDetails.recipientRelationship }}</strong></div>
+          </div>
+        </div>
+
+        <!-- جدول بيانات المساعدة المسلمة -->
+        <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 16px; border: 1px solid #ccc;">
+          <thead>
+            <tr style="background: #eceff1;">
+              <th style="padding: 8px; border: 1px solid #ccc; text-align: right;">المساعدة / الصنف</th>
+              <th style="padding: 8px; border: 1px solid #ccc; text-align: right;">النوع</th>
+              <th style="padding: 8px; border: 1px solid #ccc; text-align: right;">الكمية / المبلغ</th>
+              <th style="padding: 8px; border: 1px solid #ccc; text-align: right;">ملاحظات</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="padding: 10px; border: 1px solid #ccc;"><strong>{{ getItemName(selectedDistForDetails) }}</strong></td>
+              <td style="padding: 10px; border: 1px solid #ccc;">{{ selectedDistForDetails.kind || 'صنف ملموس' }}</td>
+              <td style="padding: 10px; border: 1px solid #ccc;">
+                <span *ngIf="selectedDistForDetails.amount"><strong>{{ selectedDistForDetails.amount | number:'1.0-0' }}</strong> ج.م</span>
+                <span *ngIf="!selectedDistForDetails.amount"><strong>{{ selectedDistForDetails.quantity }}</strong> {{ selectedDistForDetails.unit || 'وحدة' }}</span>
+              </td>
+              <td style="padding: 10px; border: 1px solid #ccc;">{{ selectedDistForDetails.notes || 'تسليم معتمد' }}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- إقرار التوقيعات -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; text-align: center; margin-top: 20px;">
+          <div style="border-top: 1px dashed #999; padding-top: 8px;">
+            <div style="font-weight: bold; font-size: 13px; color: #004d40;">توقيع المستلم الفعلي</div>
+            <div style="font-size: 12px; color: #555; margin-top: 4px;">{{ selectedDistForDetails.recipientName }}</div>
+          </div>
+
+          <div style="border-top: 1px dashed #999; padding-top: 8px;">
+            <div style="font-weight: bold; font-size: 13px; color: #004d40;">مسؤول التوزيع والاعتماد</div>
+            <div style="font-size: 12px; color: #555; margin-top: 4px;">خاتم الجمعية والتوقيع</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- أزرار الإجراء -->
+      <div style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 12px;">
+        <button type="button" 
+                (click)="printReceipt()" 
+                style="background: #004d40; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+          <span>🖨️</span> طباعة السند
+        </button>
+        <button type="button" 
+                (click)="closeDetails()" 
+                style="background: #eceff1; color: #37474f; border: 1px solid #cfd8dc; padding: 10px 18px; border-radius: 6px; font-weight: bold; cursor: pointer;">
+          إغلاق
+        </button>
+      </div>
+
+    </div>
+  </div>
+
 </div>

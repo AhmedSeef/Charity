@@ -15,5 +15,6 @@ public interface IBeneficiaryService
     Task<BeneficiaryDto> SeparateFamilyMemberAsync(string beneficiaryId, SeparateFamilyMemberDto dto);
     Task<FamilyMemberDto> AddFamilyMemberAsync(string beneficiaryId, CreateFamilyMemberDto dto);
     Task<BeneficiaryDto> TransferHeadshipAsync(string beneficiaryId, TransferHeadshipDto dto);
+    Task<string> GetNextFamilyCodeAsync();
     Task DeleteAsync(string id);
 }

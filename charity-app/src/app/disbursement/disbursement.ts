@@ -1,0 +1,428 @@
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { RouterModule, Router } from '@angular/router';
+import { Api } from '../api';
+import { AuthService } from '../auth.service';
+
+@Component({
+  selector: 'app-disbursement',
+  standalone: true,
+  imports: [CommonModule, FormsModule, RouterModule],
+  templateUrl: './disbursement.html',
+  styleUrls: ['./disbursement.css']
+})
+export class DisbursementComponent implements OnInit {
+  beneficiaries: any[] = [];
+  inventory: any[] = [];
+  activeCharity: any = null;
+
+  // نمط البحث
+  searchMode: 'byBeneficiary' | 'byFamily' = 'byBeneficiary';
+  searchQuery: string = '';
+  searchResults: any[] = [];
+
+  // الملف المختار
+  selectedBeneficiary: any = null;
+
+  // المستلم الفعلي للمساعدة
+  selectedMemberRecipient: any = null; // فرد الأسرة المختار إن وُجد
+  isRecipientHead: boolean = true;       // هل المستلم هو رب الأسرة الأساسي
+  isCustomRecipient: boolean = false;    // هل المستلم شخص آخر بموجب توكيل/تفويض
+  customRecipient = {
+    name: '',
+    nationalId: '',
+    relationship: 'مفوض / توكيل رسمي',
+    notes: ''
+  };
+
+  // بيانات حركة الصرف
+  distributionData = {
+    inventoryItemId: '',
+    kind: 'صنف ملموس',
+    itemName: '',
+    quantity: 1,
+    unit: 'وحدة',
+    amount: null as number | null,
+    date: new Date().toISOString().split('T')[0],
+    notes: ''
+  };
+
+  // سجل المساعدات السابقة للحالة لمنع الازدواجية
+  recentAidHistory: any[] = [];
+  isLoadingAidHistory: boolean = false;
+
+  // رسائل وتأكيدات
+  isSubmitting: boolean = false;
+  successMessage: string = '';
+  errorMessage: string = '';
+
+  // نافذة إيصال وسند الاستلام
+  showReceiptModal: boolean = false;
+  lastReceiptData: any = null;
+
+  constructor(
+    public api: Api,
+    public auth: AuthService,
+    private cdr: ChangeDetectorRef,
+    private router: Router
+  ) {}
+
+  ngOnInit(): void {
+    this.activeCharity = this.api.getActiveCharity();
+    this.loadInitialData();
+  }
+
+  loadInitialData(): void {
+    this.api.getBeneficiaries().subscribe({
+      next: (data) => {
+        this.beneficiaries = data || [];
+        this.cdr.detectChanges();
+      }
+    });
+
+    this.api.getInventory().subscribe({
+      next: (data) => {
+        this.inventory = data || [];
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  // ==========================================
+  // محرك البحث الذكي (باسم الملف أو بالمستفيد)
+  // ==========================================
+  setSearchMode(mode: 'byBeneficiary' | 'byFamily'): void {
+    this.searchMode = mode;
+    this.searchQuery = '';
+    this.searchResults = [];
+    this.cdr.detectChanges();
+  }
+
+  onSearchInput(): void {
+    const q = (this.searchQuery || '').trim().toLowerCase();
+    if (q.length < 2) {
+      this.searchResults = [];
+      return;
+    }
+
+    const results: any[] = [];
+
+    for (const b of this.beneficiaries) {
+      const matchFamilyName = b.familyName && b.familyName.toLowerCase().includes(q);
+      const matchFamilyCode = b.familyCode && b.familyCode.toLowerCase().includes(q);
+      const matchHeadName = b.name && b.name.toLowerCase().includes(q);
+      const matchHeadNid = b.nationalId && b.nationalId.includes(q);
+
+      // مطابقة أفراد الأسرة المقيمين
+      const matchingMembers = (b.familyMembers || []).filter((m: any) =>
+        (m.name && m.name.toLowerCase().includes(q)) ||
+        (m.nationalId && m.nationalId.includes(q))
+      );
+
+      if (this.searchMode === 'byFamily') {
+        if (matchFamilyName || matchFamilyCode || matchHeadName) {
+          results.push({
+            type: 'family',
+            beneficiary: b,
+            matchedMember: null,
+            title: b.familyName || `عائلة ${b.name}`,
+            subtitle: `كود الملف: ${b.familyCode || '—'} | رب الأسرة الحالي: ${b.name} (${b.nationalId})`,
+            badge: 'ملف أسرة'
+          });
+        }
+      } else {
+        // نمط البحث بالمستفيد المباشر (رب الأسرة أو أحد أفرادها)
+        if (matchHeadName || matchHeadNid) {
+          results.push({
+            type: 'head',
+            beneficiary: b,
+            matchedMember: null,
+            title: b.name,
+            subtitle: `صاحب الملف (رب الأسرة) | بطاقة: ${b.nationalId} | كود: ${b.familyCode || '—'}`,
+            badge: 'رب الأسرة'
+          });
+        }
+
+        for (const m of matchingMembers) {
+          results.push({
+            type: 'member',
+            beneficiary: b,
+            matchedMember: m,
+            title: m.name,
+            subtitle: `فرد أسرة (${m.relationship}) | بطاقة: ${m.nationalId} | تابع لـ: ${b.familyName || b.name}`,
+            badge: m.relationship || 'فرد أسرة'
+          });
+        }
+
+        // في حال بحث بكود العائلة في نمط المستفيد
+        if (results.length === 0 && (matchFamilyName || matchFamilyCode)) {
+          results.push({
+            type: 'family',
+            beneficiary: b,
+            matchedMember: null,
+            title: b.familyName || `عائلة ${b.name}`,
+            subtitle: `كود: ${b.familyCode || '—'} | رب الأسرة: ${b.name}`,
+            badge: 'ملف أسرة'
+          });
+        }
+      }
+    }
+
+    this.searchResults = results.slice(0, 12);
+  }
+
+  selectSearchResult(result: any): void {
+    this.selectedBeneficiary = result.beneficiary;
+    this.searchResults = [];
+    this.searchQuery = '';
+
+    // إذا تم البحث واختيار فرد معين من الأسرة، نحدده مباشرة كمستلم فعلي
+    if (result.matchedMember) {
+      this.selectRecipientMember(result.matchedMember);
+    } else {
+      this.selectRecipientHead();
+    }
+
+    this.loadBeneficiaryAidHistory(this.selectedBeneficiary.id);
+    this.cdr.detectChanges();
+  }
+
+  clearSelectedBeneficiary(): void {
+    this.selectedBeneficiary = null;
+    this.selectedMemberRecipient = null;
+    this.isRecipientHead = true;
+    this.isCustomRecipient = false;
+    this.recentAidHistory = [];
+    this.distributionData.inventoryItemId = '';
+    this.distributionData.itemName = '';
+    this.distributionData.amount = null;
+    this.distributionData.quantity = 1;
+    this.cdr.detectChanges();
+  }
+
+  // ==========================================
+  // اختيار المستلم الفعلي للمساعدة
+  // ==========================================
+  selectRecipientHead(): void {
+    this.isRecipientHead = true;
+    this.isCustomRecipient = false;
+    this.selectedMemberRecipient = null;
+    this.cdr.detectChanges();
+  }
+
+  selectRecipientMember(m: any): void {
+    this.isRecipientHead = false;
+    this.isCustomRecipient = false;
+    this.selectedMemberRecipient = m;
+    this.cdr.detectChanges();
+  }
+
+  selectCustomRecipient(): void {
+    this.isRecipientHead = false;
+    this.isCustomRecipient = true;
+    this.selectedMemberRecipient = null;
+    this.cdr.detectChanges();
+  }
+
+  get currentRecipientName(): string {
+    if (this.isCustomRecipient) {
+      return (this.customRecipient.name || '').trim();
+    }
+    if (this.selectedMemberRecipient) {
+      return this.selectedMemberRecipient.name;
+    }
+    return this.selectedBeneficiary ? this.selectedBeneficiary.name : '';
+  }
+
+  get currentRecipientNationalId(): string {
+    if (this.isCustomRecipient) {
+      return (this.customRecipient.nationalId || '').trim();
+    }
+    if (this.selectedMemberRecipient) {
+      return this.selectedMemberRecipient.nationalId;
+    }
+    return this.selectedBeneficiary ? this.selectedBeneficiary.nationalId : '';
+  }
+
+  get currentRecipientRelationship(): string {
+    if (this.isCustomRecipient) {
+      return (this.customRecipient.relationship || 'مفوض / توكيل').trim();
+    }
+    if (this.selectedMemberRecipient) {
+      return this.selectedMemberRecipient.relationship || 'فرد أسرة';
+    }
+    return 'صاحب الملف الأساسي (رب الأسرة)';
+  }
+
+  // أفراد الأسرة المؤهلين للاستلام المقيمين (باستثناء المتوفين)
+  get eligibleFamilyMembers(): any[] {
+    if (!this.selectedBeneficiary || !this.selectedBeneficiary.familyMembers) return [];
+    return this.selectedBeneficiary.familyMembers.filter((m: any) => 
+      !m.relationship?.includes('متوفى') && 
+      !m.supportType?.includes('متوفى') &&
+      !m.isSeparated
+    );
+  }
+
+  // ==========================================
+  // فحص المخزن والصنف
+  // ==========================================
+  onInventoryItemChange(): void {
+    const item = this.inventory.find(i => String(i.id) === String(this.distributionData.inventoryItemId));
+    if (item) {
+      this.distributionData.itemName = item.itemName;
+      this.distributionData.kind = item.kind || 'صنف ملموس';
+      this.distributionData.unit = item.unit || 'وحدة';
+      if (item.kind === 'خدمة') {
+        this.distributionData.quantity = 1;
+      }
+    } else {
+      this.distributionData.itemName = '';
+      this.distributionData.unit = 'وحدة';
+    }
+    this.cdr.detectChanges();
+  }
+
+  get selectedInventoryItem(): any {
+    return this.inventory.find(i => String(i.id) === String(this.distributionData.inventoryItemId));
+  }
+
+  get isStockInsufficient(): boolean {
+    const item = this.selectedInventoryItem;
+    if (item && item.kind === 'صنف ملموس') {
+      return Number(this.distributionData.quantity) > Number(item.quantity);
+    }
+    return false;
+  }
+
+  // ==========================================
+  // سجل المساعدات السابقة للحالة
+  // ==========================================
+  loadBeneficiaryAidHistory(beneficiaryId: string): void {
+    this.isLoadingAidHistory = true;
+    this.api.getDistributionsForBeneficiary(beneficiaryId).subscribe({
+      next: (hist) => {
+        this.recentAidHistory = hist || [];
+        this.isLoadingAidHistory = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.isLoadingAidHistory = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  // ==========================================
+  // اعتماد وتنفيذ حركة الصرف
+  // ==========================================
+  submitDisbursement(): void {
+    this.errorMessage = '';
+    this.successMessage = '';
+
+    if (!this.selectedBeneficiary) {
+      this.errorMessage = 'يرجى البحث واختيار ملف الأسرة أولاً قبل الصرف.';
+      return;
+    }
+
+    if (this.selectedBeneficiary.isSuspended || this.selectedBeneficiary.status === 'موقوف') {
+      this.errorMessage = `⛔ محظور الصرف: ملف (${this.selectedBeneficiary.name}) موقوف حالياً (${this.selectedBeneficiary.suspensionReasonTitle || 'حظر صرف'}). يرجى إعادة تفعيله أولاً.`;
+      return;
+    }
+
+    const recName = this.currentRecipientName;
+    const recNid = this.currentRecipientNationalId;
+
+    if (!recName) {
+      this.errorMessage = 'يرجى تحديد المستلم الفعلي للمساعدة بالاسم.';
+      return;
+    }
+
+    if (this.isCustomRecipient && (!recNid || recNid.length !== 14)) {
+      this.errorMessage = 'يرجى إدخال الرقم القومي الصحيح للمفوض (14 رقماً).';
+      return;
+    }
+
+    if (this.distributionData.kind !== 'إعانة نقدية' && !this.distributionData.inventoryItemId) {
+      this.errorMessage = 'يرجى اختيار الصنف أو المساعدة المراد صرفها من المخزن.';
+      return;
+    }
+
+    if (this.isStockInsufficient) {
+      const item = this.selectedInventoryItem;
+      this.errorMessage = `⚠️ الكمية المطلوبة (${this.distributionData.quantity}) أكبر من رصيد المخزن المتاح (${item.quantity} ${item.unit})!`;
+      return;
+    }
+
+    this.isSubmitting = true;
+
+    const payload = {
+      beneficiaryId: this.selectedBeneficiary.id,
+      inventoryItemId: this.distributionData.inventoryItemId || null,
+      itemName: this.selectedInventoryItem?.itemName || this.distributionData.itemName,
+      kind: this.distributionData.kind,
+      quantity: Number(this.distributionData.quantity),
+      unit: this.distributionData.unit,
+      amount: this.distributionData.amount,
+      date: this.distributionData.date,
+      notes: this.distributionData.notes,
+      receivedByMemberId: (!this.isRecipientHead && !this.isCustomRecipient && this.selectedMemberRecipient) 
+        ? this.selectedMemberRecipient.id 
+        : null,
+      receivedByName: recName,
+      receivedByNationalId: recNid,
+      receivedByRelationship: this.currentRecipientRelationship
+    };
+
+    this.api.addDistribution(payload).subscribe({
+      next: (created: any) => {
+        this.isSubmitting = false;
+        this.successMessage = `✅ تم بنجاح صرف (${payload.quantity} ${payload.unit} - ${payload.itemName})، وتسليمها للمستلم الفعلي: (${recName}) [${this.currentRecipientRelationship}].`;
+
+        // إعداد بيانات سند الاستلام
+        this.lastReceiptData = {
+          ...created,
+          beneficiary: this.selectedBeneficiary,
+          recipientName: recName,
+          recipientNationalId: recNid,
+          recipientRelationship: this.currentRecipientRelationship,
+          itemName: payload.itemName,
+          quantity: payload.quantity,
+          unit: payload.unit,
+          charityName: this.activeCharity?.name || 'الجمعية المانحة',
+          date: payload.date,
+          notes: payload.notes
+        };
+
+        this.showReceiptModal = true;
+        this.loadBeneficiaryAidHistory(this.selectedBeneficiary.id);
+
+        // إعادة تعيين بيانات الصنف مع بقاء الأسرة
+        this.distributionData.inventoryItemId = '';
+        this.distributionData.itemName = '';
+        this.distributionData.quantity = 1;
+        this.distributionData.notes = '';
+
+        // تحديث رصيد المخزن
+        this.api.getInventory().subscribe(data => this.inventory = data || []);
+
+        this.cdr.detectChanges();
+      },
+      error: (err: any) => {
+        this.isSubmitting = false;
+        this.errorMessage = err.error?.message || err.message || 'فشل في تسجيل حركة الصرف.';
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  printReceipt(): void {
+    window.print();
+  }
+
+  closeReceiptModal(): void {
+    this.showReceiptModal = false;
+    this.cdr.detectChanges();
+  }
+}

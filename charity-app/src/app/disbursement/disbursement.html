@@ -1,0 +1,539 @@
+<div dir="rtl" class="disbursement-page">
+  <!-- رأس الشاشة -->
+  <div class="header-card">
+    <div class="header-info">
+      <div class="header-title-row">
+        <span class="header-icon">📤</span>
+        <div>
+          <h2 class="title">حركة صرف مساعدة جديدة</h2>
+          <p class="subtitle">
+            منظومة الصرف الذكية لمخازن: <strong>{{ activeCharity?.name || 'الجمعية' }}</strong> — البحث برقم قومي المستفيد/الفرد أو باسم الملف وكود العائلة، مع تحديد دقيق للمستلم الفعلي.
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <a routerLink="/distributions" class="btn-secondary">
+        📋 استعراض سجل الصرف العام ←
+      </a>
+    </div>
+  </div>
+
+  <!-- تنبيهات النجاح والخطأ -->
+  <div *ngIf="successMessage" class="alert alert-success">
+    <span class="alert-icon">✅</span>
+    <div class="alert-content">
+      <strong>تمت العملية بنجاح!</strong>
+      <p>{{ successMessage }}</p>
+    </div>
+  </div>
+
+  <div *ngIf="errorMessage" class="alert alert-danger">
+    <span class="alert-icon">⚠️</span>
+    <div class="alert-content">
+      <strong>تنبيه في حركة الصرف:</strong>
+      <p>{{ errorMessage }}</p>
+    </div>
+  </div>
+
+  <!-- صندوق البحث والفرز المزدوج -->
+  <div class="search-section-card" *ngIf="!selectedBeneficiary">
+    <div class="search-header">
+      <h3 class="search-title">🔍 البحث عن الأسرة المستحقة ومطابقة المستلم</h3>
+      <p class="search-desc">اختر طريقة البحث المناسبة وفقاً للمستند المتوفر لديك في مكتب الصرف:</p>
+    </div>
+
+    <!-- أزرار نمط البحث -->
+    <div class="search-mode-tabs">
+      <button type="button" 
+              class="tab-btn" 
+              [class.active]="searchMode === 'byBeneficiary'"
+              (click)="setSearchMode('byBeneficiary')">
+        <span class="tab-icon">👤</span>
+        البحث بالمستفيد أو أحد أفراد الأسرة (بالاسم أو الرقم القومي)
+      </button>
+
+      <button type="button" 
+              class="tab-btn" 
+              [class.active]="searchMode === 'byFamily'"
+              (click)="setSearchMode('byFamily')">
+        <span class="tab-icon">📁</span>
+        البحث باسم الملف أو كود العائلة
+      </button>
+    </div>
+
+    <!-- حقل البحث مع الإكمال الذكي -->
+    <div class="search-input-wrapper">
+      <div class="input-with-icon">
+        <span class="input-icon">🔎</span>
+        <input type="text"
+               [(ngModel)]="searchQuery"
+               (input)="onSearchInput()"
+               [placeholder]="searchMode === 'byBeneficiary' ? 'أدخل اسم رب الأسرة أو الرقم القومي (أو اسم/رقم قومي لأحد التابعين كالزوجة أو الابن)...' : 'أدخل كود الملف (مثل FAM-26-0001) أو اسم العائلة (مثل عائلة المحمدي)...'"
+               class="search-input"
+               autocomplete="off"
+               autofocus />
+        <button *ngIf="searchQuery" type="button" class="btn-clear" (click)="searchQuery = ''; searchResults = []">✕</button>
+      </div>
+
+      <div class="search-hint">
+        <span *ngIf="searchMode === 'byBeneficiary'">
+          💡 <em>ملاحظة ذكية:</em> يمكنك إدخال الرقم القومي لزوجة أو ابن مقيم، وسيقوم النظام فوراً بجلب ملف أسرته وتحديده تلقائياً كمستلم فعلي للمساعدة.
+        </span>
+        <span *ngIf="searchMode === 'byFamily'">
+          💡 <em>ملاحظة ذكية:</em> البحث بكود الملف يظهر لك ملف الأسرة وكامل أفرادها لتسجيل استلام من حضر منهم للمكتب.
+        </span>
+      </div>
+
+      <!-- قائمة نتائج البحث المنسدلة -->
+      <div class="search-results-dropdown" *ngIf="searchResults.length > 0">
+        <div class="results-header">نتائج البحث المتطابقة ({{ searchResults.length }} نتيجة) — اضغط للاختيار:</div>
+        <div *ngFor="let res of searchResults" 
+             class="result-row" 
+             (click)="selectSearchResult(res)">
+          <div class="result-badge" [ngClass]="{'badge-head': res.type === 'head', 'badge-member': res.type === 'member', 'badge-family': res.type === 'family'}">
+            {{ res.badge }}
+          </div>
+          <div class="result-details">
+            <div class="result-title">{{ res.title }}</div>
+            <div class="result-subtitle">{{ res.subtitle }}</div>
+          </div>
+          <div class="result-action">
+            <span class="select-btn">اختيار للصرف ←</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="no-results" *ngIf="searchQuery.trim().length >= 2 && searchResults.length === 0">
+        لم يتم العثور على أي ملف أو فرد يطابق: <strong>"{{ searchQuery }}"</strong>. يرجى التأكد من الرقم القومي أو الاسم.
+      </div>
+    </div>
+  </div>
+
+  <!-- عند اختيار ملف الأسرة -->
+  <div *ngIf="selectedBeneficiary" class="workflow-container">
+    
+    <!-- 1. كارت تفاصيل ملف الأسرة المختار -->
+    <div class="card family-overview-card" [class.border-suspended]="selectedBeneficiary.isSuspended || selectedBeneficiary.status === 'موقوف'">
+      <div class="family-card-header">
+        <div class="family-main-info">
+          <span class="family-badge">📁 كود الملف: {{ selectedBeneficiary.familyCode || 'غير محدد' }}</span>
+          <h3 class="family-name">{{ selectedBeneficiary.familyName || ('عائلة ' + selectedBeneficiary.name) }}</h3>
+          <div class="family-sub">
+            <span><strong>رب الأسرة (صاحب الملف):</strong> {{ selectedBeneficiary.name }}</span>
+            <span class="sep">•</span>
+            <span><strong>الرقم القومي:</strong> {{ selectedBeneficiary.nationalId }}</span>
+            <span class="sep">•</span>
+            <span><strong>الفئة:</strong> {{ selectedBeneficiary.category || 'عام' }}</span>
+            <span class="sep">•</span>
+            <span><strong>أفراد الأسرة:</strong> {{ (selectedBeneficiary.familyMembers?.length || 0) + 1 }} فرد</span>
+          </div>
+        </div>
+
+        <div class="family-card-actions">
+          <div *ngIf="selectedBeneficiary.isSuspended || selectedBeneficiary.status === 'موقوف'" class="status-pill status-suspended">
+            ⛔ ملف موقوف: {{ selectedBeneficiary.suspensionReasonTitle || 'حظر صرف' }}
+          </div>
+          <div *ngIf="!selectedBeneficiary.isSuspended && selectedBeneficiary.status !== 'موقوف'" class="status-pill status-active">
+            ✅ ملف مؤهل ونشط
+          </div>
+          <button type="button" class="btn-change-file" (click)="clearSelectedBeneficiary()">
+            🔄 تغيير الملف / بحث جديد
+          </button>
+        </div>
+      </div>
+
+      <!-- تنبيه إيقاف الملف إن وُجد -->
+      <div *ngIf="selectedBeneficiary.isSuspended || selectedBeneficiary.status === 'موقوف'" class="suspended-alert-box">
+        <strong>⛔ تحذير: هذا الملف خاضع لقرار إيقاف نشط!</strong>
+        <p>السبب المعتمد: <strong>{{ selectedBeneficiary.suspensionReasonTitle || 'إيقاف إداري' }}</strong>. النظام يمنع الصرف لحين مراجعة وتفعيل الملف من شاشة المستفيدين.</p>
+      </div>
+    </div>
+
+    <!-- 2. بطاقات اختيار المستلم الفعلي (مين اللي جه واستلم) -->
+    <div class="card recipient-selection-card">
+      <div class="section-title-wrap">
+        <div class="title-with-icon">
+          <span class="section-icon">👥</span>
+          <div>
+            <h4 class="section-title">من هو المستلم الفعلي الذي حضر لاستلام المساعدة؟</h4>
+            <p class="section-desc">حدد بدقة فرد الأسرة أو المفوض الذي حضر إلى مقر الجمعية لاستلام المساعدة لتسجيل بياناته بالسند الرسمي:</p>
+          </div>
+        </div>
+
+        <!-- شارة المستلم الحالي المختار -->
+        <div class="current-recipient-badge">
+          <span class="cr-label">المستلم الفعلي المحدد:</span>
+          <strong class="cr-name">{{ currentRecipientName }}</strong>
+          <span class="cr-rel">({{ currentRecipientRelationship }})</span>
+        </div>
+      </div>
+
+      <div class="recipients-grid">
+        <!-- خيار 1: رب الأسرة الأساسي -->
+        <div class="recipient-card" 
+             [class.active]="isRecipientHead"
+             (click)="selectRecipientHead()">
+          <div class="rc-radio">
+            <span class="radio-dot" *ngIf="isRecipientHead">✓</span>
+          </div>
+          <div class="rc-info">
+            <div class="rc-role">رب الأسرة الأساسي (صاحب الملف)</div>
+            <div class="rc-name">{{ selectedBeneficiary.name }}</div>
+            <div class="rc-nid">بطاقة: {{ selectedBeneficiary.nationalId }}</div>
+          </div>
+          <div class="rc-icon">👤</div>
+        </div>
+
+        <!-- خيار 2: أفراد الأسرة المقيمين -->
+        <div *ngFor="let m of eligibleFamilyMembers" 
+             class="recipient-card"
+             [class.active]="!isRecipientHead && !isCustomRecipient && selectedMemberRecipient?.id === m.id"
+             (click)="selectRecipientMember(m)">
+          <div class="rc-radio">
+            <span class="radio-dot" *ngIf="!isRecipientHead && !isCustomRecipient && selectedMemberRecipient?.id === m.id">✓</span>
+          </div>
+          <div class="rc-info">
+            <div class="rc-role">
+              {{ m.relationship || 'فرد أسرة' }}
+              <span *ngIf="m.supportType" class="support-badge">{{ m.supportType }}</span>
+            </div>
+            <div class="rc-name">{{ m.name }}</div>
+            <div class="rc-nid">بطاقة: {{ m.nationalId || 'غير مسجل' }}</div>
+          </div>
+          <div class="rc-icon">👨‍👩‍👧</div>
+        </div>
+
+        <!-- خيار 3: توكيل رسمي / مفوض آخر -->
+        <div class="recipient-card custom-rc-card"
+             [class.active]="isCustomRecipient"
+             (click)="selectCustomRecipient()">
+          <div class="rc-radio">
+            <span class="radio-dot" *ngIf="isCustomRecipient">✓</span>
+          </div>
+          <div class="rc-info">
+            <div class="rc-role">مفوض / توكيل رسمي أو شخص آخر</div>
+            <div class="rc-name">{{ customRecipient.name ? customRecipient.name : 'شخص مفوض بموجب توكيل' }}</div>
+            <div class="rc-nid">{{ customRecipient.nationalId ? ('بطاقة: ' + customRecipient.nationalId) : 'تسجيل بيانات المفوض بالأسفل' }}</div>
+          </div>
+          <div class="rc-icon">📜</div>
+        </div>
+      </div>
+
+      <!-- حقول إدخال بيانات المفوض إن تم اختياره -->
+      <div *ngIf="isCustomRecipient" class="custom-recipient-form">
+        <h5 class="crf-title">بيانات الشخص المستلم (بموجب توكيل أو تفويض رسمي):</h5>
+        <div class="crf-grid">
+          <div>
+            <label class="form-label">اسم المستلم الفعلي بالكامل *</label>
+            <input type="text" [(ngModel)]="customRecipient.name" placeholder="الاسم الرباعي كما بالبطاقة" class="form-control" />
+          </div>
+          <div>
+            <label class="form-label">الرقم القومي للمستلم (14 رقماً) *</label>
+            <input type="text" [(ngModel)]="customRecipient.nationalId" maxlength="14" placeholder="الرقم القومي" class="form-control" />
+          </div>
+          <div>
+            <label class="form-label">صفة أو صلة المستلم بالأسرة *</label>
+            <input type="text" [(ngModel)]="customRecipient.relationship" placeholder="توكيل رسمي، ابن عم، جار..." class="form-control" />
+          </div>
+          <div>
+            <label class="form-label">ملاحظات التفويض أو رقم التوكيل</label>
+            <input type="text" [(ngModel)]="customRecipient.notes" placeholder="رقم توكيل الشهر العقاري أو سبب الاستلام بالنيابة..." class="form-control" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. كارت تفاصيل الصنف والمساعدة من المخزن -->
+    <div class="card disbursement-form-card">
+      <div class="section-title-wrap">
+        <div class="title-with-icon">
+          <span class="section-icon">📦</span>
+          <div>
+            <h4 class="section-title">بيانات المساعدة المراد صرفها</h4>
+            <p class="section-desc">الصرف يتم خصمه مباشرة من مخزن: <strong>{{ activeCharity?.name }}</strong></p>
+          </div>
+        </div>
+      </div>
+
+      <form (ngSubmit)="submitDisbursement()">
+        <div class="form-grid">
+          <!-- نوع المساعدة -->
+          <div>
+            <label class="form-label">نوع المساعدة *</label>
+            <select [(ngModel)]="distributionData.kind" name="kind" class="form-control">
+              <option value="صنف ملموس">📦 صنف عيني من المخزن</option>
+              <option value="خدمة">🩺 خدمة أو مساعدة طبية/تعليمية</option>
+              <option value="إعانة نقدية">💵 إعانة نقدية مباشرة</option>
+            </select>
+          </div>
+
+          <!-- اختيار الصنف من المخزن (في حال صنف ملموس أو خدمة) -->
+          <div *ngIf="distributionData.kind !== 'إعانة نقدية'">
+            <label class="form-label">الصنف أو الخدمة (مخزن {{ activeCharity?.name }}) *</label>
+            <select [(ngModel)]="distributionData.inventoryItemId" 
+                    name="inventoryItemId" 
+                    (change)="onInventoryItemChange()"
+                    required 
+                    class="form-control font-bold">
+              <option value="" disabled selected>-- اختر الصنف من مخزن الجمعية --</option>
+              <optgroup label="📦 الأصناف الملموسة المتاحة بالمخزن">
+                <ng-container *ngFor="let i of inventory">
+                  <option *ngIf="i.kind === 'صنف ملموس'" [value]="i.id">
+                    {{ i.itemName }} [المتوفر لديكم: {{ i.quantity }} {{ i.unit }}]
+                  </option>
+                </ng-container>
+              </optgroup>
+              <optgroup label="🩺 الخدمات والمساعدات">
+                <ng-container *ngFor="let s of inventory">
+                  <option *ngIf="s.kind === 'خدمة'" [value]="s.id">
+                    {{ s.itemName }} [خدمة - {{ s.unit }}]
+                  </option>
+                </ng-container>
+              </optgroup>
+            </select>
+          </div>
+
+          <!-- المبلغ في حال الإعانة النقدية -->
+          <div *ngIf="distributionData.kind === 'إعانة نقدية'">
+            <label class="form-label">المبلغ النقدي المصروف (بالجنيه المصري) *</label>
+            <input type="number" 
+                   [(ngModel)]="distributionData.amount" 
+                   name="amount" 
+                   min="1" 
+                   placeholder="مثال: 500" 
+                   required 
+                   class="form-control font-bold" />
+          </div>
+
+          <!-- الكمية والوحدة -->
+          <div *ngIf="distributionData.kind !== 'إعانة نقدية'">
+            <label class="form-label">الكمية المصروفة *</label>
+            <div class="quantity-input-group">
+              <input type="number" 
+                     [(ngModel)]="distributionData.quantity" 
+                     name="quantity" 
+                     min="1" 
+                     required 
+                     class="form-control font-bold" />
+              <span class="unit-badge">{{ distributionData.unit || selectedInventoryItem?.unit || 'وحدة' }}</span>
+            </div>
+          </div>
+
+          <!-- تاريخ الصرف -->
+          <div>
+            <label class="form-label">تاريخ الصرف *</label>
+            <input type="date" 
+                   [(ngModel)]="distributionData.date" 
+                   name="date" 
+                   required 
+                   class="form-control" />
+          </div>
+        </div>
+
+        <!-- حالة رصيد المخزن الداخلي وتأثير الصرف -->
+        <div *ngIf="selectedInventoryItem && selectedInventoryItem.kind === 'صنف ملموس'" class="stock-check-banner">
+          <div *ngIf="!isStockInsufficient" class="stock-ok">
+            💡 <strong>رصيد المخزن:</strong> المتوفر حالياً <strong>{{ selectedInventoryItem.quantity }} {{ selectedInventoryItem.unit }}</strong>. سيتبقى بعد الصرف: <strong>{{ selectedInventoryItem.quantity - distributionData.quantity }} {{ selectedInventoryItem.unit }}</strong>.
+          </div>
+          <div *ngIf="isStockInsufficient" class="stock-error">
+            ⚠️ <strong>عجز في الرصيد:</strong> الكمية المطلوبة ({{ distributionData.quantity }}) تتجاوز الرصيد المتاح بالمخزن ({{ selectedInventoryItem.quantity }} {{ selectedInventoryItem.unit }})!
+          </div>
+        </div>
+
+        <!-- ملاحظات الصرف -->
+        <div class="form-full-row">
+          <label class="form-label">ملاحظات الصرف (رقم إذن الصرف، إيصال الاستلام، حالة المساعدة...)</label>
+          <input type="text" 
+                 [(ngModel)]="distributionData.notes" 
+                 name="notes" 
+                 placeholder="أي ملاحظات تخص عملية التسليم أو إذن الصرف..." 
+                 class="form-control" />
+        </div>
+
+        <!-- أزرار الإجراء -->
+        <div class="submit-action-row">
+          <button type="submit" 
+                  class="btn-submit-disbursement"
+                  [disabled]="isSubmitting || isStockInsufficient || selectedBeneficiary?.isSuspended || selectedBeneficiary?.status === 'موقوف'">
+            <span *ngIf="!isSubmitting">
+              📤 اعتماد الصرف وتسليم المساعدة لـ ({{ currentRecipientName }})
+            </span>
+            <span *ngIf="isSubmitting">
+              ⏳ جاري تسجيل الحركة وتحديث المخزن...
+            </span>
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- 4. سجل المساعدات السابقة للحالة لمنع الازدواجية -->
+    <div class="card history-card">
+      <div class="section-title-wrap">
+        <div class="title-with-icon">
+          <span class="section-icon">📜</span>
+          <div>
+            <h4 class="section-title">سجل المساعدات السابقة المصروفة لهذه الأسرة</h4>
+            <p class="section-desc">عرض تاريخ المساعدات المسلمة للأسرة عبر الشبكة لمنع تكرار الصرف غير المبرر:</p>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="isLoadingAidHistory" class="loading-state">
+        ⏳ جاري فحص سجل استحقاقات الأسرة...
+      </div>
+
+      <div *ngIf="!isLoadingAidHistory && recentAidHistory.length > 0" class="history-table-wrapper">
+        <table class="aid-table">
+          <thead>
+            <tr>
+              <th>تاريخ الصرف</th>
+              <th>المساعدة / الصنف</th>
+              <th>الكمية / القيمة</th>
+              <th>الجمعية المانحة</th>
+              <th>المستلم الفعلي المسجل</th>
+              <th>ملاحظات</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let h of recentAidHistory">
+              <td class="cell-date">{{ h.date }}</td>
+              <td class="cell-item">
+                <strong>{{ h.itemName }}</strong>
+                <span class="item-kind-badge" [ngClass]="{'kind-cash': h.kind === 'إعانة نقدية', 'kind-service': h.kind === 'خدمة'}">
+                  {{ h.kind }}
+                </span>
+              </td>
+              <td>
+                <span *ngIf="h.amount" class="text-amount">{{ h.amount | number:'1.0-0' }} ج.م</span>
+                <span *ngIf="!h.amount" class="text-qty">{{ h.quantity }} {{ h.unit }}</span>
+              </td>
+              <td>
+                <span class="charity-tag">{{ h.charityName || 'جمعية بالشبكة' }}</span>
+              </td>
+              <td>
+                <div class="recipient-cell">
+                  <strong>{{ h.receivedByName || selectedBeneficiary.name }}</strong>
+                  <span class="recipient-rel-badge">{{ h.receivedByRelationship || 'رب الأسرة' }}</span>
+                </div>
+              </td>
+              <td class="cell-notes">{{ h.notes || '—' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div *ngIf="!isLoadingAidHistory && recentAidHistory.length === 0" class="empty-history">
+        🎉 لا توجد حركات صرف سابقة مسجلة لهذه الأسرة. هذه المساعدة هي الأولى!
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. نافذة سند الاستلام الرسمي (Modal) -->
+  <div class="modal-backdrop" *ngIf="showReceiptModal">
+    <div class="modal-content receipt-voucher-modal">
+      <div class="voucher-printable" id="printableReceipt">
+        
+        <!-- ترويسة السند -->
+        <div class="voucher-header">
+          <div class="vh-right">
+            <h3 class="vh-charity-name">{{ activeCharity?.name || 'جمعية خيرية' }}</h3>
+            <div class="vh-license">مشهرة برقم: {{ activeCharity?.license || '—' }}</div>
+            <div class="vh-sub">عضو شبكة الجمعيات الموحدة</div>
+          </div>
+          <div class="vh-center">
+            <h2 class="vh-title">سند استلام مساعدة</h2>
+            <div class="vh-voucher-no">رقم القيد: #{{ lastReceiptData?.id ? lastReceiptData.id.substring(0, 8) : 'REC' }}</div>
+          </div>
+          <div class="vh-left">
+            <div class="vh-date">التاريخ: <strong>{{ lastReceiptData?.date }}</strong></div>
+            <div class="vh-time">وقت التسجيل: {{ lastReceiptData?.date }}</div>
+          </div>
+        </div>
+
+        <hr class="voucher-divider" />
+
+        <!-- بيانات الأسرة والمستلم الفعلي -->
+        <div class="voucher-body">
+          <div class="voucher-grid-2">
+            <div class="vg-box">
+              <div class="vg-label">بيانات ملف الأسرة المستحقة:</div>
+              <div class="vg-row"><span>كود الملف:</span> <strong>{{ lastReceiptData?.beneficiary?.familyCode || '—' }}</strong></div>
+              <div class="vg-row"><span>اسم الأسرة / العائل:</span> <strong>{{ lastReceiptData?.beneficiary?.familyName || lastReceiptData?.beneficiary?.name }}</strong></div>
+              <div class="vg-row"><span>رب الأسرة الأساسي:</span> <strong>{{ lastReceiptData?.beneficiary?.name }} ({{ lastReceiptData?.beneficiary?.nationalId }})</strong></div>
+            </div>
+
+            <div class="vg-box highlight-box">
+              <div class="vg-label">بيانات المستلم الفعلي الذي حضر واستلم:</div>
+              <div class="vg-row"><span>اسم المستلم:</span> <strong class="text-primary">{{ lastReceiptData?.recipientName }}</strong></div>
+              <div class="vg-row"><span>الرقم القومي للمستلم:</span> <strong>{{ lastReceiptData?.recipientNationalId || 'غير مسجل' }}</strong></div>
+              <div class="vg-row"><span>صلة المستلم بالأسرة:</span> <strong class="badge-rel">{{ lastReceiptData?.recipientRelationship }}</strong></div>
+            </div>
+          </div>
+
+          <!-- تفاصيل المساعدة المسلمة -->
+          <div class="voucher-item-box">
+            <table class="voucher-table">
+              <thead>
+                <tr>
+                  <th>م</th>
+                  <th>بيان المساعدة أو الصنف المصروف</th>
+                  <th>النوع</th>
+                  <th>الكمية المسلمة</th>
+                  <th>ملاحظات</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>1</td>
+                  <td><strong>{{ lastReceiptData?.itemName }}</strong></td>
+                  <td>{{ lastReceiptData?.kind }}</td>
+                  <td>
+                    <span *ngIf="lastReceiptData?.amount"><strong>{{ lastReceiptData?.amount | number:'1.0-0' }}</strong> ج.م</span>
+                    <span *ngIf="!lastReceiptData?.amount"><strong>{{ lastReceiptData?.quantity }}</strong> {{ lastReceiptData?.unit }}</span>
+                  </td>
+                  <td>{{ lastReceiptData?.notes || 'تسليم معتمد باليد' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- إقرار الاستلام والتوقيعات -->
+          <div class="voucher-acknowledgement">
+            أقر أنا الموقع أدناه <strong>({{ lastReceiptData?.recipientName }})</strong>، بصفتي <strong>({{ lastReceiptData?.recipientRelationship }})</strong>، بأنني قد استلمت المساعدة الموضحة أعلاه كاملة وبحالة جيدة ومجاناً دون أي مقابل، وذلك لصالح أسرة <strong>({{ lastReceiptData?.beneficiary?.name }})</strong>.
+          </div>
+
+          <div class="voucher-signatures">
+            <div class="sig-block">
+              <div class="sig-title">توقيع / بصمة المستلم الفعلي</div>
+              <div class="sig-line">الاسم: {{ lastReceiptData?.recipientName }}</div>
+              <div class="sig-line">التوقيع: .......................................</div>
+            </div>
+
+            <div class="sig-block">
+              <div class="sig-title">أمين المخزن / مسؤول التسليم</div>
+              <div class="sig-line">المسؤول: {{ auth.getCurrentUser()?.username }}</div>
+              <div class="sig-line">التوقيع: .......................................</div>
+            </div>
+
+            <div class="sig-block">
+              <div class="sig-title">اعتماد إدارة الجمعية</div>
+              <div class="sig-line">الختم الرسمي:</div>
+              <div class="sig-seal-box">خاتم الجمعية</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- أزرار النافذة -->
+      <div class="modal-actions-bar">
+        <button type="button" class="btn-print" (click)="printReceipt()">
+          🖨️ طباعة سند الاستلام
+        </button>
+        <button type="button" class="btn-close-modal" (click)="closeReceiptModal()">
+          إغلاق ومتابعة الصرف
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -85,6 +85,10 @@ export class Api {
     return this.http.get<any>(`${this.apiUrl}/beneficiaries/${id}`);
   }
 
+  getNextFamilyCode(): Observable<{ familyCode: string }> {
+    return this.http.get<{ familyCode: string }>(`${this.apiUrl}/beneficiaries/next-family-code`);
+  }
+
   addBeneficiary(data: any): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/beneficiaries`, data);
   }

@@ -5,6 +5,7 @@ import { ItemsCatalogComponent } from './items-catalog/items-catalog';
 import { DonationsComponent } from './donations/donations';
 import { InventoryComponent } from './inventory/inventory';
 import { DistributionsComponent } from './distributions/distributions';
+import { DisbursementComponent } from './disbursement/disbursement';
 import { SettingsComponent } from './settings/settings';
 import { StaffComponent } from './staff/staff';
 import { SuspensionReasonsComponent } from './suspension-reasons/suspension-reasons';
@@ -24,6 +25,7 @@ export const routes: Routes = [
   { path: 'items-catalog', component: ItemsCatalogComponent, canActivate: [authGuard] },
   { path: 'inventory', component: InventoryComponent, canActivate: [authGuard] },
   { path: 'donations', component: DonationsComponent, canActivate: [authGuard] },
+  { path: 'disbursement', component: DisbursementComponent, canActivate: [authGuard] },
   { path: 'distributions', component: DistributionsComponent, canActivate: [authGuard] },
   { path: 'staff', component: StaffComponent, canActivate: [authGuard] },
   { path: 'settings', component: SettingsComponent, canActivate: [authGuard] }

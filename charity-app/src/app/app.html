@@ -26,8 +26,11 @@
       <a routerLink="/beneficiaries" routerLinkActive="active-link">
         👨‍👩‍👧‍👦 {{ auth.getCurrentUser()?.role === 'Admin' ? 'سجل المستفيدين (عرض وبحث)' : 'إدارة المستفيدين (الشبكة المشتركة)' }}
       </a>
+      <a *ngIf="auth.getCurrentUser()?.role !== 'Admin'" routerLink="/disbursement" routerLinkActive="active-link" style="background: rgba(255, 112, 67, 0.22); border: 1px solid rgba(255, 112, 67, 0.45); font-weight: bold;">
+        📤 صرف مساعدة جديدة
+      </a>
       <a routerLink="/distributions" routerLinkActive="active-link">
-        🔄 {{ auth.getCurrentUser()?.role === 'Admin' ? 'سجل حركات الصرف (عرض فقط)' : 'حركات صرف الجمعية' }}
+        🔄 {{ auth.getCurrentUser()?.role === 'Admin' ? 'سجل حركات الصرف (عرض فقط)' : 'سجل حركات الصرف والتقارير' }}
       </a>
       <a routerLink="/suspension-reasons" routerLinkActive="active-link">⛔ أسباب إيقاف الملفات</a>
 

@@ -14,6 +14,12 @@ public class DistributionDto
     public string Date { get; set; } = string.Empty;
     public string Notes { get; set; } = string.Empty;
 
+    // تفاصيل المستلم الفعلي للمساعدة
+    public string? ReceivedByMemberId { get; set; }
+    public string? ReceivedByName { get; set; }
+    public string? ReceivedByNationalId { get; set; }
+    public string? ReceivedByRelationship { get; set; }
+
     public string CharityId { get; set; } = string.Empty;
     public string CharityName { get; set; } = string.Empty;
     public bool IsFromCurrentCharity { get; set; }
@@ -30,6 +36,12 @@ public class CreateDistributionDto
     public decimal? Amount { get; set; }
     public string Date { get; set; } = DateTime.UtcNow.ToString("yyyy-MM-dd");
     public string Notes { get; set; } = string.Empty;
+
+    // تفاصيل المستلم الفعلي للمساعدة
+    public string? ReceivedByMemberId { get; set; }
+    public string? ReceivedByName { get; set; }
+    public string? ReceivedByNationalId { get; set; }
+    public string? ReceivedByRelationship { get; set; }
 }
 
 public class BeneficiaryAidSummaryDto

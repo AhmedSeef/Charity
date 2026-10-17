@@ -85,6 +85,17 @@ public class BeneficiaryService : IBeneficiaryService
         await ValidateNationalIdsAsync(null, dto.NationalId, dto.FamilyMembers);
 
         var entity = dto.ToEntity(charityId, charityName);
+
+        // التوليد التلقائي الموحد لكود العائلة بالباترن FAM-YY-0001
+        if (string.IsNullOrWhiteSpace(entity.FamilyCode) || entity.FamilyCode!.StartsWith("FAM-", StringComparison.OrdinalIgnoreCase))
+        {
+            entity.FamilyCode = await GetNextFamilyCodeAsync();
+        }
+        else
+        {
+            entity.FamilyCode = dto.FamilyCode.Trim();
+        }
+
         await _beneficiaryRepo.AddAsync(entity);
 
         if (dto.FamilyMembers != null && dto.FamilyMembers.Count > 0)
@@ -314,6 +325,8 @@ public class BeneficiaryService : IBeneficiaryService
             var newBeneficiary = new Beneficiary
             {
                 Id = Guid.NewGuid().ToString(),
+                FamilyCode = await GetNextFamilyCodeAsync(),
+                FamilyName = $"عائلة {member.Name}",
                 NationalId = member.NationalId,
                 Name = member.Name,
                 Phone = existing.Phone,
@@ -626,4 +639,26 @@ public class BeneficiaryService : IBeneficiaryService
             }
         }
     }
+
+    public async Task<string> GetNextFamilyCodeAsync()
+    {
+        var year = DateTime.UtcNow.ToString("yy");
+        var prefix = $"FAM-{year}-";
+        var existingBeneficiaries = await _beneficiaryRepo.FindAsync(b => b.FamilyCode != null && b.FamilyCode.StartsWith(prefix));
+
+        int maxSeq = 0;
+        foreach (var b in existingBeneficiaries)
+        {
+            if (string.IsNullOrWhiteSpace(b.FamilyCode)) continue;
+            var parts = b.FamilyCode.Split('-');
+            if (parts.Length == 3 && int.TryParse(parts[2], out int seq))
+            {
+                if (seq > maxSeq) maxSeq = seq;
+            }
+        }
+
+        int nextSeq = maxSeq + 1;
+        return $"{prefix}{nextSeq:D4}";
+    }
 }
+

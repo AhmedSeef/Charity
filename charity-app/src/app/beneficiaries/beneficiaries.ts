@@ -457,6 +457,22 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
       medicationFrequency: '',
       familyMembers: []
     };
+
+    // جلب كود العائلة التلقائي الموحد من السيرفر
+    this.api.getNextFamilyCode().subscribe({
+      next: (res) => {
+        if (this.formMode === 'add' || !this.currentBen?.id) {
+          this.currentBen.familyCode = res.familyCode;
+          this.cdr.detectChanges();
+        }
+      },
+      error: () => {
+        if (this.formMode === 'add' || !this.currentBen?.id) {
+          this.currentBen.familyCode = 'يولّد تلقائياً (FAM-26-XXXX)';
+          this.cdr.detectChanges();
+        }
+      }
+    });
   }
 
   onSubmit() {

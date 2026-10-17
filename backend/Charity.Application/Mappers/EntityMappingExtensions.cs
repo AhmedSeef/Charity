@@ -154,9 +154,9 @@ public static class EntityMappingExtensions
 
     public static Beneficiary ToEntity(this CreateBeneficiaryDto dto, string charityId, string charityName) => new()
     {
-        FamilyCode = string.IsNullOrWhiteSpace(dto.FamilyCode) 
-            ? $"FAM-{DateTime.UtcNow:yy}-{Random.Shared.Next(1000, 9999)}" 
-            : dto.FamilyCode.Trim(),
+        FamilyCode = !string.IsNullOrWhiteSpace(dto.FamilyCode) 
+            ? dto.FamilyCode.Trim() 
+            : string.Empty,
         FamilyName = string.IsNullOrWhiteSpace(dto.FamilyName) 
             ? $"عائلة {dto.Name.Trim()}" 
             : dto.FamilyName.Trim(),
@@ -283,6 +283,10 @@ public static class EntityMappingExtensions
         Amount = dist.Amount,
         Date = dist.Date,
         Notes = dist.Notes,
+        ReceivedByMemberId = dist.ReceivedByMemberId,
+        ReceivedByName = dist.ReceivedByName,
+        ReceivedByNationalId = dist.ReceivedByNationalId,
+        ReceivedByRelationship = dist.ReceivedByRelationship,
         CharityId = dist.CharityId,
         CharityName = dist.CharityName,
         IsFromCurrentCharity = dist.CharityId == currentCharityId
@@ -298,7 +302,11 @@ public static class EntityMappingExtensions
         Unit = dto.Unit ?? string.Empty,
         Amount = dto.Amount,
         Date = string.IsNullOrWhiteSpace(dto.Date) ? DateTime.UtcNow.ToString("yyyy-MM-dd") : dto.Date,
-        Notes = dto.Notes,
+        Notes = dto.Notes ?? string.Empty,
+        ReceivedByMemberId = dto.ReceivedByMemberId,
+        ReceivedByName = dto.ReceivedByName,
+        ReceivedByNationalId = dto.ReceivedByNationalId,
+        ReceivedByRelationship = dto.ReceivedByRelationship,
         CharityId = charityId,
         CharityName = charityName
     };

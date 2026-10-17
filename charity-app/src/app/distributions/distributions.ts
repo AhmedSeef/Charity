@@ -19,145 +19,130 @@ export class DistributionsComponent implements OnInit {
   inventory: any[] = [];
   activeCharity: any = null;
 
+  // الفلترة والبحث بالسجل
+  searchFilter: string = '';
   currentPage: number = 1;
-  pageSize: number = 5;
+  pageSize: number = 10;
 
-  get paginatedDistributions(): any[] {
-    const start = (this.currentPage - 1) * this.pageSize;
-    return this.distributions.slice(start, start + this.pageSize);
-  }
-
-  newDist: any = { 
-    beneficiaryId: '', 
-    inventoryId: '', 
-    quantity: 1, 
-    date: new Date().toISOString().split('T')[0], 
-    notes: '' 
-  };
+  // نافذة عرض التفاصيل الكاملة لحركة الصرف والمستلم
+  selectedDistForDetails: any = null;
 
   errorMessage: string = '';
   successMessage: string = '';
 
-  constructor(public api: Api, private cdr: ChangeDetectorRef, public auth: AuthService) {}
+  constructor(
+    public api: Api, 
+    private cdr: ChangeDetectorRef, 
+    public auth: AuthService
+  ) {}
 
   ngOnInit(): void {
     this.activeCharity = this.api.getActiveCharity();
     this.loadData();
   }
 
-  loadData() {
+  loadData(): void {
     this.activeCharity = this.api.getActiveCharity();
     const isPlatformAdmin = this.auth.getCurrentUser()?.role === 'Admin';
 
-    // Current charity distributions or whole network for platform Admin
-    this.api.getDistributions(!isPlatformAdmin).subscribe((data: any) => { 
-      this.distributions = data; 
-      this.cdr.detectChanges(); 
+    // حركات الصرف الحالية أو لكل الشبكة للأدمن
+    this.api.getDistributions(!isPlatformAdmin).subscribe({
+      next: (data: any) => { 
+        this.distributions = data || []; 
+        this.cdr.detectChanges(); 
+      }
     });
 
-    // 2. Shared Beneficiaries (from the shared network)
-    this.api.getBeneficiaries().subscribe((data: any) => { 
-      this.beneficiaries = data; 
-      this.cdr.detectChanges(); 
+    // قاعدة المستفيدين المشتركة
+    this.api.getBeneficiaries().subscribe({
+      next: (data: any) => { 
+        this.beneficiaries = data || []; 
+        this.cdr.detectChanges(); 
+      }
     });
 
-    // 3. Current charity inventory (isolated stock)
-    this.api.getInventory().subscribe((data: any) => { 
-      this.inventory = data; 
-      this.cdr.detectChanges(); 
+    // مخزن الجمعية
+    this.api.getInventory().subscribe({
+      next: (data: any) => { 
+        this.inventory = data || []; 
+        this.cdr.detectChanges(); 
+      }
     });
   }
 
-  get selectedItem(): any {
-    return this.inventory.find(x => String(x.id) === String(this.newDist.inventoryId));
-  }
-
-  get isStockInsufficient(): boolean {
-    const item = this.selectedItem;
-    if (item && item.kind === 'صنف ملموس') {
-      return Number(this.newDist.quantity) > Number(item.quantity);
+  get filteredDistributions(): any[] {
+    let list = this.distributions;
+    if (this.searchFilter.trim()) {
+      const q = this.searchFilter.trim().toLowerCase();
+      list = list.filter(d => 
+        (d.beneficiaryName && d.beneficiaryName.toLowerCase().includes(q)) ||
+        (d.receivedByName && d.receivedByName.toLowerCase().includes(q)) ||
+        (d.receivedByNationalId && d.receivedByNationalId.includes(q)) ||
+        (d.receivedByRelationship && d.receivedByRelationship.toLowerCase().includes(q)) ||
+        (d.itemName && d.itemName.toLowerCase().includes(q)) ||
+        (d.notes && d.notes.toLowerCase().includes(q)) ||
+        (d.date && d.date.includes(q))
+      );
     }
-    return false;
+    return list;
   }
 
-  getBenName(id: string) {
-    const b = this.beneficiaries.find(x => String(x.id) === String(id));
+  get paginatedDistributions(): any[] {
+    const start = (this.currentPage - 1) * this.pageSize;
+    return this.filteredDistributions.slice(start, start + this.pageSize);
+  }
+
+  getBeneficiary(id: string): any {
+    return this.beneficiaries.find(x => String(x.id) === String(id));
+  }
+
+  getBenName(id: string): string {
+    const b = this.getBeneficiary(id);
     return b ? b.name : 'غير معروف';
   }
 
-  getItem(id: string) {
+  getBenFamilyCode(id: string): string {
+    const b = this.getBeneficiary(id);
+    return b?.familyCode || '—';
+  }
+
+  getItem(id: string): any {
     return this.inventory.find(x => String(x.id) === String(id));
   }
 
-  getItemName(d: any) {
+  getItemName(d: any): string {
     if (d.itemName) {
       return `${d.itemName} ${d.unit ? '(' + d.unit + ')' : ''}`;
     }
-    const i = this.getItem(d.inventoryId);
+    const i = this.getItem(d.inventoryItemId || d.inventoryId);
     return i ? `${i.itemName} (${i.unit})` : 'مساعدة معتمدة';
   }
 
-  onSubmit() {
-    this.errorMessage = '';
-    this.successMessage = '';
+  // ==========================================
+  // نافذة إظهار تفاصيل المستلم وسند الاستلام
+  // ==========================================
+  openDetails(d: any): void {
+    const b = this.getBeneficiary(d.beneficiaryId);
+    this.selectedDistForDetails = {
+      ...d,
+      beneficiary: b,
+      familyCode: b?.familyCode || '—',
+      familyName: b?.familyName || b?.name || '—',
+      headName: b?.name || d.beneficiaryName,
+      headNationalId: b?.nationalId || '—',
+      recipientName: d.receivedByName || b?.name || d.beneficiaryName,
+      recipientNationalId: d.receivedByNationalId || b?.nationalId || '—',
+      recipientRelationship: d.receivedByRelationship || 'صاحب الملف الأساسي (رب الأسرة)'
+    };
+    this.cdr.detectChanges();
+  }
 
-    if (this.auth.getCurrentUser()?.role === 'Admin') {
-      this.errorMessage = '🔒 غير مصرح لمدير المنصة تسجيل حركات صرف؛ الصرف مقصور على مسؤولي الجمعيات.';
-      return;
-    }
+  closeDetails(): void {
+    this.selectedDistForDetails = null;
+    this.cdr.detectChanges();
+  }
 
-    if (!this.newDist.beneficiaryId || !this.newDist.inventoryId ||
-        !Number.isFinite(Number(this.newDist.quantity)) || Number(this.newDist.quantity) <= 0) {
-      this.errorMessage = 'يرجى اختيار المستفيد، والصنف أو الخدمة، وتحديد الكمية.';
-      return;
-    }
-
-    if (!this.selectedItem) {
-      this.errorMessage = 'الصنف أو الخدمة المختارة غير موجودة في مخزن جمعيتكم.';
-      return;
-    }
-
-    const selectedBen = this.beneficiaries.find(b => String(b.id) === String(this.newDist.beneficiaryId));
-    if (selectedBen && (selectedBen.isSuspended || selectedBen.status === 'موقوف')) {
-      this.errorMessage = `⛔ عذراً، لا يمكن تسجيل أي صرف للمستفيد (${selectedBen.name}) لأن الملف موقوف حالياً وحظر الصرف نشط (السبب: ${selectedBen.suspensionReasonTitle || 'موقوف'}).`;
-      return;
-    }
-
-    if (this.isStockInsufficient) {
-      const item = this.selectedItem;
-      this.errorMessage = `⚠️ عذراً، الكمية المطلوبة (${this.newDist.quantity}) أكبر من الرصيد المتوفر بمخزن ${this.activeCharity?.name} (${item.quantity} ${item.unit})!`;
-      return;
-    }
-
-    const payload = { ...this.newDist, quantity: Number(this.newDist.quantity) };
-    const item = this.selectedItem;
-
-    this.api.addDistribution(payload).subscribe({
-      next: () => {
-        if (item && item.kind === 'صنف ملموس') {
-          this.successMessage = `✅ تم تسجيل حركة الصرف بنجاح لحساب (${this.activeCharity?.name})، وخصم (${payload.quantity} ${item.unit}) من رصيد المخزن!`;
-        } else {
-          this.successMessage = `✅ تم توثيق تقديم الخدمة بنجاح في ملف المستفيد بالشبكة الموحدة!`;
-        }
-
-        this.loadData();
-        this.newDist = { 
-          beneficiaryId: '', 
-          inventoryId: '', 
-          quantity: 1, 
-          date: new Date().toISOString().split('T')[0], 
-          notes: '' 
-        };
-
-        setTimeout(() => {
-          this.successMessage = '';
-          this.cdr.detectChanges();
-        }, 5000);
-      },
-      error: (err: any) => {
-        this.errorMessage = err.message || '⚠️ فشل في تسجيل حركة الصرف.';
-        this.cdr.detectChanges();
-      }
-    });
+  printReceipt(): void {
+    window.print();
   }
 }

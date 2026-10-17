@@ -178,4 +178,73 @@ public class BeneficiaryTransferHeadshipTests
         // Act & Assert
         await Assert.ThrowsAsync<UnauthorizedDomainException>(() => service.TransferHeadshipAsync("ben3", dto));
     }
+
+    [Fact]
+    public async Task GetNextFamilyCodeAsync_WhenEmpty_ReturnsFirstSequentialCode()
+    {
+        // Arrange
+        var service = CreateService();
+        var year = DateTime.UtcNow.ToString("yy");
+
+        // Act
+        var code = await service.GetNextFamilyCodeAsync();
+
+        // Assert
+        Assert.Equal($"FAM-{year}-0001", code);
+    }
+
+    [Fact]
+    public async Task GetNextFamilyCodeAsync_WhenExistingCodesPresent_IncrementsSequentially()
+    {
+        // Arrange
+        var service = CreateService();
+        var year = DateTime.UtcNow.ToString("yy");
+
+        await _beneficiaryRepo.AddAsync(new Beneficiary
+        {
+            Id = "b1",
+            Name = "أسرة 1",
+            NationalId = "28001011234561",
+            FamilyCode = $"FAM-{year}-0001"
+        });
+        await _beneficiaryRepo.AddAsync(new Beneficiary
+        {
+            Id = "b2",
+            Name = "أسرة 2",
+            NationalId = "28001011234562",
+            FamilyCode = $"FAM-{year}-0002"
+        });
+
+        // Act
+        var nextCode = await service.GetNextFamilyCodeAsync();
+
+        // Assert
+        Assert.Equal($"FAM-{year}-0003", nextCode);
+    }
+
+    [Fact]
+    public async Task CreateAsync_AutomaticallyAssignsUnifiedFamilyCode()
+    {
+        // Arrange
+        var service = CreateService();
+        var year = DateTime.UtcNow.ToString("yy");
+
+        var createDto = new CreateBeneficiaryDto
+        {
+            Name = "أسرة تجريبية جديدة",
+            NationalId = "29001011234563",
+            Category = "أسر أولى بالرعاية",
+            Phone = "01012345678",
+            FamilyCode = "" // ترك الكود فارغاً للاعتماد على التوليد التلقائي
+        };
+
+        // Act
+        var created = await service.CreateAsync(createDto);
+
+        // Assert
+        Assert.NotNull(created.FamilyCode);
+        Assert.StartsWith($"FAM-{year}-", created.FamilyCode);
+        Assert.Equal($"FAM-{year}-0001", created.FamilyCode);
+    }
 }
+

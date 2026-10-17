@@ -665,9 +665,18 @@
         </h4>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 25px;">
           <div>
-            <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">🏷️ كود العائلة الموحد (Family Code)</label>
-            <input type="text" [(ngModel)]="currentBen.familyCode" name="familyCode" placeholder="يولّد تلقائياً إن تُرِك فارغاً (مثال: FAM-26-0001)" 
-                   style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; font-family: monospace; font-weight: bold; color: #004d40;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <label style="font-size: 13px; color: #555; margin: 0;">🏷️ كود العائلة الموحد (Family Code)</label>
+              <span style="background: #e0f2f1; color: #004d40; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;">
+                ⚡ توليد تلقائي موحد (FAM-YY-XXXX)
+              </span>
+            </div>
+            <input type="text" [(ngModel)]="currentBen.familyCode" name="familyCode" readonly
+                   placeholder="يولّد تلقائياً بباترن موحد (FAM-26-0001)" 
+                   style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #b2dfdb; background: #e0f2f1; box-sizing: border-box; font-family: monospace; font-weight: bold; color: #004d40; cursor: not-allowed;">
+            <span style="font-size: 11px; color: #666; margin-top: 2px; display: block;">
+              كود رقمي موحد للأسرة يربط كافة أفرادها وسجل مساعداتها التراكمي.
+            </span>
           </div>
 
           <div>

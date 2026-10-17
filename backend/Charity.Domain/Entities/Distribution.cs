@@ -17,6 +17,12 @@ public class Distribution : BaseEntity
     public string Date { get; set; } = DateTime.UtcNow.ToString("yyyy-MM-dd");
     public string Notes { get; set; } = string.Empty;
 
+    // تفاصيل المستلم الفعلي للمساعدة من أفراد الأسرة
+    public string? ReceivedByMemberId { get; set; }
+    public string? ReceivedByName { get; set; }
+    public string? ReceivedByNationalId { get; set; }
+    public string? ReceivedByRelationship { get; set; }
+
     // Granting Charity (Stamped upon creation)
     public string CharityId { get; set; } = string.Empty;
     public string CharityName { get; set; } = string.Empty;

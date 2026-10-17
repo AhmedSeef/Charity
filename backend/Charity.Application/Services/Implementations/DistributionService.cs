@@ -98,6 +98,13 @@ public class DistributionService : IDistributionService
 
         var entity = dto.ToEntity(charityId, charityName);
 
+        if (string.IsNullOrWhiteSpace(entity.ReceivedByName))
+        {
+            entity.ReceivedByName = beneficiary.Name;
+            entity.ReceivedByNationalId = beneficiary.NationalId;
+            entity.ReceivedByRelationship = "صاحب الملف (رب الأسرة)";
+        }
+
         // If tangible inventory item, auto deduct from active charity's warehouse
         if (!string.IsNullOrEmpty(dto.InventoryItemId))
         {

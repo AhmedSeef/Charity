@@ -33,6 +33,13 @@ public class BeneficiariesController : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("next-family-code")]
+    public async Task<ActionResult<object>> GetNextFamilyCode()
+    {
+        var code = await _beneficiaryService.GetNextFamilyCodeAsync();
+        return Ok(new { familyCode = code });
+    }
+
     [HttpPost]
     public async Task<ActionResult<BeneficiaryDto>> Create([FromBody] CreateBeneficiaryDto dto)
     {

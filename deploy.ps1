@@ -21,8 +21,9 @@ Copy-Item -Path "D:\Charity\charity-app\dist\charity-app\browser\*" -Destination
 
 Write-Host ""
 Write-Host "========================================================" -ForegroundColor Cyan
-Write-Host " [3/3] Publishing Backend (.NET 10 Release)..." -ForegroundColor Yellow
-Write-Host "========================================================" -ForegroundColor Cyan
+Write-Host "Stopping running Charity.API processes if any..." -ForegroundColor DarkYellow
+Get-Process Charity.API -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+Start-Sleep -Seconds 2
 
 $deployDir = "D:\Charity\deploy"
 dotnet publish "D:\Charity\backend\Charity.API\Charity.API.csproj" -c Release -o $deployDir

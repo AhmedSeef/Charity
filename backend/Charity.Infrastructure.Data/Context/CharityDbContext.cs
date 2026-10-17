@@ -166,6 +166,10 @@ public class CharityDbContext : IdentityDbContext<ApplicationUser, IdentityRole,
             b.ToTable("Distributions");
             b.HasKey(x => x.Id);
             b.Property(x => x.Amount).HasPrecision(18, 2);
+            b.Property(x => x.ReceivedByMemberId).HasMaxLength(100);
+            b.Property(x => x.ReceivedByName).HasMaxLength(200);
+            b.Property(x => x.ReceivedByNationalId).HasMaxLength(20);
+            b.Property(x => x.ReceivedByRelationship).HasMaxLength(100);
 
             b.HasOne(x => x.Beneficiary)
              .WithMany(ben => ben.Distributions)
