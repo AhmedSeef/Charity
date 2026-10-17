@@ -1,17 +1,19 @@
-import { Component, ChangeDetectorRef, OnInit } from '@angular/core';
+import { Component, ChangeDetectorRef, OnInit, Optional } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Api } from '../api';
 import { PaginationComponent } from '../pagination/pagination';
 
 @Component({
   selector: 'app-donations',
   standalone: true,
-  imports: [CommonModule, FormsModule, PaginationComponent],
+  imports: [CommonModule, FormsModule, RouterLink, PaginationComponent],
   templateUrl: './donations.html',
   styleUrls: ['./donations.css']
 })
 export class DonationsComponent implements OnInit {
+  viewMode: 'list' | 'form' = 'list';
   donations: any[] = [];
   inventory: any[] = [];
   selectedFilter: 'الكل' | 'نقدي' | 'عيني' | 'خدمة' = 'الكل';
@@ -55,10 +57,47 @@ export class DonationsComponent implements OnInit {
     'مندوب تحصيل'
   ];
 
-  constructor(private api: Api, private cdr: ChangeDetectorRef) {}
+  constructor(
+    private api: Api, 
+    private cdr: ChangeDetectorRef, 
+    @Optional() private route?: ActivatedRoute,
+    @Optional() private router?: Router
+  ) {}
+
+  get isFormPage(): boolean { return this.route?.snapshot.data['formPage'] === true; }
 
   ngOnInit(): void {
     this.loadData();
+    this.initRouteSync();
+  }
+
+  initRouteSync() {
+    this.route?.queryParams.subscribe(params => {
+      const mode = params['mode'];
+      if (this.isFormPage || mode === 'add') {
+        this.resetForm();
+        this.viewMode = 'form';
+      } else {
+        this.viewMode = 'list';
+      }
+      this.cdr.detectChanges();
+    });
+  }
+
+  openAdd() {
+    this.resetForm();
+    this.viewMode = 'form';
+    if (this.router) {
+      void this.router.navigate([], { relativeTo: this.route, queryParams: { mode: 'add' } });
+    }
+  }
+
+  backToList() {
+    this.resetForm();
+    this.viewMode = 'list';
+    if (this.router) {
+      void this.router.navigate(['/donations'], { queryParams: {} });
+    }
   }
 
   loadData() {
@@ -201,7 +240,7 @@ export class DonationsComponent implements OnInit {
       }
 
       this.loadData();
-      this.resetForm();
+      this.backToList();
 
       setTimeout(() => {
         this.successMessage = '';

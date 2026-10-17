@@ -1,17 +1,19 @@
-import { Component, ChangeDetectorRef, OnInit } from '@angular/core';
+import { Component, ChangeDetectorRef, OnInit, Optional } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Api } from '../api';
 import { PaginationComponent } from '../pagination/pagination';
 
 @Component({
   selector: 'app-items-catalog',
   standalone: true,
-  imports: [CommonModule, FormsModule, PaginationComponent],
+  imports: [CommonModule, FormsModule, RouterLink, PaginationComponent],
   templateUrl: './items-catalog.html',
   styleUrls: ['./items-catalog.css']
 })
 export class ItemsCatalogComponent implements OnInit {
+  viewMode: 'list' | 'form' = 'list';
   items: any[] = [];
   selectedFilter: 'الكل' | 'صنف ملموس' | 'خدمة' = 'الكل';
   searchTerm: string = '';
@@ -38,16 +40,71 @@ export class ItemsCatalogComponent implements OnInit {
   tangibleTypes = ['أغذية جافة', 'لحوم ومجمدات', 'أدوية ومستلزمات طبية', 'أجهزة تعويضية وكراسي', 'ملابس وبطاطين', 'أكفان وتجهيز متوفين', 'متنوع'];
   serviceTypes = ['خدمات طبية وعلاجية', 'خدمات اجتماعية وتجهيز', 'خدمات إيواء وتعمير', 'خدمات تعليمية وكفالات', 'سداد ديون وغارمين'];
 
-  constructor(private api: Api, private cdr: ChangeDetectorRef) {}
+  constructor(private api: Api, private cdr: ChangeDetectorRef,
+    @Optional() private route?: ActivatedRoute, @Optional() private router?: Router) {}
+
+  get isFormPage(): boolean { return this.route?.snapshot.data['formPage'] === true; }
 
   ngOnInit(): void {
     this.generateNewCode();
     this.loadData();
+    this.initRouteSync();
+  }
+
+  initRouteSync() {
+    this.route?.queryParams.subscribe(params => {
+      const mode = params['mode'];
+      const id = params['id'] || params['edit'];
+      if (this.isFormPage || mode === 'add') {
+        if (!this.itemForm.id) this.resetForm();
+        this.viewMode = 'form';
+      } else if (mode === 'edit' && id) {
+        const item = this.items.find(i => String(i.id) === String(id));
+        if (item) this.populateItem(item);
+        this.viewMode = 'form';
+      } else if (!this.isFormPage) {
+        this.viewMode = 'list';
+      }
+      this.cdr.detectChanges();
+    });
+  }
+
+  openAdd() {
+    this.resetForm();
+    this.viewMode = 'form';
+    if (this.router) {
+      void this.router.navigate([], { relativeTo: this.route, queryParams: { mode: 'add' } });
+    }
+  }
+
+  openEdit(item: any, event?: Event) {
+    if (event) event.stopPropagation();
+    this.populateItem(item);
+    this.viewMode = 'form';
+    if (this.router) {
+      void this.router.navigate([], { relativeTo: this.route, queryParams: { mode: 'edit', id: item.id } });
+    }
+  }
+
+  backToList() {
+    this.resetForm();
+    this.viewMode = 'list';
+    if (this.router) {
+      void this.router.navigate(['/items-catalog'], { queryParams: {} });
+    }
   }
 
   loadData() {
     this.api.getInventory().subscribe((data: any[]) => {
       this.items = data;
+      const editId = this.route?.snapshot.queryParamMap.get('edit') || this.route?.snapshot.queryParamMap.get('id');
+      if (editId) {
+        const item = data.find(i => String(i.id) === String(editId));
+        if (item) {
+          this.populateItem(item);
+          this.viewMode = 'form';
+        }
+      }
       this.cdr.detectChanges();
     });
   }
@@ -100,6 +157,14 @@ export class ItemsCatalogComponent implements OnInit {
   }
 
   selectItem(item: any) {
+    if (!this.isFormPage && this.router) {
+      void this.router.navigate(['/items-catalog/new'], { queryParams: { edit: item.id } });
+      return;
+    }
+    this.populateItem(item);
+  }
+
+  private populateItem(item: any) {
     this.itemForm = {
       id: item.id,
       code: item.code || '',
@@ -112,7 +177,6 @@ export class ItemsCatalogComponent implements OnInit {
       notes: item.notes || ''
     };
     this.cdr.detectChanges();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   resetForm() {
@@ -149,7 +213,7 @@ export class ItemsCatalogComponent implements OnInit {
       this.api.updateInventory(payload).subscribe(() => {
         this.successMessage = `✅ تم تحديث بيانات (${payload.itemName}) بنجاح!`;
         this.loadData();
-        this.resetForm();
+        this.backToList();
         setTimeout(() => { this.successMessage = ''; this.cdr.detectChanges(); }, 4000);
       });
     } else {
@@ -167,7 +231,7 @@ export class ItemsCatalogComponent implements OnInit {
       this.api.addInventory(payload).subscribe(() => {
         this.successMessage = `✅ تم تسجيل وتعريف (${payload.itemName}) بنجاح وأصبح جاهزاً للاستخدام في التبرعات والمخازن والصرف!`;
         this.loadData();
-        this.resetForm();
+        this.backToList();
         setTimeout(() => { this.successMessage = ''; this.cdr.detectChanges(); }, 4000);
       });
     }
