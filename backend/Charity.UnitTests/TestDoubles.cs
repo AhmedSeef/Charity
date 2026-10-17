@@ -16,6 +16,7 @@ internal sealed class FakeRepository<T> : IRepository<T> where T : BaseEntity
     public IQueryable<T> Query() => Items.Where(x => !x.IsDeleted).AsQueryable();
     public Task<T?> GetByIdAsync(string id) => Task.FromResult(Query().FirstOrDefault(x => x.Id == id));
     public Task<IReadOnlyList<T>> GetAllAsync() => Task.FromResult<IReadOnlyList<T>>(Query().ToList());
+    public Task<IReadOnlyList<T>> GetAllIncludingDeletedAsync() => Task.FromResult<IReadOnlyList<T>>(Items.ToList());
     public Task<IReadOnlyList<T>> FindAsync(Expression<Func<T, bool>> predicate) => Task.FromResult<IReadOnlyList<T>>(Query().Where(predicate).ToList());
     public Task<T?> FirstOrDefaultAsync(Expression<Func<T, bool>> predicate) => Task.FromResult(Query().FirstOrDefault(predicate));
     public Task<T> AddAsync(T entity)
@@ -43,6 +44,6 @@ internal sealed class FakeCurrentUser : ICurrentUserService
     public string? Username => "tester";
     public string? CharityId { get; set; } = "c1";
     public string? CharityName => "جمعية الاختبار";
-    public string? Role => "Admin";
+    public string? Role { get; set; } = "Staff";
     public bool IsAuthenticated => true;
 }

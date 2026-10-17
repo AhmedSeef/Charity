@@ -9,6 +9,7 @@ import { DisbursementComponent } from './disbursement/disbursement';
 import { SettingsComponent } from './settings/settings';
 import { StaffComponent } from './staff/staff';
 import { SuspensionReasonsComponent } from './suspension-reasons/suspension-reasons';
+import { SeparationReasonsComponent } from './separation-reasons/separation-reasons';
 import { BiAnalyticsComponent } from './bi-analytics/bi-analytics';
 import { LoginComponent } from './login/login';
 import { authGuard, adminGuard } from './auth.guard';
@@ -22,6 +23,7 @@ export const routes: Routes = [
   { path: 'charities-admin', component: CharitiesAdminComponent, canActivate: [adminGuard] },
   { path: 'beneficiaries', component: BeneficiariesComponent, canActivate: [authGuard] },
   { path: 'suspension-reasons', component: SuspensionReasonsComponent, canActivate: [authGuard] },
+  { path: 'separation-reasons', component: SeparationReasonsComponent, canActivate: [authGuard] },
   { path: 'items-catalog', component: ItemsCatalogComponent, canActivate: [authGuard] },
   { path: 'inventory', component: InventoryComponent, canActivate: [authGuard] },
   { path: 'donations', component: DonationsComponent, canActivate: [authGuard] },

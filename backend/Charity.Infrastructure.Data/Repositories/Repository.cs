@@ -30,6 +30,11 @@ public class Repository<T> : IRepository<T> where T : class
         return await _dbSet.AsNoTracking().ToListAsync();
     }
 
+    public virtual async Task<IReadOnlyList<T>> GetAllIncludingDeletedAsync()
+    {
+        return await _dbSet.IgnoreQueryFilters().AsNoTracking().ToListAsync();
+    }
+
     public virtual async Task<IReadOnlyList<T>> FindAsync(Expression<Func<T, bool>> predicate)
     {
         return await _dbSet.Where(predicate).AsNoTracking().ToListAsync();

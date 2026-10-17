@@ -33,6 +33,7 @@
         🔄 {{ auth.getCurrentUser()?.role === 'Admin' ? 'سجل حركات الصرف (عرض فقط)' : 'سجل حركات الصرف والتقارير' }}
       </a>
       <a routerLink="/suspension-reasons" routerLinkActive="active-link">⛔ أسباب إيقاف الملفات</a>
+      <a routerLink="/separation-reasons" routerLinkActive="active-link">✂️ أسباب انفصال الأفراد</a>
 
       <!-- حركات وتشغيل الجمعيات فقط (مخازن، تبرعات، موظفين، أصناف، إعدادات) -->
       <ng-container *ngIf="auth.getCurrentUser()?.role !== 'Admin'">

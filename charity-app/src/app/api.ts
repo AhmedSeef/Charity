@@ -113,10 +113,11 @@ export class Api {
     return this.http.post<any>(`${this.apiUrl}/beneficiaries/${beneficiaryId}/members`, member);
   }
 
-  separateFamilyMember(beneficiaryId: string, memberId: string, createNewProfile: boolean = true, reason?: string): Observable<any> {
+  separateFamilyMember(beneficiaryId: string, memberId: string, createNewProfile: boolean = true, reason?: string, separationReasonId?: string): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/beneficiaries/${beneficiaryId}/members/separate`, {
       familyMemberId: memberId,
       reason: reason || 'استقلال بمسكن خاص وزواج',
+      separationReasonId: separationReasonId || null,
       createNewBeneficiaryProfile: createNewProfile
     });
   }
@@ -150,6 +151,21 @@ export class Api {
 
   deleteSuspensionReason(id: string): Observable<any> {
     return this.http.delete<any>(`${this.apiUrl}/suspension-reasons/${id}`);
+  }
+
+  // ==========================================
+  // 2b. Separation Reasons
+  // ==========================================
+  getSeparationReasons(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/separation-reasons`);
+  }
+
+  addSeparationReason(data: any): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/separation-reasons`, data);
+  }
+
+  deleteSeparationReason(id: string): Observable<any> {
+    return this.http.delete<any>(`${this.apiUrl}/separation-reasons/${id}`);
   }
 
   // ==========================================

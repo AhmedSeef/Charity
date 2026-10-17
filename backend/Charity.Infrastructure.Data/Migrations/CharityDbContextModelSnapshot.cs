@@ -389,6 +389,9 @@ namespace Charity.Infrastructure.Data.Migrations
                     b.Property<string>("SeparationReason")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("SeparationReasonId")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("SupportType")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -782,6 +785,46 @@ namespace Charity.Infrastructure.Data.Migrations
                     b.HasIndex("CharityId");
 
                     b.ToTable("InventoryItems", (string)null);
+                });
+
+            modelBuilder.Entity("Charity.Domain.Entities.SeparationReason", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("CharityId")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("CharityName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("SeparationReasons", (string)null);
                 });
 
             modelBuilder.Entity("Charity.Domain.Entities.StaffMember", b =>

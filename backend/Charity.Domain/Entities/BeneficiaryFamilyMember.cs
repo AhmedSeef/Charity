@@ -29,6 +29,7 @@ public class BeneficiaryFamilyMember : BaseEntity
     public bool IsSeparated { get; set; } = false;
     public DateTime? SeparatedAt { get; set; }
     public string? SeparatedToBeneficiaryId { get; set; }
+    public string? SeparationReasonId { get; set; }
     public string? SeparationReason { get; set; }
 
     // هل كان عائلاً سابقاً للأسرة (رب أسرة سابق متوفى أو تنازل عن الولاية)

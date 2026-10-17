@@ -96,6 +96,7 @@ builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<ICharityService, CharityService>();
 builder.Services.AddScoped<ICharityProvisioningService, CharityProvisioningService>();
 builder.Services.AddScoped<ISuspensionReasonService, SuspensionReasonService>();
+builder.Services.AddScoped<ISeparationReasonService, SeparationReasonService>();
 builder.Services.AddScoped<IBiAnalyticsService, BiAnalyticsService>();
 
 // 5. CORS for Angular Frontend
@@ -167,13 +168,9 @@ using (var scope = app.Services.CreateScope())
         logger.LogInformation("Ensuring database is created and migrating...");
         await db.Database.MigrateAsync();
 
-        if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Testing") ||
-            builder.Configuration.GetValue<bool>("DemoData:Enabled"))
-        {
-            logger.LogInformation("Seeding demo charities, roles, users and sample data...");
-            await DbInitializer.SeedAsync(db, userManager, roleManager);
-            logger.LogInformation("Demo data seeded successfully.");
-        }
+        logger.LogInformation("Seeding initial system lookups, roles and admin user...");
+        await DbInitializer.SeedAsync(db, userManager, roleManager);
+        logger.LogInformation("System lookups seeded successfully.");
     }
     catch (Exception ex)
     {

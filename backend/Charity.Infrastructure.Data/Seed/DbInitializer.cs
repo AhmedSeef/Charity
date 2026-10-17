@@ -37,6 +37,23 @@ public static class DbInitializer
             await context.SaveChangesAsync();
         }
 
+        // 2b. Seed Universal Separation Reasons (Lookups - أسباب انفصال الأفراد العامة)
+        if (!await context.SeparationReasons.AnyAsync())
+        {
+            var sepReasons = new List<SeparationReason>
+            {
+                new() { Id = "sep1", Title = "استقلال بمسكن خاص وزواج", Description = "استقلال الفرد بعد الزواج وتأسيس مسكن ومعيشة منفصلة", IsActive = true, CharityId = null, CharityName = "النظام العام" },
+                new() { Id = "sep2", Title = "تكوين أسرة جديدة مستحقة", Description = "تكوين أسرة جديدة تتطلب ملفاً مستقلاً وتقديم دعم اجتماعي خاص بها", IsActive = true, CharityId = null, CharityName = "النظام العام" },
+                new() { Id = "sep3", Title = "بلوغ سن الرشد والعمل", Description = "بلوغ السن القانوني واكتساب دخل مستقل وتحمل نفقاته الشخصية", IsActive = true, CharityId = null, CharityName = "النظام العام" },
+                new() { Id = "sep4", Title = "الانتقال لمحافظة أخرى", Description = "انتقال إقامة الفرد بشكل دائم خارج نطاق المحافظة ومسكن الأسرة", IsActive = true, CharityId = null, CharityName = "النظام العام" },
+                new() { Id = "sep5", Title = "فك ارتباط بملف الأسرة فقط", Description = "استبعاد الفرد من قائمة المعالين دون الرغبة في فتح ملف مساعدات جديد", IsActive = true, CharityId = null, CharityName = "النظام العام" },
+                new() { Id = "sep6", Title = "انفصال عائلي وطلاق", Description = "انفصال الزوجة بعد الطلاق واستقلال الحضانة والمعيشة في مسكن خاص", IsActive = true, CharityId = null, CharityName = "النظام العام" }
+            };
+
+            await context.SeparationReasons.AddRangeAsync(sepReasons);
+            await context.SaveChangesAsync();
+        }
+
         // 3. Seed ONLY the platform super administrator ("كبير مسؤولي المنصة")
         var adminUser = await userManager.FindByNameAsync("admin");
         if (adminUser == null)

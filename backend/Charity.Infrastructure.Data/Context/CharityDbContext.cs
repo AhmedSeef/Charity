@@ -21,6 +21,7 @@ public class CharityDbContext : IdentityDbContext<ApplicationUser, IdentityRole,
     public DbSet<Distribution> Distributions => Set<Distribution>();
     public DbSet<StaffMember> StaffMembers => Set<StaffMember>();
     public DbSet<CharitySettings> CharitySettings => Set<CharitySettings>();
+    public DbSet<SeparationReason> SeparationReasons => Set<SeparationReason>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -119,6 +120,17 @@ public class CharityDbContext : IdentityDbContext<ApplicationUser, IdentityRole,
         builder.Entity<SuspensionReason>(b =>
         {
             b.ToTable("SuspensionReasons");
+            b.HasKey(x => x.Id);
+            b.Property(x => x.Title).IsRequired().HasMaxLength(200);
+            b.Property(x => x.Description).HasMaxLength(500);
+            b.Property(x => x.CharityId).HasMaxLength(50).IsRequired(false);
+            b.Property(x => x.CharityName).HasMaxLength(200).IsRequired(false);
+        });
+
+        // SeparationReason configuration (Tenant / System-wide)
+        builder.Entity<SeparationReason>(b =>
+        {
+            b.ToTable("SeparationReasons");
             b.HasKey(x => x.Id);
             b.Property(x => x.Title).IsRequired().HasMaxLength(200);
             b.Property(x => x.Description).HasMaxLength(500);
@@ -225,5 +237,6 @@ public class CharityDbContext : IdentityDbContext<ApplicationUser, IdentityRole,
         builder.Entity<InventoryItem>().HasQueryFilter(x => !x.IsDeleted);
         builder.Entity<StaffMember>().HasQueryFilter(x => !x.IsDeleted);
         builder.Entity<SuspensionReason>().HasQueryFilter(x => !x.IsDeleted);
+        builder.Entity<SeparationReason>().HasQueryFilter(x => !x.IsDeleted);
     }
 }

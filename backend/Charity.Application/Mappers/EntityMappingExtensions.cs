@@ -5,6 +5,7 @@ using Charity.Application.DTOs.Donations;
 using Charity.Application.DTOs.Inventory;
 using Charity.Application.DTOs.Staff;
 using Charity.Application.DTOs.SuspensionReasons;
+using Charity.Application.DTOs.SeparationReasons;
 using Charity.Domain.Entities;
 
 namespace Charity.Application.Mappers;
@@ -18,8 +19,19 @@ public static class EntityMappingExtensions
         Title = r.Title,
         Description = r.Description,
         IsActive = r.IsActive,
-        CharityId = r.CharityId,
-        CharityName = r.CharityName
+        CharityId = r.CharityId ?? string.Empty,
+        CharityName = r.CharityName ?? string.Empty
+    };
+
+    // SeparationReason
+    public static SeparationReasonDto ToDto(this SeparationReason r) => new()
+    {
+        Id = r.Id,
+        Title = r.Title,
+        Description = r.Description,
+        IsActive = r.IsActive,
+        CharityId = r.CharityId ?? string.Empty,
+        CharityName = r.CharityName ?? string.Empty
     };
 
     // Charity
@@ -57,6 +69,7 @@ public static class EntityMappingExtensions
         IsSeparated = m.IsSeparated,
         SeparatedAt = m.SeparatedAt,
         SeparatedToBeneficiaryId = m.SeparatedToBeneficiaryId,
+        SeparationReasonId = m.SeparationReasonId,
         SeparationReason = m.SeparationReason,
         IsFormerHead = m.IsFormerHead
     };

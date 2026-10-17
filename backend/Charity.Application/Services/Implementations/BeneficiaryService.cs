@@ -119,9 +119,10 @@ public class BeneficiaryService : IBeneficiaryService
             ?? throw new EntityNotFoundException(nameof(Beneficiary), id);
 
         var currentCharityId = _currentUserService.CharityId ?? string.Empty;
+        bool isSuperAdmin = string.Equals(_currentUserService.Role, "Admin", StringComparison.OrdinalIgnoreCase);
 
-        // Strict Authorization Rule: ONLY the registering charity can update beneficiary CRM profile!
-        if (string.IsNullOrWhiteSpace(currentCharityId) || (!string.IsNullOrEmpty(existing.RegisteredByCharityId) && existing.RegisteredByCharityId != currentCharityId))
+        // Strict Authorization Rule: ONLY the registering charity or Super Admin can update beneficiary CRM profile!
+        if (!isSuperAdmin && (string.IsNullOrWhiteSpace(currentCharityId) || (!string.IsNullOrEmpty(existing.RegisteredByCharityId) && existing.RegisteredByCharityId != currentCharityId)))
         {
             throw new UnauthorizedDomainException(
                 $"غير مصرح: لا تملك صلاحية تعديل بيانات هذا المستفيد. التعديل مقصور قانونياً على الجمعية التي قامت بفتح الملف ({existing.RegisteredByCharityName})."
@@ -243,8 +244,9 @@ public class BeneficiaryService : IBeneficiaryService
             ?? throw new EntityNotFoundException(nameof(Beneficiary), id);
 
         var currentCharityId = _currentUserService.CharityId ?? string.Empty;
+        bool isSuperAdmin = string.Equals(_currentUserService.Role, "Admin", StringComparison.OrdinalIgnoreCase);
 
-        if (string.IsNullOrWhiteSpace(currentCharityId) || (!string.IsNullOrEmpty(existing.RegisteredByCharityId) && existing.RegisteredByCharityId != currentCharityId))
+        if (!isSuperAdmin && (string.IsNullOrWhiteSpace(currentCharityId) || (!string.IsNullOrEmpty(existing.RegisteredByCharityId) && existing.RegisteredByCharityId != currentCharityId)))
         {
             throw new UnauthorizedDomainException(
                 $"غير مصرح: إيقاف الملف مقصور على الجمعية المسجلة له ({existing.RegisteredByCharityName})."
@@ -275,8 +277,9 @@ public class BeneficiaryService : IBeneficiaryService
             ?? throw new EntityNotFoundException(nameof(Beneficiary), id);
 
         var currentCharityId = _currentUserService.CharityId ?? string.Empty;
+        bool isSuperAdmin = string.Equals(_currentUserService.Role, "Admin", StringComparison.OrdinalIgnoreCase);
 
-        if (string.IsNullOrWhiteSpace(currentCharityId) || (!string.IsNullOrEmpty(existing.RegisteredByCharityId) && existing.RegisteredByCharityId != currentCharityId))
+        if (!isSuperAdmin && (string.IsNullOrWhiteSpace(currentCharityId) || (!string.IsNullOrEmpty(existing.RegisteredByCharityId) && existing.RegisteredByCharityId != currentCharityId)))
         {
             throw new UnauthorizedDomainException(
                 $"غير مصرح: إعادة تفعيل الملف مقصورة على الجمعية المسجلة له ({existing.RegisteredByCharityName})."
@@ -302,8 +305,9 @@ public class BeneficiaryService : IBeneficiaryService
             ?? throw new EntityNotFoundException(nameof(Beneficiary), beneficiaryId);
 
         var currentCharityId = _currentUserService.CharityId ?? string.Empty;
+        bool isSuperAdmin = string.Equals(_currentUserService.Role, "Admin", StringComparison.OrdinalIgnoreCase);
 
-        if (string.IsNullOrWhiteSpace(currentCharityId) || (!string.IsNullOrEmpty(existing.RegisteredByCharityId) && existing.RegisteredByCharityId != currentCharityId))
+        if (!isSuperAdmin && (string.IsNullOrWhiteSpace(currentCharityId) || (!string.IsNullOrEmpty(existing.RegisteredByCharityId) && existing.RegisteredByCharityId != currentCharityId)))
         {
             throw new UnauthorizedDomainException(
                 $"غير مصرح: إدارة وفصل أفراد الأسرة مقصورة على الجمعية المسجلة للملف ({existing.RegisteredByCharityName})."
@@ -313,14 +317,16 @@ public class BeneficiaryService : IBeneficiaryService
         var member = await _familyMemberRepo.FirstOrDefaultAsync(m => m.Id == dto.FamilyMemberId && m.BeneficiaryId == beneficiaryId)
             ?? throw new EntityNotFoundException(nameof(BeneficiaryFamilyMember), dto.FamilyMemberId);
 
-        // Delete member from current beneficiary's family
-        await _familyMemberRepo.DeleteAsync(member);
+        member.IsSeparated = true;
+        member.SeparatedAt = DateTime.UtcNow;
+        member.SeparationReason = dto.Reason;
+        member.SeparationReasonId = dto.SeparationReasonId;
 
         // If requested to create a brand new independent Beneficiary file for this person
         if (dto.CreateIndependentBeneficiaryProfile)
         {
-            var charityId = _currentUserService.CharityId ?? "c1";
-            var charityName = _currentUserService.CharityName ?? "الجمعية المسجلة";
+            var charityId = !string.IsNullOrWhiteSpace(_currentUserService.CharityId) ? _currentUserService.CharityId : (existing.RegisteredByCharityId ?? "c1");
+            var charityName = !string.IsNullOrWhiteSpace(_currentUserService.CharityName) ? _currentUserService.CharityName : (existing.RegisteredByCharityName ?? "الجمعية المسجلة");
 
             var newBeneficiary = new Beneficiary
             {
@@ -345,7 +351,11 @@ public class BeneficiaryService : IBeneficiaryService
             };
 
             await _beneficiaryRepo.AddAsync(newBeneficiary);
+            member.SeparatedToBeneficiaryId = newBeneficiary.Id;
         }
+
+        // Delete member from current beneficiary's family (soft delete frees the national ID for new independent headship)
+        await _familyMemberRepo.DeleteAsync(member);
 
         existing.FamilyCount = Math.Max(1, existing.FamilyCount - 1);
         await _beneficiaryRepo.UpdateAsync(existing);
@@ -363,7 +373,9 @@ public class BeneficiaryService : IBeneficiaryService
             ?? throw new EntityNotFoundException(nameof(Beneficiary), beneficiaryId);
 
         var currentCharityId = _currentUserService.CharityId ?? string.Empty;
-        if (string.IsNullOrWhiteSpace(currentCharityId) || (!string.IsNullOrEmpty(existing.RegisteredByCharityId) && existing.RegisteredByCharityId != currentCharityId))
+        bool isSuperAdmin = string.Equals(_currentUserService.Role, "Admin", StringComparison.OrdinalIgnoreCase);
+
+        if (!isSuperAdmin && (string.IsNullOrWhiteSpace(currentCharityId) || (!string.IsNullOrEmpty(existing.RegisteredByCharityId) && existing.RegisteredByCharityId != currentCharityId)))
         {
             throw new UnauthorizedDomainException(
                 $"غير مصرح: إضافة أفراد مقصورة على الجمعية المسجلة للملف ({existing.RegisteredByCharityName})."
@@ -417,9 +429,10 @@ public class BeneficiaryService : IBeneficiaryService
             ?? throw new EntityNotFoundException(nameof(Beneficiary), beneficiaryId);
 
         var currentCharityId = _currentUserService.CharityId ?? string.Empty;
-        var currentCharityName = _currentUserService.CharityName ?? "الجمعية المسجلة";
+        var currentCharityName = _currentUserService.CharityName ?? (existing.RegisteredByCharityName ?? "الجمعية المسجلة");
+        bool isSuperAdmin = string.Equals(_currentUserService.Role, "Admin", StringComparison.OrdinalIgnoreCase);
 
-        if (string.IsNullOrWhiteSpace(currentCharityId) || (!string.IsNullOrEmpty(existing.RegisteredByCharityId) && existing.RegisteredByCharityId != currentCharityId))
+        if (!isSuperAdmin && (string.IsNullOrWhiteSpace(currentCharityId) || (!string.IsNullOrEmpty(existing.RegisteredByCharityId) && existing.RegisteredByCharityId != currentCharityId)))
         {
             throw new UnauthorizedDomainException(
                 $"غير مصرح: نقل ولاية الملف مقصورة على الجمعية المسجلة له ({existing.RegisteredByCharityName})."
@@ -563,7 +576,9 @@ public class BeneficiaryService : IBeneficiaryService
             ?? throw new EntityNotFoundException(nameof(Beneficiary), id);
 
         var currentCharityId = _currentUserService.CharityId ?? string.Empty;
-        if (string.IsNullOrWhiteSpace(currentCharityId) || (!string.IsNullOrEmpty(existing.RegisteredByCharityId) && existing.RegisteredByCharityId != currentCharityId))
+        bool isSuperAdmin = string.Equals(_currentUserService.Role, "Admin", StringComparison.OrdinalIgnoreCase);
+
+        if (!isSuperAdmin && (string.IsNullOrWhiteSpace(currentCharityId) || (!string.IsNullOrEmpty(existing.RegisteredByCharityId) && existing.RegisteredByCharityId != currentCharityId)))
         {
             throw new UnauthorizedDomainException(
                 $"غير مصرح: حذف أو أرشفة ملف الحالة مقصورة على الجمعية المسجلة له ({existing.RegisteredByCharityName})."

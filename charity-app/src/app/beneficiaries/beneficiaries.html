@@ -1416,16 +1416,19 @@
         </div>
 
         <div style="margin-bottom: 15px;">
-          <label style="display: block; font-size: 13px; font-weight: bold; color: #333; margin-bottom: 6px;">
-            سبب الانفصال / الاستقلال *
-          </label>
-          <select [(ngModel)]="separateReason" 
-                  style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; font-size: 14px;">
-            <option value="استقلال بمسكن خاص وزواج">استقلال بمسكن خاص وزواج</option>
-            <option value="تكوين أسرة جديدة مستحقة">تكوين أسرة جديدة مستحقة</option>
-            <option value="بلوغ سن الرشد والعمل">بلوغ سن الرشد والعمل</option>
-            <option value="الانتقال لمحافظة أخرى">الانتقال لمحافظة أخرى</option>
-            <option value="فك ارتباط بملف الأسرة فقط">فك ارتباط بملف الأسرة فقط</option>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <label style="font-size: 13px; font-weight: bold; color: #333; margin: 0;">
+              سبب الانفصال / الاستقلال المعتمد *
+            </label>
+            <a routerLink="/separation-reasons" target="_blank" style="font-size: 11px; color: #00796b; text-decoration: none; font-weight: bold;">
+              ⚙️ إدارة وتخصيص أسباب الانفصال ←
+            </a>
+          </div>
+          <select [(ngModel)]="selectedSeparationReasonId" (change)="onSeparationReasonChange()" 
+                  style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #b2dfdb; box-sizing: border-box; font-size: 14px; font-weight: bold; color: #004d40; background: #fdfdfd;">
+            <option *ngFor="let r of separationReasons" [value]="r.id">
+              {{ r.title }} {{ r.charityName ? '(' + r.charityName + ')' : '' }}
+            </option>
           </select>
         </div>
 

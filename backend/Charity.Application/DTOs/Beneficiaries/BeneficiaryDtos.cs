@@ -22,6 +22,7 @@ public class FamilyMemberDto
     public bool IsSeparated { get; set; }
     public DateTime? SeparatedAt { get; set; }
     public string? SeparatedToBeneficiaryId { get; set; }
+    public string? SeparationReasonId { get; set; }
     public string? SeparationReason { get; set; }
 
     // هل هو عائل سابق للأسرة (سابق/متوفى)
@@ -231,6 +232,7 @@ public class SeparateFamilyMemberDto
 {
     public string FamilyMemberId { get; set; } = string.Empty;
     public bool CreateIndependentBeneficiaryProfile { get; set; } = true;
+    public string? SeparationReasonId { get; set; }
     public string? Reason { get; set; }
 }
 

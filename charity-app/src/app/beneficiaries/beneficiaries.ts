@@ -147,6 +147,8 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
   showSeparateModal: boolean = false;
   targetMemberToSeparate: any = null;
   separateReason: string = 'استقلال بمسكن خاص وزواج';
+  separationReasons: any[] = [];
+  selectedSeparationReasonId: string = '';
   createNewProfileOnSeparate: boolean = true;
 
   // نقل ولاية الملف (تعيين عائل جديد للأسرة)
@@ -627,10 +629,31 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
       return;
     }
     this.targetMemberToSeparate = m;
-    this.separateReason = 'استقلال بمسكن خاص وزواج';
     this.createNewProfileOnSeparate = true;
+
+    // جلب أسباب الانفصال المعتمدة ديناميكياً
+    this.api.getSeparationReasons().subscribe({
+      next: (data) => {
+        this.separationReasons = data || [];
+        if (this.separationReasons.length > 0) {
+          this.selectedSeparationReasonId = this.separationReasons[0].id;
+          this.separateReason = this.separationReasons[0].title;
+        } else {
+          this.separateReason = 'استقلال بمسكن خاص وزواج';
+        }
+        this.cdr.detectChanges();
+      }
+    });
+
     this.showSeparateModal = true;
     this.cdr.detectChanges();
+  }
+
+  onSeparationReasonChange() {
+    const found = this.separationReasons.find(r => String(r.id) === String(this.selectedSeparationReasonId));
+    if (found) {
+      this.separateReason = found.title;
+    }
   }
 
   closeSeparateModal() {
@@ -646,7 +669,8 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
       this.selectedBen.id,
       this.targetMemberToSeparate.id,
       this.createNewProfileOnSeparate,
-      this.separateReason
+      this.separateReason,
+      this.selectedSeparationReasonId
     ).subscribe({
       next: (res: any) => {
         const actionDesc = this.createNewProfileOnSeparate 
