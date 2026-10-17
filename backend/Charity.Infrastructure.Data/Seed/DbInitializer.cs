@@ -169,6 +169,87 @@ public static class DbInitializer
             await context.SaveChangesAsync();
         }
 
+        // 2e. Seed Universal Expense Categories (Lookups - أنواع وبنود المصروفات العامة)
+        if (!await context.ExpenseCategories.AnyAsync())
+        {
+            var expCategories = new List<ExpenseCategory>
+            {
+                new()
+                {
+                    Id = "exp_medical",
+                    Code = "EXP-001",
+                    Name = "إعانات علاجية وعمليات جراحية",
+                    Description = "تغطية تكاليف الفحوصات الطبية، العمليات الجراحية، وشراء الأدوية المزمنة لغير القادرين.",
+                    IsActive = true,
+                    CharityId = null,
+                    CharityName = "النظام العام"
+                },
+                new()
+                {
+                    Id = "exp_monthly",
+                    Code = "EXP-002",
+                    Name = "مساعدات نقدية شهرية دورية",
+                    Description = "مبالغ نقدية منتظمة تكفل الأسر المعدمة والأرامل والأيتام الذين لا عائل لهم ولا دخل ثابت.",
+                    IsActive = true,
+                    CharityId = null,
+                    CharityName = "النظام العام"
+                },
+                new()
+                {
+                    Id = "exp_marriage",
+                    Code = "EXP-003",
+                    Name = "تجهيز فتيات مقبلات على الزواج وأيتام",
+                    Description = "مساهمات نقدية لشراء الأجهزة الكهربائية ومستلزمات الزواج الأساسية للفتيات اليتيمات.",
+                    IsActive = true,
+                    CharityId = null,
+                    CharityName = "النظام العام"
+                },
+                new()
+                {
+                    Id = "exp_education",
+                    Code = "EXP-004",
+                    Name = "مصاريف ومساعدات تعليمية",
+                    Description = "سداد المصروفات المدرسية والجامعية، وتوفير الكتب والزي المدرسي للطلاب غير القادرين.",
+                    IsActive = true,
+                    CharityId = null,
+                    CharityName = "النظام العام"
+                },
+                new()
+                {
+                    Id = "exp_debt",
+                    Code = "EXP-005",
+                    Name = "سداد ديون وغارمين",
+                    Description = "سداد الديون وإيصالات الأمانة للحالات المهددة بالسجن بعد بحث اجتماعي وقانوني معتمد.",
+                    IsActive = true,
+                    CharityId = null,
+                    CharityName = "النظام العام"
+                },
+                new()
+                {
+                    Id = "exp_emergency",
+                    Code = "EXP-006",
+                    Name = "إعانات طارئة وظروف استثنائية",
+                    Description = "دعم مالي فوري لحالات الحوادث والوفاة والظروف الطارئة المفاجئة التي تصيب الأسر.",
+                    IsActive = true,
+                    CharityId = null,
+                    CharityName = "النظام العام"
+                },
+                new()
+                {
+                    Id = "exp_housing",
+                    Code = "EXP-007",
+                    Name = "تسقيف وترميم منازل وتأهيل مأوى",
+                    Description = "مساهمات نقدية لشراء مواد البناء والصب وألواح السقف لستر بيوت الأسر الفقيرة.",
+                    IsActive = true,
+                    CharityId = null,
+                    CharityName = "النظام العام"
+                }
+            };
+
+            await context.ExpenseCategories.AddRangeAsync(expCategories);
+            await context.SaveChangesAsync();
+        }
+
         // 3. Seed ONLY the platform super administrator ("كبير مسؤولي المنصة")
         var adminUser = await userManager.FindByNameAsync("admin");
         if (adminUser == null)

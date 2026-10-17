@@ -11,6 +11,8 @@ public class DistributionDto
     public double Quantity { get; set; }
     public string Unit { get; set; } = string.Empty;
     public decimal? Amount { get; set; }
+    public string? ExpenseCategoryId { get; set; }
+    public string? ExpenseCategoryName { get; set; }
     public string Date { get; set; } = string.Empty;
     public string Notes { get; set; } = string.Empty;
 
@@ -34,6 +36,8 @@ public class CreateDistributionDto
     public double Quantity { get; set; } = 1;
     public string? Unit { get; set; }
     public decimal? Amount { get; set; }
+    public string? ExpenseCategoryId { get; set; }
+    public string? ExpenseCategoryName { get; set; }
     public string Date { get; set; } = DateTime.UtcNow.ToString("yyyy-MM-dd");
     public string Notes { get; set; } = string.Empty;
 

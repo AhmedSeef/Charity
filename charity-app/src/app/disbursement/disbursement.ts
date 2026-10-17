@@ -15,6 +15,7 @@ import { AuthService } from '../auth.service';
 export class DisbursementComponent implements OnInit {
   beneficiaries: any[] = [];
   inventory: any[] = [];
+  expenseCategories: any[] = [];
   activeCharity: any = null;
 
   // نمط البحث
@@ -40,6 +41,8 @@ export class DisbursementComponent implements OnInit {
   distributionData = {
     inventoryItemId: '',
     kind: 'صنف ملموس',
+    expenseCategoryId: '',
+    expenseCategoryName: '',
     itemName: '',
     quantity: 1,
     unit: 'وحدة',
@@ -84,6 +87,13 @@ export class DisbursementComponent implements OnInit {
     this.api.getInventory().subscribe({
       next: (data) => {
         this.inventory = data || [];
+        this.cdr.detectChanges();
+      }
+    });
+
+    this.api.getExpenseCategories().subscribe({
+      next: (data) => {
+        this.expenseCategories = (data || []).filter((c: any) => c.isActive !== false);
         this.cdr.detectChanges();
       }
     });
@@ -284,6 +294,18 @@ export class DisbursementComponent implements OnInit {
     this.cdr.detectChanges();
   }
 
+  onExpenseCategoryChange(): void {
+    const cat = this.expenseCategories.find(c => String(c.id) === String(this.distributionData.expenseCategoryId));
+    if (cat) {
+      this.distributionData.expenseCategoryName = cat.name;
+      this.distributionData.itemName = cat.name;
+      this.distributionData.unit = 'جنيه';
+    } else {
+      this.distributionData.expenseCategoryName = '';
+    }
+    this.cdr.detectChanges();
+  }
+
   get selectedInventoryItem(): any {
     return this.inventory.find(i => String(i.id) === String(this.distributionData.inventoryItemId));
   }
@@ -344,7 +366,16 @@ export class DisbursementComponent implements OnInit {
       return;
     }
 
-    if (this.distributionData.kind !== 'إعانة نقدية' && !this.distributionData.inventoryItemId) {
+    if (this.distributionData.kind === 'إعانة نقدية') {
+      if (!this.distributionData.expenseCategoryId) {
+        this.errorMessage = 'يرجى اختيار نوع وبند المصروف للإعانة النقدية.';
+        return;
+      }
+      if (!this.distributionData.amount || Number(this.distributionData.amount) <= 0) {
+        this.errorMessage = 'يرجى تحديد المبلغ النقدي المصروف (أكبر من صفر).';
+        return;
+      }
+    } else if (!this.distributionData.inventoryItemId) {
       this.errorMessage = 'يرجى اختيار الصنف أو المساعدة المراد صرفها من المخزن.';
       return;
     }
@@ -360,11 +391,15 @@ export class DisbursementComponent implements OnInit {
     const payload = {
       beneficiaryId: this.selectedBeneficiary.id,
       inventoryItemId: this.distributionData.inventoryItemId || null,
-      itemName: this.selectedInventoryItem?.itemName || this.distributionData.itemName,
+      itemName: this.distributionData.kind === 'إعانة نقدية' 
+        ? (this.distributionData.expenseCategoryName || 'إعانة نقدية')
+        : (this.selectedInventoryItem?.itemName || this.distributionData.itemName),
       kind: this.distributionData.kind,
       quantity: Number(this.distributionData.quantity),
       unit: this.distributionData.unit,
       amount: this.distributionData.amount,
+      expenseCategoryId: this.distributionData.kind === 'إعانة نقدية' ? this.distributionData.expenseCategoryId : null,
+      expenseCategoryName: this.distributionData.kind === 'إعانة نقدية' ? this.distributionData.expenseCategoryName : null,
       date: this.distributionData.date,
       notes: this.distributionData.notes,
       receivedByMemberId: (!this.isRecipientHead && !this.isCustomRecipient && this.selectedMemberRecipient) 
@@ -378,7 +413,7 @@ export class DisbursementComponent implements OnInit {
     this.api.addDistribution(payload).subscribe({
       next: (created: any) => {
         this.isSubmitting = false;
-        this.successMessage = `✅ تم بنجاح صرف (${payload.quantity} ${payload.unit} - ${payload.itemName})، وتسليمها للمستلم الفعلي: (${recName}) [${this.currentRecipientRelationship}].`;
+        this.successMessage = `✅ تم بنجاح صرف (${payload.kind === 'إعانة نقدية' ? (payload.amount + ' ج.م - ' + payload.itemName) : (payload.quantity + ' ' + payload.unit + ' - ' + payload.itemName)})، وتسليمها للمستلم الفعلي: (${recName}) [${this.currentRecipientRelationship}].`;
 
         // إعداد بيانات سند الاستلام
         this.lastReceiptData = {
@@ -390,6 +425,7 @@ export class DisbursementComponent implements OnInit {
           itemName: payload.itemName,
           quantity: payload.quantity,
           unit: payload.unit,
+          amount: payload.amount,
           charityName: this.activeCharity?.name || 'الجمعية المانحة',
           date: payload.date,
           notes: payload.notes
@@ -400,7 +436,10 @@ export class DisbursementComponent implements OnInit {
 
         // إعادة تعيين بيانات الصنف مع بقاء الأسرة
         this.distributionData.inventoryItemId = '';
+        this.distributionData.expenseCategoryId = '';
+        this.distributionData.expenseCategoryName = '';
         this.distributionData.itemName = '';
+        this.distributionData.amount = null;
         this.distributionData.quantity = 1;
         this.distributionData.notes = '';
 

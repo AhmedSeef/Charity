@@ -10,6 +10,7 @@ import { SettingsComponent } from './settings/settings';
 import { StaffComponent } from './staff/staff';
 import { SuspensionReasonsComponent } from './suspension-reasons/suspension-reasons';
 import { SeparationReasonsComponent } from './separation-reasons/separation-reasons';
+import { ExpenseCategoriesComponent } from './expense-categories/expense-categories';
 import { BiAnalyticsComponent } from './bi-analytics/bi-analytics';
 import { LoginComponent } from './login/login';
 import { authGuard, adminGuard } from './auth.guard';
@@ -24,6 +25,8 @@ export const routes: Routes = [
   { path: 'beneficiaries', component: BeneficiariesComponent, canActivate: [authGuard] },
   { path: 'suspension-reasons', component: SuspensionReasonsComponent, canActivate: [authGuard] },
   { path: 'separation-reasons', component: SeparationReasonsComponent, canActivate: [authGuard] },
+  { path: 'expense-categories', component: ExpenseCategoriesComponent, canActivate: [authGuard] },
+  { path: 'expense-categories/new', component: ExpenseCategoriesComponent, canActivate: [authGuard], data: { formPage: true } },
   { path: 'items-catalog', component: ItemsCatalogComponent, canActivate: [authGuard] },
   { path: 'items-catalog/new', component: ItemsCatalogComponent, canActivate: [authGuard], data: { formPage: true } },
   { path: 'inventory', component: InventoryComponent, canActivate: [authGuard] },

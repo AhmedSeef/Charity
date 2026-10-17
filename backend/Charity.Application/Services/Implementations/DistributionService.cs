@@ -12,6 +12,7 @@ public class DistributionService : IDistributionService
     private readonly IRepository<Distribution> _distributionRepo;
     private readonly IRepository<InventoryItem> _inventoryRepo;
     private readonly IRepository<Beneficiary> _beneficiaryRepo;
+    private readonly IRepository<ExpenseCategory> _expenseCategoryRepo;
     private readonly ICurrentUserService _currentUserService;
     private readonly IUnitOfWork _unitOfWork;
 
@@ -19,12 +20,14 @@ public class DistributionService : IDistributionService
         IRepository<Distribution> distributionRepo,
         IRepository<InventoryItem> inventoryRepo,
         IRepository<Beneficiary> beneficiaryRepo,
+        IRepository<ExpenseCategory> expenseCategoryRepo,
         ICurrentUserService currentUserService,
         IUnitOfWork unitOfWork)
     {
         _distributionRepo = distributionRepo;
         _inventoryRepo = inventoryRepo;
         _beneficiaryRepo = beneficiaryRepo;
+        _expenseCategoryRepo = expenseCategoryRepo;
         _currentUserService = currentUserService;
         _unitOfWork = unitOfWork;
     }
@@ -97,6 +100,25 @@ public class DistributionService : IDistributionService
         }
 
         var entity = dto.ToEntity(charityId, charityName);
+
+        if (dto.Kind == "إعانة نقدية")
+        {
+            if (string.IsNullOrWhiteSpace(dto.ExpenseCategoryId))
+            {
+                throw new ValidationDomainException("يجب اختيار بند ونوع المصروف عند صرف مساعدة نقدية.");
+            }
+
+            var expenseCategory = await _expenseCategoryRepo.GetByIdAsync(dto.ExpenseCategoryId)
+                ?? throw new EntityNotFoundException(nameof(ExpenseCategory), dto.ExpenseCategoryId);
+
+            entity.ExpenseCategoryId = expenseCategory.Id;
+            entity.ExpenseCategoryName = expenseCategory.Name;
+
+            if (string.IsNullOrWhiteSpace(entity.ItemName))
+            {
+                entity.ItemName = expenseCategory.Name;
+            }
+        }
 
         if (string.IsNullOrWhiteSpace(entity.ReceivedByName))
         {

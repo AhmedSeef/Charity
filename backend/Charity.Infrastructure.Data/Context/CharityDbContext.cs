@@ -25,6 +25,7 @@ public class CharityDbContext : IdentityDbContext<ApplicationUser, IdentityRole,
     public DbSet<Governorate> Governorates => Set<Governorate>();
     public DbSet<District> Districts => Set<District>();
     public DbSet<AddressRecord> AddressRecords => Set<AddressRecord>();
+    public DbSet<ExpenseCategory> ExpenseCategories => Set<ExpenseCategory>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -236,6 +237,9 @@ public class CharityDbContext : IdentityDbContext<ApplicationUser, IdentityRole,
             b.Property(x => x.ReceivedByNationalId).HasMaxLength(20);
             b.Property(x => x.ReceivedByRelationship).HasMaxLength(100);
 
+            b.Property(x => x.ExpenseCategoryId).HasMaxLength(50).IsRequired(false);
+            b.Property(x => x.ExpenseCategoryName).HasMaxLength(200).IsRequired(false);
+
             b.HasOne(x => x.Beneficiary)
              .WithMany(ben => ben.Distributions)
              .HasForeignKey(x => x.BeneficiaryId)
@@ -250,6 +254,24 @@ public class CharityDbContext : IdentityDbContext<ApplicationUser, IdentityRole,
              .WithMany()
              .HasForeignKey(x => x.InventoryItemId)
              .OnDelete(DeleteBehavior.Restrict);
+
+            b.HasOne(x => x.ExpenseCategory)
+             .WithMany(ec => ec.Distributions)
+             .HasForeignKey(x => x.ExpenseCategoryId)
+             .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // ExpenseCategory configuration (أنواع وبنود المصروفات)
+        builder.Entity<ExpenseCategory>(b =>
+        {
+            b.ToTable("ExpenseCategories");
+            b.HasKey(x => x.Id);
+            b.Property(x => x.Id).HasMaxLength(50);
+            b.Property(x => x.Name).IsRequired().HasMaxLength(200);
+            b.Property(x => x.Code).HasMaxLength(50);
+            b.Property(x => x.Description).HasMaxLength(500);
+            b.Property(x => x.CharityId).HasMaxLength(50).IsRequired(false);
+            b.Property(x => x.CharityName).HasMaxLength(200).IsRequired(false);
         });
 
         // StaffMember configuration (Tenant isolated)
@@ -294,5 +316,6 @@ public class CharityDbContext : IdentityDbContext<ApplicationUser, IdentityRole,
         builder.Entity<Governorate>().HasQueryFilter(x => !x.IsDeleted);
         builder.Entity<District>().HasQueryFilter(x => !x.IsDeleted);
         builder.Entity<AddressRecord>().HasQueryFilter(x => !x.IsDeleted);
+        builder.Entity<ExpenseCategory>().HasQueryFilter(x => !x.IsDeleted);
     }
 }

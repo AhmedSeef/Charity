@@ -12,6 +12,7 @@ public class DistributionServiceTests
     private readonly FakeRepository<Distribution> _distributions = new();
     private readonly FakeRepository<InventoryItem> _inventory;
     private readonly FakeRepository<Beneficiary> _beneficiaries;
+    private readonly FakeRepository<ExpenseCategory> _expenseCategories = new();
     private readonly FakeUnitOfWork _uow = new();
     private readonly FakeCurrentUser _user = new();
     private readonly DistributionService _service;
@@ -19,7 +20,7 @@ public class DistributionServiceTests
     public DistributionServiceTests()
     {
         _inventory = new(_item); _beneficiaries = new(_beneficiary);
-        _service = new(_distributions, _inventory, _beneficiaries, _user, _uow);
+        _service = new(_distributions, _inventory, _beneficiaries, _expenseCategories, _user, _uow);
     }
 
     private static CreateDistributionDto Request(double quantity = 3) => new() { BeneficiaryId = "beneficiary", InventoryItemId = "stock", Quantity = quantity };
@@ -131,6 +132,45 @@ public class DistributionServiceTests
         Assert.Equal(2, summary.TotalDistributionsCount);
         Assert.Equal(1, summary.OtherCharitiesDistributionsCount);
         Assert.False(summary.AidHistory[0].IsFromCurrentCharity);
+    }
+
+    [Fact]
+    public async Task CashAid_WithoutExpenseCategory_ThrowsValidationDomainException()
+    {
+        var dto = new CreateDistributionDto
+        {
+            BeneficiaryId = "beneficiary",
+            Kind = "إعانة نقدية",
+            Amount = 1500,
+            Quantity = 1,
+            ExpenseCategoryId = null
+        };
+
+        var ex = await Assert.ThrowsAsync<ValidationDomainException>(() => _service.CreateDistributionAsync(dto));
+        Assert.Contains("يجب اختيار بند ونوع المصروف", ex.Message);
+    }
+
+    [Fact]
+    public async Task CashAid_WithExpenseCategory_AssignsCategoryAndAmountSuccessfully()
+    {
+        var cat = new ExpenseCategory { Id = "exp_monthly", Name = "مساعدات نقدية شهرية", Code = "EXP-002" };
+        await _expenseCategories.AddAsync(cat);
+
+        var dto = new CreateDistributionDto
+        {
+            BeneficiaryId = "beneficiary",
+            Kind = "إعانة نقدية",
+            Amount = 1500,
+            Quantity = 1,
+            ExpenseCategoryId = "exp_monthly"
+        };
+
+        var result = await _service.CreateDistributionAsync(dto);
+        Assert.Equal("إعانة نقدية", result.Kind);
+        Assert.Equal(1500, result.Amount);
+        Assert.Equal("exp_monthly", result.ExpenseCategoryId);
+        Assert.Equal("مساعدات نقدية شهرية", result.ExpenseCategoryName);
+        Assert.Equal("مساعدات نقدية شهرية", result.ItemName);
     }
 
     private void AssertNoWrite()

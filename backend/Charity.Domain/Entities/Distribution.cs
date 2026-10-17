@@ -14,6 +14,11 @@ public class Distribution : BaseEntity
     public string Unit { get; set; } = string.Empty;
     public decimal? Amount { get; set; }
 
+    // بند ونوع المصروف (للمساعدات النقدية)
+    public string? ExpenseCategoryId { get; set; }
+    public ExpenseCategory? ExpenseCategory { get; set; }
+    public string? ExpenseCategoryName { get; set; }
+
     public string Date { get; set; } = DateTime.UtcNow.ToString("yyyy-MM-dd");
     public string Notes { get; set; } = string.Empty;
 

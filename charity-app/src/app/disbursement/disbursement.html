@@ -294,6 +294,24 @@
             </select>
           </div>
 
+          <!-- اختيار نوع وبند المصروف في حال الإعانة النقدية -->
+          <div *ngIf="distributionData.kind === 'إعانة نقدية'">
+            <label class="form-label">نوع وبند المصروف النقدي (المصروفات المعتمدة) *</label>
+            <select [(ngModel)]="distributionData.expenseCategoryId" 
+                    name="expenseCategoryId" 
+                    (change)="onExpenseCategoryChange()"
+                    required 
+                    class="form-control font-bold">
+              <option value="" disabled selected>-- اختر بند المصروف من الدليل المعتمد --</option>
+              <option *ngFor="let cat of expenseCategories" [value]="cat.id">
+                [{{ cat.code }}] {{ cat.name }}
+              </option>
+            </select>
+            <small class="form-hint" *ngIf="distributionData.expenseCategoryId" style="color: #047857; display: block; margin-top: 4px; font-weight: 600;">
+              ✓ سيتم قيد وتحميل هذه المساعدة تلقائياً على بند: {{ distributionData.expenseCategoryName }}
+            </small>
+          </div>
+
           <!-- المبلغ في حال الإعانة النقدية -->
           <div *ngIf="distributionData.kind === 'إعانة نقدية'">
             <label class="form-label">المبلغ النقدي المصروف (بالجنيه المصري) *</label>

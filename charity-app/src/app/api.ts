@@ -169,6 +169,41 @@ export class Api {
   }
 
   // ==========================================
+  // 2c. Expense Categories (أنواع وبنود المصروفات)
+  // ==========================================
+  getExpenseCategories(month?: string): Observable<any[]> {
+    const q = month ? `?month=${encodeURIComponent(month)}` : '';
+    return this.http.get<any[]>(`${this.apiUrl}/expense-categories${q}`);
+  }
+
+  getMonthlyExpenseMovements(year?: number): Observable<any[]> {
+    const q = year ? `?year=${year}` : '';
+    return this.http.get<any[]>(`${this.apiUrl}/expense-categories/monthly-movements${q}`);
+  }
+
+  getExpenseCategoryById(id: string, month?: string): Observable<any> {
+    const q = month ? `?month=${encodeURIComponent(month)}` : '';
+    return this.http.get<any>(`${this.apiUrl}/expense-categories/${id}${q}`);
+  }
+
+  getExpenseCategoryBeneficiaries(id: string, month?: string): Observable<any[]> {
+    const q = month ? `?month=${encodeURIComponent(month)}` : '';
+    return this.http.get<any[]>(`${this.apiUrl}/expense-categories/${id}/beneficiaries${q}`);
+  }
+
+  addExpenseCategory(data: any): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/expense-categories`, data);
+  }
+
+  updateExpenseCategory(id: string, data: any): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/expense-categories/${id}`, data);
+  }
+
+  deleteExpenseCategory(id: string): Observable<any> {
+    return this.http.delete<any>(`${this.apiUrl}/expense-categories/${id}`);
+  }
+
+  // ==========================================
   // 3. Aid Distributions
   // ==========================================
   getDistributions(onlyCurrentCharity: boolean = true): Observable<any[]> {

@@ -11,6 +11,8 @@ import { Api } from '../api';
   styleUrls: ['./separation-reasons.css']
 })
 export class SeparationReasonsComponent implements OnInit {
+  viewMode: 'list' | 'form' = 'list';
+
   reasons: any[] = [];
   newReason: any = {
     title: '',
@@ -20,6 +22,7 @@ export class SeparationReasonsComponent implements OnInit {
   successMessage: string = '';
   errorMessage: string = '';
   searchTerm: string = '';
+  isSaving: boolean = false;
 
   constructor(private api: Api, private cdr: ChangeDetectorRef) {}
 
@@ -40,6 +43,16 @@ export class SeparationReasonsComponent implements OnInit {
     });
   }
 
+  switchView(mode: 'list' | 'form'): void {
+    this.viewMode = mode;
+    this.errorMessage = '';
+    this.successMessage = '';
+    if (mode === 'form') {
+      this.newReason = { title: '', description: '' };
+    }
+    this.cdr.detectChanges();
+  }
+
   get filteredReasons(): any[] {
     const term = this.searchTerm.trim().toLowerCase();
     if (!term) return this.reasons;
@@ -56,17 +69,18 @@ export class SeparationReasonsComponent implements OnInit {
     }
 
     this.errorMessage = '';
+    this.isSaving = true;
+
     this.api.addSeparationReason(this.newReason).subscribe({
       next: (created: any) => {
+        this.isSaving = false;
         this.successMessage = `✅ تم إضافة سبب الانفصال (${created.title}) بنجاح!`;
         this.newReason = { title: '', description: '' };
+        this.switchView('list');
         this.loadReasons();
-        setTimeout(() => {
-          this.successMessage = '';
-          this.cdr.detectChanges();
-        }, 4000);
       },
       error: (err: any) => {
+        this.isSaving = false;
         this.errorMessage = err.error?.message || err.message || 'فشل في إضافة سبب الانفصال.';
         this.cdr.detectChanges();
       }

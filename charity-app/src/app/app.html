@@ -32,14 +32,16 @@
       <a routerLink="/distributions" routerLinkActive="active-link">
         🔄 {{ auth.getCurrentUser()?.role === 'Admin' ? 'سجل حركات الصرف (عرض فقط)' : 'سجل حركات الصرف والتقارير' }}
       </a>
+      <a *ngIf="auth.getCurrentUser()?.role === 'Admin'" routerLink="/expense-categories" routerLinkActive="active-link">💳 بنود وأنواع المصروفات</a>
       <a routerLink="/suspension-reasons" routerLinkActive="active-link">⛔ أسباب إيقاف الملفات</a>
       <a routerLink="/separation-reasons" routerLinkActive="active-link">✂️ أسباب انفصال الأفراد</a>
 
-      <!-- حركات وتشغيل الجمعيات فقط (مخازن، تبرعات، موظفين، أصناف، إعدادات) -->
+      <!-- حركات وتشغيل الجمعيات فقط (مخازن، تبرعات، مصروفات، موظفين، أصناف، إعدادات) -->
       <ng-container *ngIf="auth.getCurrentUser()?.role !== 'Admin'">
         <a routerLink="/items-catalog" routerLinkActive="active-link">🏷️ أصناف وخدمات جمعيتنا</a>
         <a routerLink="/inventory" routerLinkActive="active-link">📦 مخازن الجمعية والأرصدة</a>
         <a routerLink="/donations" routerLinkActive="active-link">💰 إدارة التبرعات</a>
+        <a routerLink="/expense-categories" routerLinkActive="active-link" style="font-weight: 700;">💳 بنود ومصروفات الجمعية</a>
         <a routerLink="/staff" routerLinkActive="active-link">👥 فريق العمل والمتطوعين</a>
         <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.15); width: 100%; margin: 8px 0;">
         <a routerLink="/settings" routerLinkActive="active-link">⚙️ إعدادات الجمعية</a>

@@ -1,0 +1,621 @@
+<div dir="rtl" class="expense-categories-container">
+
+  <!-- تنبيهات النجاح والأخطاء -->
+  <div *ngIf="successMessage" class="alert-box alert-success">
+    {{ successMessage }}
+  </div>
+
+  <div *ngIf="errorMessage" class="alert-box alert-danger">
+    {{ errorMessage }}
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- 1. شاشة القائمة (List View) - منفصلة كلياً دون أي فورم -->
+  <!-- ======================================================== -->
+  <div *ngIf="viewMode === 'list'" class="view-list-container">
+    
+    <!-- رأس الصفحة وأزرار الإجراءات -->
+    <div class="page-header">
+      <div>
+        <h2 class="page-title">
+          <span *ngIf="isCharityManager">💳 بنود ومصروفات: {{ activeCharity?.name || 'الجمعية' }}</span>
+          <span *ngIf="!isCharityManager">💳 دليل بنود وأنواع المصروفات النقدية</span>
+        </h2>
+        <p class="page-subtitle">
+          <ng-container *ngIf="isCharityManager">
+            إدارة وإضافة بنود المصروفات المعتمدة لصرف المساعدات النقدية لجمعيتكم، ومتابعة إجمالي المنصرف من صندوق الجمعية على كل بند، واستعراض تفاصيل المستفيدين (من أخذ من هذا البند).
+          </ng-container>
+          <ng-container *ngIf="!isCharityManager">
+            إدارة وتوصيف بنود وأوجه الصرف المعتمدة للمساعدات النقدية، ومتابعة إجمالي المبالغ المحملة والمنصرفة على كل بند مع كشف تفصيلي بمن أخذ من هذا البند.
+          </ng-container>
+        </p>
+      </div>
+
+      <div class="header-actions">
+        <button type="button" class="btn btn-primary" (click)="openCreateForm()">
+          <span class="btn-icon">➕</span>
+          <span>إضافة نوع مصروف جديد</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- تبويبات العرض: بنود المصروفات وحركة المصروف الشهري -->
+    <div class="tabs-nav-bar">
+      <div class="tabs-group">
+        <button type="button" 
+                class="tab-btn" 
+                [class.tab-btn-active]="activeTab === 'categories'" 
+                (click)="activeTab = 'categories'">
+          <span>📋 بنود وتصنيفات المصروفات</span>
+          <span class="tab-badge">{{ categories.length }}</span>
+        </button>
+
+        <button type="button" 
+                class="tab-btn" 
+                [class.tab-btn-active]="activeTab === 'monthly'" 
+                (click)="activeTab = 'monthly'">
+          <span>📅 حركة المصروف الشهري (تقرير الشهور)</span>
+          <span class="tab-badge" *ngIf="monthlyMovements.length">{{ monthlyMovements.length }}</span>
+        </button>
+      </div>
+
+      <!-- منتقي الشهر السريع عند التواجد في تبويب البنود -->
+      <div *ngIf="activeTab === 'categories'" class="month-filter-quick">
+        <label class="month-filter-label">📅 تصفية المنصرف بالشهر:</label>
+        <select class="month-select" [ngModel]="selectedMonth" (ngModelChange)="onMonthFilterChange($event)">
+          <option value="">كل الشهور (الإجمالي التاريخي)</option>
+          <option *ngFor="let m of monthlyMovements" [value]="m.monthYear">
+            {{ m.monthLabel }} ({{ m.totalAmount | number:'1.0-0' }} ج.م)
+          </option>
+        </select>
+        <button *ngIf="selectedMonth" type="button" class="btn-clear-month" (click)="resetMonthFilter()" title="إلغاء تصفية الشهر">
+          ✕ إظهار الكل
+        </button>
+      </div>
+    </div>
+
+    <!-- تنبيه تصفية الشهر المفعل -->
+    <div *ngIf="selectedMonth && activeTab === 'categories'" class="active-filter-alert">
+      <div class="afa-content">
+        <span class="afa-icon">📅</span>
+        <span>يتم الآن احتساب وعرض مبالغ وحركات الصرف الخاصة بـ: <strong>{{ getSelectedMonthLabel() }}</strong> فقط.</span>
+      </div>
+      <button type="button" class="btn-reset-filter" (click)="resetMonthFilter()">
+        ✕ إظهار الإجمالي التاريخي (كل الشهور)
+      </button>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- تبويب 1: بنود وتصنيفات المصروفات          -->
+    <!-- ========================================== -->
+    <div *ngIf="activeTab === 'categories'">
+
+      <!-- بطاقات الإحصائيات السريعة -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon-wrap bg-teal">💳</div>
+          <div class="stat-details">
+            <span class="stat-label">إجمالي بنود المصروفات</span>
+            <span class="stat-value">{{ categories.length }} بند</span>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon-wrap bg-emerald">💰</div>
+          <div class="stat-details">
+            <span class="stat-label">{{ selectedMonth ? 'منصرف ' + getSelectedMonthLabel() : (isCharityManager ? 'إجمالي منصرف الجمعية' : 'إجمالي المنصرف المالي') }}</span>
+            <span class="stat-value text-emerald">{{ totalDisbursedAll | number:'1.0-2' }} <small>ج.م</small></span>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon-wrap bg-blue">📋</div>
+          <div class="stat-details">
+            <span class="stat-label">{{ selectedMonth ? 'حركات الصرف لشهر ' + getSelectedMonthLabel() : 'إجمالي حركات الصرف' }}</span>
+            <span class="stat-value">{{ totalDisbursementsCount }} عملية</span>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon-wrap bg-purple">👨‍👩‍👧‍👦</div>
+          <div class="stat-details">
+            <span class="stat-label">{{ selectedMonth ? 'المستفيدون في ' + getSelectedMonthLabel() : 'إجمالي الأسر والمستفيدين' }}</span>
+            <span class="stat-value">{{ totalBeneficiariesCount }} أسرة</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- شريط البحث السريع والتصفية -->
+      <div class="search-bar-card">
+        <div class="search-input-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" 
+                 [(ngModel)]="searchTerm" 
+                 placeholder="بحث بالاسم، الكود، أو تفاصيل البند..." 
+                 class="search-input" />
+        </div>
+        <div class="search-stats">
+          <span>عرض {{ filteredCategories.length }} من أصل {{ categories.length }} بند</span>
+        </div>
+      </div>
+
+      <!-- جدول بنود المصروفات -->
+      <div class="table-card">
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width: 110px;">كود البند</th>
+                <th>مسمى ونوع بند المصروف</th>
+                <th>الوصف والضوابط</th>
+                <th style="width: 100px;">الحالة</th>
+                <th style="width: 160px; text-align: left;">
+                  {{ selectedMonth ? 'منصرف ' + getSelectedMonthLabel() : 'إجمالي المنصرف' }}
+                </th>
+                <th style="width: 130px; text-align: center;">الحركات والعمليات</th>
+                <th style="width: 220px; text-align: center;">الإجراءات والتقارير</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let cat of filteredCategories" [class.row-highlight]="cat.totalDisbursedAmount > 0">
+                <!-- كود البند -->
+                <td>
+                  <span class="badge-code">{{ cat.code }}</span>
+                </td>
+
+                <!-- مسمى البند -->
+                <td>
+                  <div class="cat-name-cell">
+                    <strong>{{ cat.name }}</strong>
+                    <span *ngIf="cat.charityName" class="tenant-tag">{{ cat.charityName }}</span>
+                  </div>
+                </td>
+
+                <!-- الوصف -->
+                <td>
+                  <span class="cat-desc">{{ cat.description || 'لا يوجد وصف تفصيلي' }}</span>
+                </td>
+
+                <!-- الحالة -->
+                <td>
+                  <span class="status-badge" [class.status-active]="cat.isActive !== false" [class.status-inactive]="cat.isActive === false">
+                    {{ cat.isActive !== false ? 'فعال' : 'معطل' }}
+                  </span>
+                </td>
+
+                <!-- إجمالي المنصرف (مُميز وواضح وقابل للنقر لاستعراض التفاصيل) -->
+                <td style="text-align: left;">
+                  <div class="amount-pill" 
+                       [class.has-amount]="cat.totalDisbursedAmount > 0" 
+                       (click)="openDrilldown(cat)"
+                       style="cursor: pointer;"
+                       [title]="selectedMonth ? 'اضغط لعرض من أخذ من هذا البند في ' + getSelectedMonthLabel() : 'اضغط لعرض تفاصيل الحالات والمستفيدين الذين صُرف لهم من هذا البند'">
+                    <span class="amount-num">{{ cat.totalDisbursedAmount | number:'1.0-2' }}</span>
+                    <span class="amount-curr">ج.م</span>
+                  </div>
+                </td>
+
+                <!-- العمليات والحالات -->
+                <td style="text-align: center;">
+                  <div class="count-tag" (click)="openDrilldown(cat)" style="cursor: pointer;" title="عرض التفاصيل">
+                    <span>{{ cat.disbursementsCount }} حركة</span>
+                    <small *ngIf="cat.beneficiariesCount">({{ cat.beneficiariesCount }} أسرة)</small>
+                  </div>
+                </td>
+
+                <!-- أزرار الإجراءات -->
+                <td style="text-align: center;">
+                  <div class="actions-group">
+                    <!-- زر كشف الحالات: من أخذ من هذا البند والتفاصيل -->
+                    <button type="button" 
+                            class="btn-action btn-drilldown" 
+                            [title]="selectedMonth ? 'عرض تفاصيل من أخذ في ' + getSelectedMonthLabel() : 'عرض تفاصيل المستفيدين الذين صُرف لهم من هذا البند'"
+                            (click)="openDrilldown(cat)">
+                      <span>👥 من أخذ؟</span>
+                      <span class="badge-pill" *ngIf="cat.disbursementsCount > 0">{{ cat.disbursementsCount }}</span>
+                    </button>
+
+                    <!-- تعديل -->
+                    <button type="button" 
+                            class="btn-action btn-edit" 
+                            title="تعديل بند المصروف"
+                            (click)="openEditForm(cat)">
+                      ✏️
+                    </button>
+
+                    <!-- حذف (معطل إذا عليه حركات صرف سابقة) -->
+                    <button type="button" 
+                            class="btn-action btn-delete" 
+                            [disabled]="!cat.canDelete || cat.disbursementsCount > 0"
+                            [title]="(!cat.canDelete || cat.disbursementsCount > 0) ? 'محظور الحذف: مسجل عليه حركات صرف سابقة لحماية التدقيق المالي' : 'حذف البند'"
+                            (click)="deleteCategory(cat)">
+                      🗑️
+                    </button>
+                  </div>
+                </td>
+              </tr>
+
+              <tr *ngIf="filteredCategories.length === 0">
+                <td colspan="7" class="empty-state">
+                  <div class="empty-wrap">
+                    <span class="empty-icon">📂</span>
+                    <p>لا توجد بنود مصروفات مطابقة للبحث الحالي.</p>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ========================================== -->
+    <!-- تبويب 2: بيان حركة المصروف الشهري         -->
+    <!-- ========================================== -->
+    <div *ngIf="activeTab === 'monthly'" class="monthly-movements-section">
+      <!-- رأس التقرير واختيار السنة -->
+      <div class="monthly-header-bar">
+        <div class="mh-title">
+          <h3>📊 حركة المصروف الشهري لصندوق {{ activeCharity?.name || 'الجمعية' }} لعام {{ selectedYear }}</h3>
+          <p>تتبع إجمالي النفقات والمساعدات النقدية الخارجة شهراً بشهر (مثل شهر 8/2026، شهر 7/2026)، وتوزيع المبالغ المنصرفة على بنود الصرف.</p>
+        </div>
+        <div class="mh-controls">
+          <label>السنة المالية:</label>
+          <select [(ngModel)]="selectedYear" (ngModelChange)="onYearChange()" class="year-select">
+            <option [value]="2026">2026</option>
+            <option [value]="2025">2025</option>
+            <option [value]="2024">2024</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- بطاقات ملخص السنة -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon-wrap bg-emerald">💰</div>
+          <div class="stat-details">
+            <span class="stat-label">إجمالي منصرف سنة {{ selectedYear }}</span>
+            <span class="stat-value text-emerald">{{ monthlyYearTotalAmount | number:'1.0-2' }} <small>ج.م</small></span>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon-wrap bg-blue">📋</div>
+          <div class="stat-details">
+            <span class="stat-label">إجمالي حركات الصرف</span>
+            <span class="stat-value">{{ monthlyYearTotalDisbursements }} عملية</span>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon-wrap bg-purple">👨‍👩‍👧‍👦</div>
+          <div class="stat-details">
+            <span class="stat-label">إجمالي الأسر المستفيدة</span>
+            <span class="stat-value">{{ monthlyYearTotalBeneficiaries }} أسرة</span>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon-wrap bg-teal">📅</div>
+          <div class="stat-details">
+            <span class="stat-label">عدد الشهور المسجل بها حركات</span>
+            <span class="stat-value">{{ monthlyMovements.length }} شهر</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- جدول تفاصيل حركة الشهور -->
+      <div class="table-card">
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width: 150px;">الشهر / السنة</th>
+                <th style="width: 170px; text-align: left;">إجمالي المنصرف الشهري</th>
+                <th style="width: 130px; text-align: center;">عدد العمليات</th>
+                <th style="width: 130px; text-align: center;">الأسر المستفيدة</th>
+                <th>أبرز بنود الصرف في هذا الشهر</th>
+                <th style="width: 220px; text-align: center;">الإجراءات</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let m of monthlyMovements">
+                <!-- الشهر -->
+                <td>
+                  <span class="month-pill-badge">{{ m.monthLabel }}</span>
+                </td>
+
+                <!-- إجمالي المنصرف -->
+                <td style="text-align: left;">
+                  <span class="amount-num text-emerald" style="font-size: 16px; font-weight: 800;">
+                    {{ m.totalAmount | number:'1.0-2' }} <small>ج.م</small>
+                  </span>
+                </td>
+
+                <!-- العمليات -->
+                <td style="text-align: center;">
+                  <span class="badge-count">{{ m.disbursementsCount }} عملية</span>
+                </td>
+
+                <!-- الأسر -->
+                <td style="text-align: center;">
+                  <span class="badge-beneficiary">{{ m.beneficiariesCount }} أسرة</span>
+                </td>
+
+                <!-- أبرز البنود -->
+                <td>
+                  <div class="top-categories-list">
+                    <span *ngFor="let tc of m.topCategories" class="top-category-chip">
+                      <strong>{{ tc.categoryName }}</strong>: {{ tc.amount | number:'1.0-0' }} ج.م ({{ tc.disbursementsCount }} عملية)
+                    </span>
+                    <span *ngIf="!m.topCategories || m.topCategories.length === 0" class="text-muted">
+                      لم تحدد بنود
+                    </span>
+                  </div>
+                </td>
+
+                <!-- زر الإجراء والفلترة -->
+                <td style="text-align: center;">
+                  <button type="button" 
+                          class="btn-action btn-drilldown" 
+                          (click)="filterByMonthFromMovement(m.monthYear)"
+                          title="استعراض تفاصيل بنود ومستفيدي هذا الشهر">
+                    <span>🔍 استعراض بنود {{ m.monthLabel }}</span>
+                  </button>
+                </td>
+              </tr>
+
+              <tr *ngIf="monthlyMovements.length === 0">
+                <td colspan="6" class="empty-state">
+                  <div class="empty-wrap">
+                    <span class="empty-icon">📅</span>
+                    <p>لا توجد حركات صرف مسجلة لسنة {{ selectedYear }}.</p>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- 2. شاشة الإضافة والتعديل (Form View) - شاشة مستقلة تماماً -->
+  <!-- ======================================================== -->
+  <div *ngIf="viewMode === 'form'" class="view-form-container">
+    
+    <!-- زر العودة وشريط العنوان -->
+    <div class="form-header">
+      <button type="button" class="btn btn-outline" (click)="switchView('list')">
+        <span>⬅️ العودة لقائمة بنود المصروفات</span>
+      </button>
+
+      <div class="form-title-wrap">
+        <h2 class="form-title">
+          <span>{{ isEditing ? '✏️ تعديل بند المصروفات' : '➕ إضافة نوع وبند مصروفات جديد' }}</span>
+        </h2>
+        <p class="form-subtitle">
+          تحديد المسمى والكود والضوابط التوجيهية للبند لاستخدامه عند تسجيل المساعدات النقدية للمستفيدين.
+        </p>
+      </div>
+    </div>
+
+    <!-- كارت نموذج الإدخال المستقل -->
+    <div class="form-card">
+      <form (ngSubmit)="saveCategory()">
+        
+        <div class="form-grid">
+          <!-- كود البند -->
+          <div class="form-group">
+            <label class="form-label">كود البند المحاسبي *</label>
+            <input type="text" 
+                   [(ngModel)]="categoryForm.code" 
+                   name="code" 
+                   required
+                   placeholder="مثال: EXP-001" 
+                   class="form-control font-mono" />
+            <small class="form-hint">كود تعريفي موحد للبند لتسهيل التبويب المالي والفرز.</small>
+          </div>
+
+          <!-- مسمى ونوع المصروف -->
+          <div class="form-group">
+            <label class="form-label">مسمى ونوع المصروف *</label>
+            <input type="text" 
+                   [(ngModel)]="categoryForm.name" 
+                   name="name" 
+                   required
+                   placeholder="مثال: إعانات علاجية وعمليات جراحية، مصاريف تعليمية..." 
+                   class="form-control font-bold" />
+            <small class="form-hint">يظهر هذا الاسم في قائمة اختيار بند الصرف بشاشة صرف المساعدات النقدية.</small>
+          </div>
+        </div>
+
+        <!-- الوصف والضوابط -->
+        <div class="form-group full-width">
+          <label class="form-label">وصف البند وضوابط وقواعد الصرف</label>
+          <textarea [(ngModel)]="categoryForm.description" 
+                    name="description" 
+                    rows="4" 
+                    placeholder="بيان شروط استحقاق هذا البند، الفئات المستهدفة، أو تعليمات مجلس الإدارة بشأنه..." 
+                    class="form-control"></textarea>
+        </div>
+
+        <!-- حالة التفعيل -->
+        <div class="form-group checkbox-group" *ngIf="isEditing">
+          <label class="checkbox-label">
+            <input type="checkbox" [(ngModel)]="categoryForm.isActive" name="isActive" />
+            <span>تفعيل بند المصروفات (متاح للاختيار في شاشة الصرف)</span>
+          </label>
+        </div>
+
+        <!-- أزرار الحفظ والإلغاء -->
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary btn-save" [disabled]="isSaving">
+            <span *ngIf="!isSaving">💾 {{ isEditing ? 'حفظ التعديلات' : 'حفظ واعتماد بند المصروف' }}</span>
+            <span *ngIf="isSaving">⏳ جاري الحفظ...</span>
+          </button>
+
+          <button type="button" class="btn btn-outline" (click)="switchView('list')">
+            إلغاء والعودة
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- 3. نافذة كشف الحالات: "من أخذ من هذا البند؟" (Modal)     -->
+  <!-- ======================================================== -->
+  <div *ngIf="showDrilldownModal" class="modal-backdrop" (click)="closeDrilldown()">
+    <div class="modal-dialog drilldown-modal" (click)="$event.stopPropagation()">
+      
+      <!-- رأس النافذة -->
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <span class="modal-icon">📋</span>
+          <div>
+            <h3 class="modal-title">
+              سجل المستفيدين من بند: <strong>{{ selectedCategory?.name }}</strong>
+            </h3>
+            <span class="modal-code">كود البند: {{ selectedCategory?.code }}</span>
+          </div>
+        </div>
+
+        <div class="modal-top-actions">
+          <button type="button" class="btn-action-sm btn-print" (click)="printDrilldown()" title="طباعة كشف الحالات">
+            🖨️ طباعة الكشف
+          </button>
+          <button type="button" class="btn-close" (click)="closeDrilldown()">✕</button>
+        </div>
+      </div>
+
+      <!-- شريط ملخص المبالغ داخل النافذة -->
+      <div class="modal-summary-bar">
+        <div class="msb-item">
+          <span class="msb-label">إجمالي المنصرف من هذا البند:</span>
+          <span class="msb-value text-emerald">{{ selectedCategory?.totalDisbursedAmount | number:'1.0-2' }} ج.م</span>
+        </div>
+        <div class="msb-item">
+          <span class="msb-label">عدد حركات الصرف:</span>
+          <span class="msb-value">{{ drilldownRecipients.length }} حركة</span>
+        </div>
+        <div class="msb-item" *ngIf="selectedMonth">
+          <span class="msb-label">تصفية الشهر:</span>
+          <span class="msb-value" style="color: #0284c7; font-weight: 800;">{{ getSelectedMonthLabel() }}</span>
+        </div>
+        <div class="msb-item" *ngIf="!selectedMonth">
+          <span class="msb-label">النطاق الزمني:</span>
+          <span class="msb-value">كل الشهور (الإجمالي التاريخي)</span>
+        </div>
+      </div>
+
+      <!-- محرك البحث داخل الكشف -->
+      <div class="modal-search-wrap">
+        <input type="text" 
+               [(ngModel)]="drilldownSearchTerm" 
+               placeholder="🔍 تصفية الكشف بالاسم، كود الأسرة، الرقم القومي، المستلم الفعلي..." 
+               class="modal-search-input" />
+      </div>
+
+      <!-- محتوى الجدول -->
+      <div class="modal-body">
+        <div *ngIf="isLoadingRecipients" class="modal-loading">
+          <span>⏳ جاري تحميل سجل الحركات والمستفيدين...</span>
+        </div>
+
+        <div *ngIf="!isLoadingRecipients && filteredRecipients.length > 0" class="table-responsive">
+          <table class="drilldown-table">
+            <thead>
+              <tr>
+                <th style="width: 40px;">#</th>
+                <th>اسم المستفيد (رب الأسرة)</th>
+                <th>كود الأسرة</th>
+                <th>المحافظة والمركز</th>
+                <th>الرقم القومي / الهاتف</th>
+                <th style="width: 120px; text-align: left;">المبلغ المنصرف</th>
+                <th style="width: 110px;">تاريخ الصرف</th>
+                <th>المستلم الفعلي بالأسرة</th>
+                <th>الجمعية المانحة</th>
+                <th>ملاحظات الصرف</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let r of filteredRecipients; let i = index">
+                <td>{{ i + 1 }}</td>
+
+                <!-- اسم المستفيد -->
+                <td>
+                  <strong class="rec-name">{{ r.beneficiaryName }}</strong>
+                </td>
+
+                <!-- كود الأسرة -->
+                <td>
+                  <span class="rec-family-code">{{ r.familyCode || 'غير مسجل' }}</span>
+                </td>
+
+                <!-- العنوان والمركز -->
+                <td>
+                  <span class="rec-geo">{{ r.governorateName }} - {{ r.districtName }}</span>
+                </td>
+
+                <!-- الرقم القومي والهاتف -->
+                <td>
+                  <div class="rec-contact">
+                    <span>{{ r.nationalId || 'بدون رقم قومي' }}</span>
+                    <small *ngIf="r.phone">{{ r.phone }}</small>
+                  </div>
+                </td>
+
+                <!-- المبلغ المنصرف -->
+                <td style="text-align: left;">
+                  <span class="rec-amount">{{ r.amount | number:'1.0-2' }} ج.م</span>
+                </td>
+
+                <!-- تاريخ الصرف -->
+                <td>
+                  <span class="rec-date">{{ r.date }}</span>
+                </td>
+
+                <!-- المستلم الفعلي بالأسرة -->
+                <td>
+                  <div class="rec-recipient-wrap">
+                    <span class="rec-recipient-name">👤 {{ r.receivedByName || r.beneficiaryName }}</span>
+                    <span class="rec-recipient-rel">({{ r.receivedByRelationship || 'صاحب الملف' }})</span>
+                  </div>
+                </td>
+
+                <!-- الجمعية المانحة -->
+                <td>
+                  <span class="rec-charity">{{ r.charityName }}</span>
+                </td>
+
+                <!-- ملاحظات الصرف -->
+                <td>
+                  <span class="rec-notes">{{ r.notes || '—' }}</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div *ngIf="!isLoadingRecipients && filteredRecipients.length === 0" class="modal-empty-state">
+          <span class="empty-icon">📭</span>
+          <p>لم يتم تسجيل أي حركات صرف على هذا البند حتى الآن.</p>
+        </div>
+      </div>
+
+      <!-- ذيل النافذة -->
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" (click)="closeDrilldown()">
+          إغلاق النافذة
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+</div>

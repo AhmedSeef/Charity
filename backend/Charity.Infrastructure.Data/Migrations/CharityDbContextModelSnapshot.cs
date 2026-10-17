@@ -684,6 +684,14 @@ namespace Charity.Infrastructure.Data.Migrations
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("ExpenseCategoryId")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("ExpenseCategoryName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
                     b.Property<string>("InventoryItemId")
                         .HasColumnType("nvarchar(450)");
 
@@ -730,6 +738,8 @@ namespace Charity.Infrastructure.Data.Migrations
                     b.HasIndex("BeneficiaryId");
 
                     b.HasIndex("CharityId");
+
+                    b.HasIndex("ExpenseCategoryId");
 
                     b.HasIndex("InventoryItemId");
 
@@ -849,6 +859,52 @@ namespace Charity.Infrastructure.Data.Migrations
                     b.HasIndex("InventoryItemId");
 
                     b.ToTable("Donations", (string)null);
+                });
+
+            modelBuilder.Entity("Charity.Domain.Entities.ExpenseCategory", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("CharityId")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("CharityName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ExpenseCategories", (string)null);
                 });
 
             modelBuilder.Entity("Charity.Domain.Entities.Governorate", b =>
@@ -1308,6 +1364,11 @@ namespace Charity.Infrastructure.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("Charity.Domain.Entities.ExpenseCategory", "ExpenseCategory")
+                        .WithMany("Distributions")
+                        .HasForeignKey("ExpenseCategoryId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("Charity.Domain.Entities.InventoryItem", "InventoryItem")
                         .WithMany()
                         .HasForeignKey("InventoryItemId")
@@ -1316,6 +1377,8 @@ namespace Charity.Infrastructure.Data.Migrations
                     b.Navigation("Beneficiary");
 
                     b.Navigation("Charity");
+
+                    b.Navigation("ExpenseCategory");
 
                     b.Navigation("InventoryItem");
                 });
@@ -1449,6 +1512,11 @@ namespace Charity.Infrastructure.Data.Migrations
             modelBuilder.Entity("Charity.Domain.Entities.District", b =>
                 {
                     b.Navigation("AddressRecords");
+                });
+
+            modelBuilder.Entity("Charity.Domain.Entities.ExpenseCategory", b =>
+                {
+                    b.Navigation("Distributions");
                 });
 
             modelBuilder.Entity("Charity.Domain.Entities.Governorate", b =>

@@ -309,6 +309,8 @@ public static class EntityMappingExtensions
         Quantity = dist.Quantity,
         Unit = dist.Unit,
         Amount = dist.Amount,
+        ExpenseCategoryId = dist.ExpenseCategoryId,
+        ExpenseCategoryName = dist.ExpenseCategoryName ?? dist.ExpenseCategory?.Name,
         Date = dist.Date,
         Notes = dist.Notes,
         ReceivedByMemberId = dist.ReceivedByMemberId,
@@ -329,6 +331,8 @@ public static class EntityMappingExtensions
         Quantity = dto.Quantity,
         Unit = dto.Unit ?? string.Empty,
         Amount = dto.Amount,
+        ExpenseCategoryId = dto.ExpenseCategoryId,
+        ExpenseCategoryName = dto.ExpenseCategoryName,
         Date = string.IsNullOrWhiteSpace(dto.Date) ? DateTime.UtcNow.ToString("yyyy-MM-dd") : dto.Date,
         Notes = dto.Notes ?? string.Empty,
         ReceivedByMemberId = dto.ReceivedByMemberId,
@@ -396,5 +400,17 @@ public static class EntityMappingExtensions
         DistrictId = a.DistrictId,
         AddressText = a.AddressText,
         UsageCount = a.UsageCount
+    };
+
+    // ExpenseCategory
+    public static ExpenseCategoryDto ToDto(this ExpenseCategory c) => new()
+    {
+        Id = c.Id,
+        Name = c.Name,
+        Code = c.Code,
+        Description = c.Description,
+        IsActive = c.IsActive,
+        CharityId = c.CharityId,
+        CharityName = c.CharityName
     };
 }
