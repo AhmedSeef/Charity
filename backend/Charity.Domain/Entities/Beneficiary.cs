@@ -43,6 +43,11 @@ public class Beneficiary : BaseEntity
     public string? SuspendedByCharityName { get; set; }
 
     // 4. أبعاد البحث الاجتماعي الميداني والقرية (Field Research & Multidimensional Poverty)
+    public string? GovernorateId { get; set; }
+    public string? GovernorateName { get; set; }
+    public string? DistrictId { get; set; }
+    public string? DistrictName { get; set; }
+    public string? AddressId { get; set; } // ربط العنوان بجدول العناوين المستقل
     public string VillageOrDistrict { get; set; } = string.Empty; // القرية / العزبة / النجع / الحي
     public string PriorityTier { get; set; } = "أ - أولوية قصوى ومعدم"; // أ - أولوية قصوى ومعدم | ب - متوسط الاحتياج | ج - طوارئ وظرف مؤقت
 

@@ -275,4 +275,29 @@ export class Api {
   getDashboardStats(): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/dashboard/stats`);
   }
+
+  // ==========================================
+  // 9. Geographic Lookups & Smart Address Autocomplete
+  // ==========================================
+  getGovernorates(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/lookups/governorates`);
+  }
+
+  getDistricts(governorateId?: string): Observable<any[]> {
+    const q = governorateId ? `?governorateId=${encodeURIComponent(governorateId)}` : '';
+    return this.http.get<any[]>(`${this.apiUrl}/lookups/districts${q}`);
+  }
+
+  autocompleteAddresses(query: string, governorateId?: string, districtId?: string, limit: number = 10): Observable<any[]> {
+    const params = new URLSearchParams();
+    if (query) params.set('q', query);
+    if (governorateId) params.set('governorateId', governorateId);
+    if (districtId) params.set('districtId', districtId);
+    params.set('limit', limit.toString());
+    return this.http.get<any[]>(`${this.apiUrl}/lookups/addresses/autocomplete?${params.toString()}`);
+  }
+
+  createAddress(data: any): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/lookups/addresses`, data);
+  }
 }

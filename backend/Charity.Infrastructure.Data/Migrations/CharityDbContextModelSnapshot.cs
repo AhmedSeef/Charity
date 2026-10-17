@@ -22,6 +22,61 @@ namespace Charity.Infrastructure.Data.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("Charity.Domain.Entities.AddressRecord", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("AddressText")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("CharityId")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("CharityName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DistrictId")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("GovernorateId")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("NormalizedText")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<int>("UsageCount")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DistrictId");
+
+                    b.HasIndex("GovernorateId");
+
+                    b.ToTable("AddressRecords", (string)null);
+                });
+
             modelBuilder.Entity("Charity.Domain.Entities.ApplicationUser", b =>
                 {
                     b.Property<string>("Id")
@@ -108,6 +163,9 @@ namespace Charity.Infrastructure.Data.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("AddressId")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("AppliancesSummary")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -134,6 +192,12 @@ namespace Charity.Infrastructure.Data.Migrations
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("DistrictId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DistrictName")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("ElectricitySource")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -153,6 +217,12 @@ namespace Charity.Infrastructure.Data.Migrations
 
                     b.Property<string>("GovernmentPensionDetails")
                         .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("GovernorateId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("GovernorateName")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("HasChronicDisease")
@@ -496,6 +566,18 @@ namespace Charity.Infrastructure.Data.Migrations
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("DistrictId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DistrictName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("GovernorateId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("GovernorateName")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Icon")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -654,6 +736,46 @@ namespace Charity.Infrastructure.Data.Migrations
                     b.ToTable("Distributions", (string)null);
                 });
 
+            modelBuilder.Entity("Charity.Domain.Entities.District", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("GovernorateId")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("NameEn")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GovernorateId");
+
+                    b.ToTable("Districts", (string)null);
+                });
+
             modelBuilder.Entity("Charity.Domain.Entities.Donation", b =>
                 {
                     b.Property<string>("Id")
@@ -727,6 +849,39 @@ namespace Charity.Infrastructure.Data.Migrations
                     b.HasIndex("InventoryItemId");
 
                     b.ToTable("Donations", (string)null);
+                });
+
+            modelBuilder.Entity("Charity.Domain.Entities.Governorate", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("NameEn")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Governorates", (string)null);
                 });
 
             modelBuilder.Entity("Charity.Domain.Entities.InventoryItem", b =>
@@ -1066,6 +1221,25 @@ namespace Charity.Infrastructure.Data.Migrations
                     b.ToTable("UserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("Charity.Domain.Entities.AddressRecord", b =>
+                {
+                    b.HasOne("Charity.Domain.Entities.District", "District")
+                        .WithMany("AddressRecords")
+                        .HasForeignKey("DistrictId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Charity.Domain.Entities.Governorate", "Governorate")
+                        .WithMany()
+                        .HasForeignKey("GovernorateId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("District");
+
+                    b.Navigation("Governorate");
+                });
+
             modelBuilder.Entity("Charity.Domain.Entities.ApplicationUser", b =>
                 {
                     b.HasOne("Charity.Domain.Entities.Charity", "Charity")
@@ -1144,6 +1318,17 @@ namespace Charity.Infrastructure.Data.Migrations
                     b.Navigation("Charity");
 
                     b.Navigation("InventoryItem");
+                });
+
+            modelBuilder.Entity("Charity.Domain.Entities.District", b =>
+                {
+                    b.HasOne("Charity.Domain.Entities.Governorate", "Governorate")
+                        .WithMany("Districts")
+                        .HasForeignKey("GovernorateId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Governorate");
                 });
 
             modelBuilder.Entity("Charity.Domain.Entities.Donation", b =>
@@ -1259,6 +1444,16 @@ namespace Charity.Infrastructure.Data.Migrations
                     b.Navigation("StaffMembers");
 
                     b.Navigation("Users");
+                });
+
+            modelBuilder.Entity("Charity.Domain.Entities.District", b =>
+                {
+                    b.Navigation("AddressRecords");
+                });
+
+            modelBuilder.Entity("Charity.Domain.Entities.Governorate", b =>
+                {
+                    b.Navigation("Districts");
                 });
 #pragma warning restore 612, 618
         }

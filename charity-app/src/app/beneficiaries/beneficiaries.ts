@@ -36,6 +36,17 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
   successMessage: string = '';
   errorMessage: string = '';
 
+  // Geographic Lookups & Autocomplete
+  governorates: any[] = [];
+  allDistricts: any[] = [];
+  filteredDistricts: any[] = [];
+  selectedGovFilter: string = 'الكل';
+  selectedDistrictFilter: string = 'الكل';
+  filterDistrictsList: any[] = [];
+  addressSuggestions: any[] = [];
+  showAddressSuggestions: boolean = false;
+  private addressAutocompleteTimer: any;
+
   currentBen: any = { 
     id: null,
     familyCode: '',
@@ -46,6 +57,11 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
     category: 'أرامل وأيتام', 
     maritalStatus: 'متزوج',
     familyCount: 1,
+    governorateId: 'gov_kfs',
+    governorateName: 'كفر الشيخ',
+    districtId: 'dist_motobas',
+    districtName: 'مركز مطوبس',
+    addressId: null,
     address: '', 
     housing: 'إيجار جديد',
     villageOrDistrict: '',
@@ -231,6 +247,7 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
       this.suspensionReasons = data;
       this.cdr.detectChanges();
     });
+    this.loadGeographicLookups();
   }
 
   initRouteSync() {
@@ -261,6 +278,7 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
             ...found, 
             familyMembers: (found.familyMembers || []).map((m: any) => ({ ...m })) 
           };
+          this.filterDistrictsByGov();
           this.formMode = 'edit';
           this.viewMode = 'form';
         } else {
@@ -348,6 +366,8 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
   get filteredBeneficiaries(): any[] {
     return this.beneficiaries.filter(b => {
       const matchCat = this.selectedCategoryFilter === 'الكل' || b.category === this.selectedCategoryFilter;
+      const matchGov = this.selectedGovFilter === 'الكل' || b.governorateId === this.selectedGovFilter;
+      const matchDist = this.selectedDistrictFilter === 'الكل' || b.districtId === this.selectedDistrictFilter;
       const term = this.searchTerm.trim().toLowerCase();
       const matchSearch = !term ||
         (b.name && b.name.toLowerCase().includes(term)) ||
@@ -356,11 +376,14 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
         (b.familyName && b.familyName.toLowerCase().includes(term)) ||
         (b.phone && b.phone.includes(term)) ||
         (b.address && b.address.toLowerCase().includes(term)) ||
+        (b.villageOrDistrict && b.villageOrDistrict.toLowerCase().includes(term)) ||
+        (b.governorateName && b.governorateName.toLowerCase().includes(term)) ||
+        (b.districtName && b.districtName.toLowerCase().includes(term)) ||
         (b.familyMembers && b.familyMembers.some((m: any) =>
           (m.name && m.name.toLowerCase().includes(term)) ||
           (m.nationalId && m.nationalId.includes(term))
         ));
-      return matchCat && matchSearch;
+      return matchCat && matchGov && matchDist && matchSearch;
     });
   }
 
@@ -426,6 +449,11 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
       maritalStatus: 'متزوج',
       familyCount: 1, 
       headHistories: [],
+      governorateId: 'gov_kfs',
+      governorateName: 'كفر الشيخ',
+      districtId: 'dist_motobas',
+      districtName: 'مركز مطوبس',
+      addressId: null,
       address: '', 
       housing: 'إيجار جديد',
       villageOrDistrict: '',
@@ -914,5 +942,88 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
 
   printProfile() {
     window.print();
+  }
+
+  // ==========================================
+  // Geographic Lookups & Smart Address Autocomplete
+  // ==========================================
+  loadGeographicLookups() {
+    this.api.getGovernorates().subscribe({
+      next: govs => {
+        this.governorates = govs || [];
+        this.cdr.detectChanges();
+      }
+    });
+
+    this.api.getDistricts().subscribe({
+      next: dists => {
+        this.allDistricts = dists || [];
+        this.filterDistrictsByGov();
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  onGovernorateChange() {
+    const g = this.governorates.find(x => x.id === this.currentBen.governorateId);
+    this.currentBen.governorateName = g ? g.name : '';
+    this.filterDistrictsByGov();
+    this.currentBen.districtId = this.filteredDistricts.length > 0 ? this.filteredDistricts[0].id : '';
+    this.onDistrictChange();
+  }
+
+  onDistrictChange() {
+    const d = this.allDistricts.find(x => x.id === this.currentBen.districtId);
+    this.currentBen.districtName = d ? d.name : '';
+  }
+
+  filterDistrictsByGov() {
+    if (this.currentBen.governorateId) {
+      this.filteredDistricts = this.allDistricts.filter(d => d.governorateId === this.currentBen.governorateId);
+    } else {
+      this.filteredDistricts = [...this.allDistricts];
+    }
+  }
+
+  onFilterGovChange() {
+    if (this.selectedGovFilter !== 'الكل') {
+      this.filterDistrictsList = this.allDistricts.filter(d => d.governorateId === this.selectedGovFilter);
+    } else {
+      this.filterDistrictsList = [];
+      this.selectedDistrictFilter = 'الكل';
+    }
+    this.currentPage = 1;
+  }
+
+  onAddressInput() {
+    if (this.addressAutocompleteTimer) clearTimeout(this.addressAutocompleteTimer);
+    const query = this.currentBen.address?.trim() || '';
+
+    this.addressAutocompleteTimer = setTimeout(() => {
+      this.api.autocompleteAddresses(query, this.currentBen.governorateId, this.currentBen.districtId, 8).subscribe({
+        next: (res: any[]) => {
+          this.addressSuggestions = res || [];
+          this.showAddressSuggestions = this.addressSuggestions.length > 0;
+          this.cdr.detectChanges();
+        }
+      });
+    }, 200);
+  }
+
+  selectAddressSuggestion(item: any) {
+    this.currentBen.address = item.addressText;
+    this.currentBen.addressId = item.id;
+    if (item.addressText && !this.currentBen.villageOrDistrict) {
+      this.currentBen.villageOrDistrict = item.addressText;
+    }
+    this.showAddressSuggestions = false;
+    this.cdr.detectChanges();
+  }
+
+  hideAddressSuggestions() {
+    setTimeout(() => {
+      this.showAddressSuggestions = false;
+      this.cdr.detectChanges();
+    }, 250);
   }
 }

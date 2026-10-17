@@ -54,6 +54,121 @@ public static class DbInitializer
             await context.SaveChangesAsync();
         }
 
+        // 2c. Seed Governorates (Lookups - المحافظات)
+        if (!await context.Governorates.AnyAsync())
+        {
+            var govs = new List<Governorate>
+            {
+                new() { Id = "gov_kfs", Name = "كفر الشيخ", NameEn = "Kafr El-Sheikh", IsActive = true },
+                new() { Id = "gov_cairo", Name = "القاهرة", NameEn = "Cairo", IsActive = true },
+                new() { Id = "gov_giza", Name = "الجيزة", NameEn = "Giza", IsActive = true },
+                new() { Id = "gov_alex", Name = "الإسكندرية", NameEn = "Alexandria", IsActive = true },
+                new() { Id = "gov_dakahlia", Name = "الدقهلية", NameEn = "Dakahlia", IsActive = true },
+                new() { Id = "gov_sharqia", Name = "الشرقية", NameEn = "Sharqia", IsActive = true },
+                new() { Id = "gov_gharbia", Name = "الغربية", NameEn = "Gharbia", IsActive = true },
+                new() { Id = "gov_beheira", Name = "البحيرة", NameEn = "Beheira", IsActive = true }
+            };
+
+            await context.Governorates.AddRangeAsync(govs);
+            await context.SaveChangesAsync();
+        }
+
+        // 2d. Seed Districts (Lookups - المراكز والأحياء التابعة للمحافظات)
+        if (!await context.Districts.AnyAsync())
+        {
+            var districts = new List<District>
+            {
+                // مراكز محافظة كفر الشيخ (البداية بمركز مطوبس كما طُلب)
+                new() { Id = "dist_motobas", GovernorateId = "gov_kfs", Name = "مركز مطوبس", NameEn = "Motobas District", IsActive = true },
+                new() { Id = "dist_desouk", GovernorateId = "gov_kfs", Name = "مركز دسوق", NameEn = "Desouk District", IsActive = true },
+                new() { Id = "dist_fouh", GovernorateId = "gov_kfs", Name = "مركز فوه", NameEn = "Fouh District", IsActive = true },
+                new() { Id = "dist_kfs", GovernorateId = "gov_kfs", Name = "مركز كفر الشيخ", NameEn = "Kafr El-Sheikh District", IsActive = true },
+                new() { Id = "dist_sidi_salem", GovernorateId = "gov_kfs", Name = "مركز سيدي سالم", NameEn = "Sidi Salem District", IsActive = true },
+                new() { Id = "dist_baltim", GovernorateId = "gov_kfs", Name = "مركز بلطيم", NameEn = "Baltim District", IsActive = true },
+                new() { Id = "dist_bila", GovernorateId = "gov_kfs", Name = "مركز بيلا", NameEn = "Bila District", IsActive = true },
+                new() { Id = "dist_hamool", GovernorateId = "gov_kfs", Name = "مركز الحامول", NameEn = "Al-Hamool District", IsActive = true },
+                new() { Id = "dist_qallin", GovernorateId = "gov_kfs", Name = "مركز قلين", NameEn = "Qallin District", IsActive = true },
+                new() { Id = "dist_riyad", GovernorateId = "gov_kfs", Name = "مركز الرياض", NameEn = "Al-Riyad District", IsActive = true },
+
+                // أحياء ومراكز الجيزة
+                new() { Id = "dist_omraniya", GovernorateId = "gov_giza", Name = "حي العمرانية", NameEn = "Al-Omraniya", IsActive = true },
+                new() { Id = "dist_safat", GovernorateId = "gov_giza", Name = "صفط اللبن", NameEn = "Safat El-Laban", IsActive = true },
+                new() { Id = "dist_dokki", GovernorateId = "gov_giza", Name = "حي الدقي", NameEn = "Al-Dokki", IsActive = true },
+                new() { Id = "dist_haram", GovernorateId = "gov_giza", Name = "حي الهرم", NameEn = "Al-Haram", IsActive = true },
+
+                // أحياء ومراكز القاهرة
+                new() { Id = "dist_maadi", GovernorateId = "gov_cairo", Name = "حي المعادي", NameEn = "Al-Maadi", IsActive = true },
+                new() { Id = "dist_matariya", GovernorateId = "gov_cairo", Name = "حي المطرية", NameEn = "Al-Matariya", IsActive = true },
+                new() { Id = "dist_dar_salam", GovernorateId = "gov_cairo", Name = "حي دار السلام", NameEn = "Dar El-Salam", IsActive = true },
+                new() { Id = "dist_helwan", GovernorateId = "gov_cairo", Name = "حي حلوان", NameEn = "Helwan", IsActive = true },
+
+                // أحياء الإسكندرية
+                new() { Id = "dist_asafra", GovernorateId = "gov_alex", Name = "حي العصافرة", NameEn = "Al-Asafra", IsActive = true },
+                new() { Id = "dist_montazah", GovernorateId = "gov_alex", Name = "حي المنتزه", NameEn = "Al-Montazah", IsActive = true },
+                new() { Id = "dist_smouha", GovernorateId = "gov_alex", Name = "حي سموحة", NameEn = "Smouha", IsActive = true }
+            };
+
+            await context.Districts.AddRangeAsync(districts);
+            await context.SaveChangesAsync();
+        }
+
+        // 2e. Seed AddressRecords (دليل العناوين والقرى المستقل مع النورماليزيشن)
+        if (!await context.AddressRecords.AnyAsync())
+        {
+            var addresses = new List<(string id, string govId, string distId, string text, int usage)>
+            {
+                // قرى ومناطق مركز مطوبس (كفر الشيخ)
+                ("addr_motobas_1", "gov_kfs", "dist_motobas", "قرية الجزيرة الخضراء", 12),
+                ("addr_motobas_2", "gov_kfs", "dist_motobas", "قرية برج مغيزل", 10),
+                ("addr_motobas_3", "gov_kfs", "dist_motobas", "قرية معدية مهدي", 8),
+                ("addr_motobas_4", "gov_kfs", "dist_motobas", "قرية برنبال (برمبال)", 15),
+                ("addr_motobas_5", "gov_kfs", "dist_motobas", "قرية منية المرشد", 9),
+                ("addr_motobas_6", "gov_kfs", "dist_motobas", "قرية إبيانة", 7),
+                ("addr_motobas_7", "gov_kfs", "dist_motobas", "قرية البصراط", 6),
+                ("addr_motobas_8", "gov_kfs", "dist_motobas", "قرية بني بكار", 5),
+                ("addr_motobas_9", "gov_kfs", "dist_motobas", "قرية القني", 4),
+                ("addr_motobas_10", "gov_kfs", "dist_motobas", "قرية خليج بحري", 8),
+                ("addr_motobas_11", "gov_kfs", "dist_motobas", "قرية السكرانة", 6),
+                ("addr_motobas_12", "gov_kfs", "dist_motobas", "عزبة عمرو", 5),
+                ("addr_motobas_13", "gov_kfs", "dist_motobas", "شارع داير الناحية - مطوبس", 14),
+                ("addr_motobas_14", "gov_kfs", "dist_motobas", "مساكن المحكمة - مطوبس", 11),
+
+                // قرى ومناطق مركز دسوق (كفر الشيخ)
+                ("addr_desouk_1", "gov_kfs", "dist_desouk", "قرية شباس الشهداء", 9),
+                ("addr_desouk_2", "gov_kfs", "dist_desouk", "قرية سنهور المدينة", 8),
+                ("addr_desouk_3", "gov_kfs", "dist_desouk", "قرية محلة دياي", 6),
+                ("addr_desouk_4", "gov_kfs", "dist_desouk", "شارع الجيش - دسوق", 10),
+
+                // قرى ومناطق مركز فوه (كفر الشيخ)
+                ("addr_fouh_1", "gov_kfs", "dist_fouh", "قرية سنديون", 7),
+                ("addr_fouh_2", "gov_kfs", "dist_fouh", "قرية قبريط", 6),
+                ("addr_fouh_3", "gov_kfs", "dist_fouh", "شارع الكورنيش - فوه", 8),
+
+                // مناطق شائعة بالجيزة والقاهرة والإسكندرية
+                ("addr_omraniya_1", "gov_giza", "dist_omraniya", "العمرانية الغربية، شارع ترعة الزمر", 18),
+                ("addr_omraniya_2", "gov_giza", "dist_omraniya", "العمرانية الشرقية، شارع عثمان محرم", 14),
+                ("addr_safat_1", "gov_giza", "dist_safat", "صفط اللبن، شارع التحرير وموقف الميكروباص", 16),
+                ("addr_maadi_1", "gov_cairo", "dist_maadi", "طرة المعادي، شارع كورنيش النيل", 15),
+                ("addr_matariya_1", "gov_cairo", "dist_matariya", "المطرية، عزبة النخل، شارع التروللي", 12),
+                ("addr_asafra_1", "gov_alex", "dist_asafra", "العصافرة قبلي، شارع المعهد الديني", 14),
+                ("addr_montazah_1", "gov_alex", "dist_montazah", "المنتزه، سيدي بشر قبلي، شارع جمال عبد الناصر", 16)
+            };
+
+            var addressEntities = addresses.Select(a => new AddressRecord
+            {
+                Id = a.id,
+                GovernorateId = a.govId,
+                DistrictId = a.distId,
+                AddressText = a.text,
+                NormalizedText = Charity.Application.Services.Implementations.AddressNormalizationService.Normalize(a.text),
+                UsageCount = a.usage,
+                CharityName = "النظام العام"
+            }).ToList();
+
+            await context.AddressRecords.AddRangeAsync(addressEntities);
+            await context.SaveChangesAsync();
+        }
+
         // 3. Seed ONLY the platform super administrator ("كبير مسؤولي المنصة")
         var adminUser = await userManager.FindByNameAsync("admin");
         if (adminUser == null)

@@ -6,6 +6,7 @@ using Charity.Application.DTOs.Inventory;
 using Charity.Application.DTOs.Staff;
 using Charity.Application.DTOs.SuspensionReasons;
 using Charity.Application.DTOs.SeparationReasons;
+using Charity.Application.DTOs.Lookups;
 using Charity.Domain.Entities;
 
 namespace Charity.Application.Mappers;
@@ -45,7 +46,11 @@ public static class EntityMappingExtensions
         Icon = c.Icon,
         Phone = c.Phone,
         Address = c.Address,
-        License = c.License
+        License = c.License,
+        GovernorateId = c.GovernorateId,
+        GovernorateName = c.GovernorateName,
+        DistrictId = c.DistrictId,
+        DistrictName = c.DistrictName
     };
 
     // FamilyMember
@@ -136,6 +141,11 @@ public static class EntityMappingExtensions
         NeedsPeriodicMedication = b.NeedsPeriodicMedication,
         PeriodicMedicationDetails = b.PeriodicMedicationDetails,
         MedicationFrequency = b.MedicationFrequency,
+        GovernorateId = b.GovernorateId,
+        GovernorateName = b.GovernorateName,
+        DistrictId = b.DistrictId,
+        DistrictName = b.DistrictName,
+        AddressId = b.AddressId,
         VillageOrDistrict = b.VillageOrDistrict,
         PriorityTier = b.PriorityTier,
         RoofType = b.RoofType,
@@ -195,6 +205,11 @@ public static class EntityMappingExtensions
         NeedsPeriodicMedication = dto.NeedsPeriodicMedication,
         PeriodicMedicationDetails = dto.PeriodicMedicationDetails ?? string.Empty,
         MedicationFrequency = dto.MedicationFrequency ?? string.Empty,
+        GovernorateId = dto.GovernorateId,
+        GovernorateName = dto.GovernorateName,
+        DistrictId = dto.DistrictId,
+        DistrictName = dto.DistrictName,
+        AddressId = dto.AddressId,
         VillageOrDistrict = dto.VillageOrDistrict ?? string.Empty,
         PriorityTier = string.IsNullOrEmpty(dto.PriorityTier) ? "أ - أولوية قصوى ومعدم" : dto.PriorityTier,
         RoofType = string.IsNullOrEmpty(dto.RoofType) ? "خرساني مسلح" : dto.RoofType,
@@ -354,5 +369,32 @@ public static class EntityMappingExtensions
         Tasks = dto.Tasks,
         Status = "نشط على رأس العمل",
         CharityId = charityId
+    };
+
+    // Geographic Lookups & Addresses
+    public static GovernorateDto ToDto(this Governorate g) => new()
+    {
+        Id = g.Id,
+        Name = g.Name,
+        NameEn = g.NameEn,
+        DistrictsCount = g.Districts?.Count ?? 0
+    };
+
+    public static DistrictDto ToDto(this District d) => new()
+    {
+        Id = d.Id,
+        GovernorateId = d.GovernorateId,
+        GovernorateName = d.Governorate?.Name ?? string.Empty,
+        Name = d.Name,
+        NameEn = d.NameEn
+    };
+
+    public static AddressRecordDto ToDto(this AddressRecord a) => new()
+    {
+        Id = a.Id,
+        GovernorateId = a.GovernorateId,
+        DistrictId = a.DistrictId,
+        AddressText = a.AddressText,
+        UsageCount = a.UsageCount
     };
 }

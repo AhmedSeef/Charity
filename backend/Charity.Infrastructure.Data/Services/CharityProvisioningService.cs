@@ -28,7 +28,11 @@ public sealed class CharityProvisioningService(
             RoleDesc = request.RoleDesc.Trim(),
             Phone = request.Phone.Trim(),
             Address = request.Address.Trim(),
-            License = request.License.Trim()
+            License = request.License.Trim(),
+            GovernorateId = string.IsNullOrWhiteSpace(request.GovernorateId) ? null : request.GovernorateId.Trim(),
+            GovernorateName = string.IsNullOrWhiteSpace(request.GovernorateName) ? null : request.GovernorateName.Trim(),
+            DistrictId = string.IsNullOrWhiteSpace(request.DistrictId) ? null : request.DistrictId.Trim(),
+            DistrictName = string.IsNullOrWhiteSpace(request.DistrictName) ? null : request.DistrictName.Trim()
         };
         db.Charities.Add(charity);
         await db.SaveChangesAsync();
@@ -86,6 +90,10 @@ public sealed class CharityProvisioningService(
     {
         Id = charity.Id, Name = charity.Name, RoleDesc = charity.RoleDesc,
         Phone = charity.Phone, Address = charity.Address, License = charity.License,
-        Color = charity.Color, Icon = charity.Icon, Logo = charity.Logo
+        Color = charity.Color, Icon = charity.Icon, Logo = charity.Logo,
+        GovernorateId = charity.GovernorateId,
+        GovernorateName = charity.GovernorateName,
+        DistrictId = charity.DistrictId,
+        DistrictName = charity.DistrictName
     };
 }

@@ -22,6 +22,9 @@ public class CharityDbContext : IdentityDbContext<ApplicationUser, IdentityRole,
     public DbSet<StaffMember> StaffMembers => Set<StaffMember>();
     public DbSet<CharitySettings> CharitySettings => Set<CharitySettings>();
     public DbSet<SeparationReason> SeparationReasons => Set<SeparationReason>();
+    public DbSet<Governorate> Governorates => Set<Governorate>();
+    public DbSet<District> Districts => Set<District>();
+    public DbSet<AddressRecord> AddressRecords => Set<AddressRecord>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -138,6 +141,56 @@ public class CharityDbContext : IdentityDbContext<ApplicationUser, IdentityRole,
             b.Property(x => x.CharityName).HasMaxLength(200).IsRequired(false);
         });
 
+        // Governorate configuration (المحافظة)
+        builder.Entity<Governorate>(b =>
+        {
+            b.ToTable("Governorates");
+            b.HasKey(x => x.Id);
+            b.Property(x => x.Id).HasMaxLength(50);
+            b.Property(x => x.Name).IsRequired().HasMaxLength(150);
+            b.Property(x => x.NameEn).HasMaxLength(150);
+        });
+
+        // District configuration (المركز أو الحي)
+        builder.Entity<District>(b =>
+        {
+            b.ToTable("Districts");
+            b.HasKey(x => x.Id);
+            b.Property(x => x.Id).HasMaxLength(50);
+            b.Property(x => x.Name).IsRequired().HasMaxLength(150);
+            b.Property(x => x.NameEn).HasMaxLength(150);
+            b.Property(x => x.GovernorateId).IsRequired().HasMaxLength(50);
+
+            b.HasOne(x => x.Governorate)
+             .WithMany(g => g.Districts)
+             .HasForeignKey(x => x.GovernorateId)
+             .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // AddressRecord configuration (جدول العناوين المستقل)
+        builder.Entity<AddressRecord>(b =>
+        {
+            b.ToTable("AddressRecords");
+            b.HasKey(x => x.Id);
+            b.Property(x => x.Id).HasMaxLength(50);
+            b.Property(x => x.AddressText).IsRequired().HasMaxLength(300);
+            b.Property(x => x.NormalizedText).IsRequired().HasMaxLength(300);
+            b.Property(x => x.GovernorateId).IsRequired().HasMaxLength(50);
+            b.Property(x => x.DistrictId).IsRequired().HasMaxLength(50);
+            b.Property(x => x.CharityId).HasMaxLength(50).IsRequired(false);
+            b.Property(x => x.CharityName).HasMaxLength(200).IsRequired(false);
+
+            b.HasOne(x => x.Governorate)
+             .WithMany()
+             .HasForeignKey(x => x.GovernorateId)
+             .OnDelete(DeleteBehavior.Restrict);
+
+            b.HasOne(x => x.District)
+             .WithMany(d => d.AddressRecords)
+             .HasForeignKey(x => x.DistrictId)
+             .OnDelete(DeleteBehavior.Restrict);
+        });
+
         // InventoryItem configuration (Tenant isolated)
         builder.Entity<InventoryItem>(b =>
         {
@@ -238,5 +291,8 @@ public class CharityDbContext : IdentityDbContext<ApplicationUser, IdentityRole,
         builder.Entity<StaffMember>().HasQueryFilter(x => !x.IsDeleted);
         builder.Entity<SuspensionReason>().HasQueryFilter(x => !x.IsDeleted);
         builder.Entity<SeparationReason>().HasQueryFilter(x => !x.IsDeleted);
+        builder.Entity<Governorate>().HasQueryFilter(x => !x.IsDeleted);
+        builder.Entity<District>().HasQueryFilter(x => !x.IsDeleted);
+        builder.Entity<AddressRecord>().HasQueryFilter(x => !x.IsDeleted);
     }
 }

@@ -29,6 +29,10 @@ public class CharityDto
     public string Phone { get; set; } = string.Empty;
     public string Address { get; set; } = string.Empty;
     public string License { get; set; } = string.Empty;
+    public string? GovernorateId { get; set; }
+    public string? GovernorateName { get; set; }
+    public string? DistrictId { get; set; }
+    public string? DistrictName { get; set; }
 }
 
 public class CharitySettingsDto

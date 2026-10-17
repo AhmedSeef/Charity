@@ -147,6 +147,11 @@ public class BeneficiaryService : IBeneficiaryService
         existing.Status = dto.Status;
 
         // البيانات الجغرافية ودرجة الاستحقاق
+        existing.GovernorateId = dto.GovernorateId;
+        existing.GovernorateName = dto.GovernorateName;
+        existing.DistrictId = dto.DistrictId;
+        existing.DistrictName = dto.DistrictName;
+        existing.AddressId = dto.AddressId;
         existing.VillageOrDistrict = dto.VillageOrDistrict ?? string.Empty;
         existing.PriorityTier = dto.PriorityTier ?? "أ - أولوية قصوى ومعدم";
 

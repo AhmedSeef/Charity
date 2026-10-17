@@ -97,6 +97,7 @@ builder.Services.AddScoped<ICharityService, CharityService>();
 builder.Services.AddScoped<ICharityProvisioningService, CharityProvisioningService>();
 builder.Services.AddScoped<ISuspensionReasonService, SuspensionReasonService>();
 builder.Services.AddScoped<ISeparationReasonService, SeparationReasonService>();
+builder.Services.AddScoped<IGeographicLookupService, GeographicLookupService>();
 builder.Services.AddScoped<IBiAnalyticsService, BiAnalyticsService>();
 
 // 5. CORS for Angular Frontend

@@ -79,7 +79,12 @@ public class BeneficiaryDto
     public string PeriodicMedicationDetails { get; set; } = string.Empty;
     public string MedicationFrequency { get; set; } = string.Empty;
 
-    // 4. أبعاد البحث الاجتماعي الميداني والقرية
+    // 4. أبعاد البحث الاجتماعي الميداني والموقع الجغرافي
+    public string? GovernorateId { get; set; }
+    public string? GovernorateName { get; set; }
+    public string? DistrictId { get; set; }
+    public string? DistrictName { get; set; }
+    public string? AddressId { get; set; }
     public string VillageOrDistrict { get; set; } = string.Empty;
     public string PriorityTier { get; set; } = "أ - أولوية قصوى ومعدم";
     public string RoofType { get; set; } = "خرساني مسلح";
@@ -148,7 +153,12 @@ public class CreateBeneficiaryDto
     public string PeriodicMedicationDetails { get; set; } = string.Empty;
     public string MedicationFrequency { get; set; } = string.Empty;
 
-    // 4. أبعاد البحث الاجتماعي الميداني والقرية
+    // 4. أبعاد البحث الاجتماعي الميداني والموقع الجغرافي
+    public string? GovernorateId { get; set; }
+    public string? GovernorateName { get; set; }
+    public string? DistrictId { get; set; }
+    public string? DistrictName { get; set; }
+    public string? AddressId { get; set; }
     public string VillageOrDistrict { get; set; } = string.Empty;
     public string PriorityTier { get; set; } = "أ - أولوية قصوى ومعدم";
     public string RoofType { get; set; } = "خرساني مسلح";
@@ -200,7 +210,12 @@ public class UpdateBeneficiaryDto
     public string PeriodicMedicationDetails { get; set; } = string.Empty;
     public string MedicationFrequency { get; set; } = string.Empty;
 
-    // 4. أبعاد البحث الاجتماعي الميداني والقرية
+    // 4. أبعاد البحث الاجتماعي الميداني والموقع الجغرافي
+    public string? GovernorateId { get; set; }
+    public string? GovernorateName { get; set; }
+    public string? DistrictId { get; set; }
+    public string? DistrictName { get; set; }
+    public string? AddressId { get; set; }
     public string VillageOrDistrict { get; set; } = string.Empty;
     public string PriorityTier { get; set; } = "أ - أولوية قصوى ومعدم";
     public string RoofType { get; set; } = "خرساني مسلح";

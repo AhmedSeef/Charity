@@ -11,6 +11,12 @@ public class Charity : BaseEntity
     public string Address { get; set; } = string.Empty;
     public string License { get; set; } = string.Empty;
 
+    // Geographic Jurisdiction & Location (المحافظة والمركز)
+    public string? GovernorateId { get; set; }
+    public string? GovernorateName { get; set; }
+    public string? DistrictId { get; set; }
+    public string? DistrictName { get; set; }
+
     // Navigations
     public ICollection<ApplicationUser> Users { get; set; } = new List<ApplicationUser>();
     public ICollection<Beneficiary> RegisteredBeneficiaries { get; set; } = new List<Beneficiary>();
