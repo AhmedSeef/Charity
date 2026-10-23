@@ -15,6 +15,7 @@ public class AuthResponseDto
     public string CharityId { get; set; } = string.Empty;
     public string CharityName { get; set; } = string.Empty;
     public string Role { get; set; } = string.Empty;
+    public List<string> Permissions { get; set; } = new();
 }
 
 public class CurrentUserDto
@@ -25,4 +26,5 @@ public class CurrentUserDto
     public string CharityId { get; set; } = string.Empty;
     public string CharityName { get; set; } = string.Empty;
     public string Role { get; set; } = string.Empty;
+    public List<string> Permissions { get; set; } = new();
 }

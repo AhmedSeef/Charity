@@ -301,6 +301,7 @@
           <tr *ngFor="let d of paginatedDonations">
             <td>
               <strong style="font-size: 15px; color: #004d40;">{{ d.donorName }}</strong>
+              <div *ngIf="d.createdByName" style="font-size: 11px; color: #607d8b; margin-top: 3px;">سجّله: {{ d.createdByName }} <span *ngIf="d.updatedByName">· عدّله: {{ d.updatedByName }}</span></div>
               <div *ngIf="d.donorPhone" style="color: #666; font-size: 12px; margin-top: 2px;">📞 {{ d.donorPhone }}</div>
             </td>
 

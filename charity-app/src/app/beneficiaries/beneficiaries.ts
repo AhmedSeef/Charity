@@ -243,10 +243,17 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
       this.initRouteSync();
       this.cdr.detectChanges(); 
     });
-    this.api.getAllInventory().subscribe((data: any[]) => { 
-      this.inventory = data; 
-      this.cdr.detectChanges(); 
-    });
+    if (this.auth.getCurrentUser()?.role === 'Admin' || this.auth.hasPermission('inventory.view') || this.auth.hasPermission('inventory.manage')) {
+      this.api.getAllInventory().subscribe({
+        next: (data: any[]) => { 
+          this.inventory = data; 
+          this.cdr.detectChanges(); 
+        },
+        error: () => {
+          this.inventory = [];
+        }
+      });
+    }
     this.api.getSuspensionReasons().subscribe((data: any[]) => {
       this.suspensionReasons = data;
       this.cdr.detectChanges();
@@ -310,6 +317,15 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
   canEditBeneficiary(b: any): boolean {
     if (!b) return false;
     if (this.auth.getCurrentUser()?.role === 'Admin') return false;
+    if (!this.auth.hasPermission('beneficiaries.edit')) return false;
+    const activeId = this.auth.getCurrentUser()?.charityId;
+    return !!activeId && b.registeredByCharityId === activeId;
+  }
+
+  canDeleteBeneficiary(b: any): boolean {
+    if (!b) return false;
+    if (this.auth.getCurrentUser()?.role === 'Admin') return false;
+    if (!this.auth.hasPermission('beneficiaries.delete')) return false;
     const activeId = this.auth.getCurrentUser()?.charityId;
     return !!activeId && b.registeredByCharityId === activeId;
   }
@@ -338,6 +354,11 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
   openAdd() {
     if (this.auth.getCurrentUser()?.role === 'Admin') {
       this.errorMessage = '🔒 غير مصرح لمدير المنصة إضافة مستفيدين، الإضافة مقصورة على مسؤولي الجمعيات.';
+      this.cdr.detectChanges();
+      return;
+    }
+    if (!this.auth.hasPermission('beneficiaries.create')) {
+      this.errorMessage = '🔒 ليس لديك صلاحية فتح ملفات حالات جديدة.';
       this.cdr.detectChanges();
       return;
     }

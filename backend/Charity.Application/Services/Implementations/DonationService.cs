@@ -28,6 +28,9 @@ public class DonationService : IDonationService
 
     public async Task<IReadOnlyList<DonationDto>> GetMyDonationsAsync()
     {
+        if (!_currentUserService.HasPermission(Charity.Domain.Security.AppPermissions.DonationsView))
+            throw new UnauthorizedDomainException("غير مصرح: ليس لديك صلاحية استعراض سجل التبرعات.");
+
         var charityId = _currentUserService.CharityId ?? string.Empty;
         var donations = await _donationRepo.FindAsync(d => d.CharityId == charityId);
         return donations.OrderByDescending(d => d.Date).Select(d => d.ToDto()).ToList();
@@ -35,6 +38,9 @@ public class DonationService : IDonationService
 
     public async Task<DonationDto> CreateAsync(CreateDonationDto dto)
     {
+        if (!_currentUserService.HasPermission(Charity.Domain.Security.AppPermissions.DonationsCreate))
+            throw new UnauthorizedDomainException("غير مصرح: ليس لديك صلاحية تسجيل تبرعات جديدة.");
+
         var charityId = _currentUserService.CharityId;
         if (string.IsNullOrWhiteSpace(charityId)) throw new UnauthorizedDomainException("لا يوجد حساب جمعية صالح.");
         if (string.IsNullOrWhiteSpace(dto.DonorName)) throw new ValidationDomainException("اسم المتبرع مطلوب.");

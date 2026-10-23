@@ -25,6 +25,12 @@ public class InventoryService : IInventoryService
 
     public async Task<IReadOnlyList<InventoryItemDto>> GetMyInventoryAsync()
     {
+        if (!_currentUserService.HasPermission(Charity.Domain.Security.AppPermissions.InventoryView) &&
+            !_currentUserService.HasPermission(Charity.Domain.Security.AppPermissions.InventoryManage))
+        {
+            throw new UnauthorizedDomainException("غير مصرح: ليس لديك صلاحية استعراض المخازن والأصناف.");
+        }
+
         var charityId = _currentUserService.CharityId ?? string.Empty;
         var items = await _inventoryRepo.FindAsync(i => i.CharityId == charityId);
         return items.Select(i => i.ToDto()).ToList();
@@ -32,6 +38,9 @@ public class InventoryService : IInventoryService
 
     public async Task<InventoryItemDto?> GetByIdAsync(string id)
     {
+        if (!_currentUserService.HasPermission(Charity.Domain.Security.AppPermissions.InventoryView) &&
+            !_currentUserService.HasPermission(Charity.Domain.Security.AppPermissions.InventoryManage))
+            throw new UnauthorizedDomainException("غير مصرح: ليس لديك صلاحية استعراض المخازن والأصناف.");
         var charityId = _currentUserService.CharityId ?? string.Empty;
         var item = await _inventoryRepo.GetByIdAsync(id);
         if (item == null || item.CharityId != charityId) return null;
@@ -40,6 +49,9 @@ public class InventoryService : IInventoryService
 
     public async Task<InventoryItemDto> CreateAsync(CreateInventoryItemDto dto)
     {
+        if (!_currentUserService.HasPermission(Charity.Domain.Security.AppPermissions.InventoryManage))
+            throw new UnauthorizedDomainException("غير مصرح: ليس لديك صلاحية إضافة وتعديل الأصناف والمخزون.");
+
         var charityId = _currentUserService.CharityId;
         if (string.IsNullOrWhiteSpace(charityId)) throw new UnauthorizedDomainException("لا يوجد حساب جمعية صالح.");
         ValidateStock(dto.Quantity, dto.MinAlert);
@@ -53,6 +65,9 @@ public class InventoryService : IInventoryService
 
     public async Task<InventoryItemDto> UpdateAsync(string id, UpdateInventoryItemDto dto)
     {
+        if (!_currentUserService.HasPermission(Charity.Domain.Security.AppPermissions.InventoryManage))
+            throw new UnauthorizedDomainException("غير مصرح: ليس لديك صلاحية تعديل الأصناف والمخزون.");
+
         var charityId = _currentUserService.CharityId ?? string.Empty;
         var existing = await _inventoryRepo.GetByIdAsync(id)
             ?? throw new EntityNotFoundException(nameof(InventoryItem), id);
@@ -82,6 +97,9 @@ public class InventoryService : IInventoryService
 
     public async Task AdjustStockAsync(string id, AdjustStockDto dto)
     {
+        if (!_currentUserService.HasPermission(Charity.Domain.Security.AppPermissions.InventoryManage))
+            throw new UnauthorizedDomainException("غير مصرح: ليس لديك صلاحية جرد وتعديل أرصدة المخزون.");
+
         var charityId = _currentUserService.CharityId ?? string.Empty;
         var existing = await _inventoryRepo.GetByIdAsync(id)
             ?? throw new EntityNotFoundException(nameof(InventoryItem), id);
@@ -102,6 +120,9 @@ public class InventoryService : IInventoryService
 
     public async Task DeleteAsync(string id)
     {
+        if (!_currentUserService.HasPermission(Charity.Domain.Security.AppPermissions.InventoryManage))
+            throw new UnauthorizedDomainException("غير مصرح: ليس لديك صلاحية حذف الأصناف.");
+
         var charityId = _currentUserService.CharityId ?? string.Empty;
         var existing = await _inventoryRepo.GetByIdAsync(id)
             ?? throw new EntityNotFoundException(nameof(InventoryItem), id);

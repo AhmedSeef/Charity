@@ -41,6 +41,9 @@ public class DistributionService : IDistributionService
 
     public async Task<IReadOnlyList<DistributionDto>> GetMyCharityDistributionsAsync()
     {
+        if (!_currentUserService.HasPermission(Charity.Domain.Security.AppPermissions.DisbursementView))
+            throw new UnauthorizedDomainException("غير مصرح: ليس لديك صلاحية استعراض سجلات الصرف.");
+
         var currentCharityId = _currentUserService.CharityId ?? string.Empty;
         var myDistributions = await _distributionRepo.FindAsync(d => d.CharityId == currentCharityId);
         return myDistributions.OrderByDescending(d => d.Date).Select(d => d.ToDto(currentCharityId)).ToList();
@@ -57,6 +60,8 @@ public class DistributionService : IDistributionService
 
     public async Task<IReadOnlyList<DistributionDto>> GetDistributionsByBeneficiaryIdAsync(string beneficiaryId)
     {
+        if (!_currentUserService.HasPermission(Charity.Domain.Security.AppPermissions.DisbursementView))
+            throw new UnauthorizedDomainException("غير مصرح: ليس لديك صلاحية استعراض سجلات الصرف.");
         var currentCharityId = _currentUserService.CharityId ?? string.Empty;
         var distributions = await _distributionRepo.FindAsync(d => d.BeneficiaryId == beneficiaryId && d.CharityId == currentCharityId);
         return distributions.OrderByDescending(d => d.Date).Select(d => d.ToDto(currentCharityId)).ToList();
@@ -64,6 +69,8 @@ public class DistributionService : IDistributionService
 
     public async Task<BeneficiaryAidSummaryDto> GetBeneficiaryAidSummaryAsync(string beneficiaryId)
     {
+        if (!_currentUserService.HasPermission(Charity.Domain.Security.AppPermissions.DisbursementView))
+            throw new UnauthorizedDomainException("غير مصرح: ليس لديك صلاحية استعراض سجلات الصرف.");
         var currentCharityId = _currentUserService.CharityId ?? string.Empty;
         var beneficiary = await _beneficiaryRepo.GetByIdAsync(beneficiaryId)
             ?? throw new EntityNotFoundException(nameof(Beneficiary), beneficiaryId);
@@ -85,6 +92,9 @@ public class DistributionService : IDistributionService
 
     public async Task<DistributionDto> CreateDistributionAsync(CreateDistributionDto dto)
     {
+        if (!_currentUserService.HasPermission(Charity.Domain.Security.AppPermissions.DisbursementExecute))
+            throw new UnauthorizedDomainException("غير مصرح: ليس لديك صلاحية تنفيذ صرف المساعدات.");
+
         var charityId = _currentUserService.CharityId;
         if (string.IsNullOrWhiteSpace(charityId)) throw new UnauthorizedDomainException("لا يوجد حساب جمعية صالح.");
         if (!double.IsFinite(dto.Quantity) || dto.Quantity <= 0)
@@ -187,6 +197,9 @@ public class DistributionService : IDistributionService
 
     public async Task<BulkDistributionResultDto> CreateBulkDistributionAsync(BulkDistributionRequestDto dto)
     {
+        if (!_currentUserService.HasPermission(Charity.Domain.Security.AppPermissions.DisbursementExecute))
+            throw new UnauthorizedDomainException("غير مصرح: ليس لديك صلاحية تنفيذ صرف المساعدات.");
+
         var charityId = _currentUserService.CharityId;
         if (string.IsNullOrWhiteSpace(charityId)) throw new UnauthorizedDomainException("لا يوجد حساب جمعية صالح.");
         var charityName = _currentUserService.CharityName ?? "الجمعية المانحة";

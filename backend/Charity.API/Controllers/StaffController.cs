@@ -52,4 +52,39 @@ public class StaffController : ControllerBase
         await _staffService.DeleteAsync(id);
         return NoContent();
     }
+
+    [HttpGet("users")]
+    public async Task<ActionResult<IReadOnlyList<StaffUserDto>>> GetStaffUsers()
+    {
+        var result = await _staffService.GetStaffUsersAsync();
+        return Ok(result);
+    }
+
+    [HttpPost("users")]
+    public async Task<ActionResult<StaffUserDto>> CreateStaffUser([FromBody] CreateStaffUserDto dto)
+    {
+        var result = await _staffService.CreateStaffUserAsync(dto);
+        return StatusCode(StatusCodes.Status201Created, result);
+    }
+
+    [HttpPut("users/{userId}/permissions")]
+    public async Task<ActionResult<StaffUserDto>> UpdateStaffUserPermissions(string userId, [FromBody] UpdateStaffUserPermissionsDto dto)
+    {
+        var result = await _staffService.UpdateStaffUserPermissionsAsync(userId, dto);
+        return Ok(result);
+    }
+
+    [HttpPut("users/{userId}/password")]
+    public async Task<IActionResult> ResetStaffUserPassword(string userId, [FromBody] ChangeStaffUserPasswordDto dto)
+    {
+        await _staffService.ResetStaffUserPasswordAsync(userId, dto);
+        return NoContent();
+    }
+
+    [HttpDelete("users/{userId}")]
+    public async Task<IActionResult> DeleteStaffUser(string userId)
+    {
+        await _staffService.DeleteStaffUserAsync(userId);
+        return NoContent();
+    }
 }

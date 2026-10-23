@@ -1,8 +1,9 @@
+using Charity.Application.DTOs.Audit;
 namespace Charity.Application.DTOs.Staff;
 
 using Charity.Domain.Validation;
 
-public class StaffMemberDto
+public class StaffMemberDto : AuditedDto
 {
     public string Id { get; set; } = string.Empty;
     public string NationalId { get; set; } = string.Empty;

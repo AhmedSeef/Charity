@@ -1,6 +1,7 @@
+using Charity.Application.DTOs.Audit;
 namespace Charity.Application.DTOs.Lookups;
 
-public class ExpenseCategoryDto
+public class ExpenseCategoryDto : AuditedDto
 {
     public string Id { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;

@@ -1,6 +1,7 @@
+using Charity.Application.DTOs.Audit;
 namespace Charity.Application.DTOs.Inventory;
 
-public class InventoryItemDto
+public class InventoryItemDto : AuditedDto
 {
     public string Id { get; set; } = string.Empty;
     public string Code { get; set; } = string.Empty;

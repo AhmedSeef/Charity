@@ -69,8 +69,9 @@ builder.Services.AddAuthentication(options =>
         {
             var userId = context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier);
             var db = context.HttpContext.RequestServices.GetRequiredService<CharityDbContext>();
-            if (string.IsNullOrEmpty(userId) || !await db.Users.AnyAsync(u => u.Id == userId))
-                context.Fail("User no longer exists.");
+            var user = string.IsNullOrEmpty(userId) ? null : await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
+            if (user == null || context.Principal?.FindFirstValue("security_stamp") != (user.SecurityStamp ?? string.Empty))
+                context.Fail("User session is no longer valid.");
         }
     };
 });
@@ -100,6 +101,7 @@ builder.Services.AddScoped<ISeparationReasonService, SeparationReasonService>();
 builder.Services.AddScoped<IExpenseCategoryService, ExpenseCategoryService>();
 builder.Services.AddScoped<IGeographicLookupService, GeographicLookupService>();
 builder.Services.AddScoped<IBiAnalyticsService, BiAnalyticsService>();
+builder.Services.AddScoped<IAuditLogService, AuditLogService>();
 
 // 5. CORS for Angular Frontend
 builder.Services.AddCors(options =>
@@ -170,9 +172,16 @@ using (var scope = app.Services.CreateScope())
         logger.LogInformation("Ensuring database is created and migrating...");
         await db.Database.MigrateAsync();
 
-        logger.LogInformation("Seeding initial system lookups, roles and admin user...");
-        await DbInitializer.SeedAsync(db, userManager, roleManager);
-        logger.LogInformation("System lookups seeded successfully.");
+        if (app.Configuration.GetValue("DataInitialization:SeedOnStartup", true))
+        {
+            logger.LogInformation("Seeding initial system lookups, roles and admin user...");
+            await DbInitializer.SeedAsync(db, userManager, roleManager);
+            logger.LogInformation("System lookups seeded successfully.");
+        }
+        else
+        {
+            logger.LogInformation("Startup reference-data seeding is disabled for this database.");
+        }
     }
     catch (Exception ex)
     {

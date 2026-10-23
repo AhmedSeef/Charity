@@ -1,6 +1,7 @@
+using Charity.Application.DTOs.Audit;
 namespace Charity.Application.DTOs.Beneficiaries;
 
-public class FamilyMemberDto
+public class FamilyMemberDto : AuditedDto
 {
     public string Id { get; set; } = string.Empty;
     public string BeneficiaryId { get; set; } = string.Empty;
@@ -47,7 +48,7 @@ public class CreateFamilyMemberDto
     public bool IsChildLabor { get; set; }
 }
 
-public class BeneficiaryDto
+public class BeneficiaryDto : AuditedDto
 {
     public string Id { get; set; } = string.Empty;
     public string FamilyCode { get; set; } = string.Empty; // كود العائلة الدائم مثل FAM-26-0001
@@ -263,7 +264,7 @@ public class SeparateFamilyMemberDto
     public string? Reason { get; set; }
 }
 
-public class BeneficiaryHeadHistoryDto
+public class BeneficiaryHeadHistoryDto : AuditedDto
 {
     public string Id { get; set; } = string.Empty;
     public string BeneficiaryId { get; set; } = string.Empty;

@@ -1,6 +1,7 @@
+using Charity.Application.DTOs.Audit;
 namespace Charity.Application.DTOs.Lookups;
 
-public class GovernorateDto
+public class GovernorateDto : AuditedDto
 {
     public string Id { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
@@ -8,7 +9,7 @@ public class GovernorateDto
     public int DistrictsCount { get; set; }
 }
 
-public class DistrictDto
+public class DistrictDto : AuditedDto
 {
     public string Id { get; set; } = string.Empty;
     public string GovernorateId { get; set; } = string.Empty;
@@ -18,7 +19,7 @@ public class DistrictDto
     public int VillagesCount { get; set; }
 }
 
-public class VillageDto
+public class VillageDto : AuditedDto
 {
     public string Id { get; set; } = string.Empty;
     public string DistrictId { get; set; } = string.Empty;
@@ -48,7 +49,7 @@ public class UpdateVillageDto
     public bool IsActive { get; set; } = true;
 }
 
-public class VillageAreaDto
+public class VillageAreaDto : AuditedDto
 {
     public string Id { get; set; } = string.Empty;
     public string VillageId { get; set; } = string.Empty;
@@ -82,7 +83,7 @@ public class UpdateVillageAreaDto
     public bool IsActive { get; set; } = true;
 }
 
-public class AddressRecordDto
+public class AddressRecordDto : AuditedDto
 {
     public string Id { get; set; } = string.Empty;
     public string GovernorateId { get; set; } = string.Empty;

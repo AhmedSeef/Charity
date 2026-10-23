@@ -54,6 +54,7 @@
             <td style="padding: 12px; text-align: right; color: #666;">{{ i + 1 }}</td>
             <td style="padding: 12px; font-weight: bold; color: #c62828;">
               {{ r.title }}
+              <small *ngIf="r.createdByName" style="display: block; color: #607d8b; font-weight: normal;">أضافه: {{ r.createdByName }} <span *ngIf="r.updatedByName">· عدّله: {{ r.updatedByName }}</span></small>
               <div *ngIf="r.charityName" style="font-size: 11px; color: #888; font-weight: normal; margin-top: 3px;">
                 🏛️ {{ r.charityName }}
               </div>

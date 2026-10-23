@@ -93,6 +93,7 @@
           <!-- ملف الأسرة -->
           <td>
             <strong style="color: #004d40; font-size: 15px;">{{ d.beneficiaryName || getBenName(d.beneficiaryId) }}</strong>
+            <div *ngIf="d.createdByName" style="font-size: 11px; color: #607d8b; margin-top: 3px;">صرفه: {{ d.createdByName }} <span *ngIf="d.updatedByName">· عدّله: {{ d.updatedByName }}</span></div>
           </td>
 
           <!-- المستلم الفعلي (مين جه وخد) -->

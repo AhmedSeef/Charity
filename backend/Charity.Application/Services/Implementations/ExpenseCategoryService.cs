@@ -4,6 +4,7 @@ using Charity.Application.Services.Interfaces;
 using Charity.Domain.Entities;
 using Charity.Domain.Exceptions;
 using Charity.Domain.Interfaces;
+using Charity.Domain.Security;
 using System.Globalization;
 
 namespace Charity.Application.Services.Implementations;
@@ -15,6 +16,12 @@ public class ExpenseCategoryService : IExpenseCategoryService
     private readonly IRepository<Beneficiary> _beneficiaryRepo;
     private readonly ICurrentUserService _currentUserService;
     private readonly IUnitOfWork _unitOfWork;
+
+    private void EnsureExpensesPermission()
+    {
+        if (!_currentUserService.HasPermission(AppPermissions.ExpensesManage))
+            throw new UnauthorizedDomainException("غير مصرح: ليس لديك صلاحية إدارة بنود المصروفات وتقاريرها.");
+    }
 
     public ExpenseCategoryService(
         IRepository<ExpenseCategory> categoryRepo,
@@ -32,6 +39,7 @@ public class ExpenseCategoryService : IExpenseCategoryService
 
     public async Task<IReadOnlyList<ExpenseCategoryDto>> GetAllAsync(string? month = null, string? from = null, string? to = null)
     {
+        EnsureExpensesPermission();
 
         // Each charity reads its own copies; platform oversight is read-only across charities.
         var allCategories = await _categoryRepo.GetAllAsync();
@@ -61,6 +69,7 @@ public class ExpenseCategoryService : IExpenseCategoryService
 
     public async Task<ExpenseCategoryDto> GetByIdAsync(string id, string? month = null, string? from = null, string? to = null)
     {
+        EnsureExpensesPermission();
         var category = await _categoryRepo.GetByIdAsync(id)
             ?? throw new EntityNotFoundException(nameof(ExpenseCategory), id);
         if (!TenantAccess.CanRead(category.CharityId, _currentUserService))
@@ -85,6 +94,7 @@ public class ExpenseCategoryService : IExpenseCategoryService
 
     public async Task<IReadOnlyList<ExpenseCategoryDisbursementDetailDto>> GetDisbursementsByCategoryAsync(string categoryId, string? month = null, string? from = null, string? to = null)
     {
+        EnsureExpensesPermission();
         var category = await _categoryRepo.GetByIdAsync(categoryId)
             ?? throw new EntityNotFoundException(nameof(ExpenseCategory), categoryId);
         if (!TenantAccess.CanRead(category.CharityId, _currentUserService))
@@ -135,6 +145,7 @@ public class ExpenseCategoryService : IExpenseCategoryService
 
     public async Task<IReadOnlyList<MonthlyExpenseMovementDto>> GetMonthlyMovementsAsync(int? year = null, string? from = null, string? to = null)
     {
+        EnsureExpensesPermission();
 
         var allDistributions = await _distributionRepo.GetAllAsync();
         // الربط ببند المصروف والمبلغ هو مصدر الحقيقة؛ السجلات القديمة تستخدم «نقدية» والجديدة «إعانة نقدية».
@@ -220,6 +231,7 @@ public class ExpenseCategoryService : IExpenseCategoryService
 
     public async Task<ExpenseCategoryDto> CreateAsync(CreateExpenseCategoryDto dto)
     {
+        EnsureExpensesPermission();
         if (string.IsNullOrWhiteSpace(dto.Name))
         {
             throw new ValidationDomainException("اسم نوع أو بند المصروفات مطلوب!");
@@ -264,6 +276,7 @@ public class ExpenseCategoryService : IExpenseCategoryService
 
     public async Task<ExpenseCategoryDto> UpdateAsync(string id, UpdateExpenseCategoryDto dto)
     {
+        EnsureExpensesPermission();
         if (string.IsNullOrWhiteSpace(dto.Name))
         {
             throw new ValidationDomainException("اسم نوع أو بند المصروفات مطلوب!");
@@ -300,6 +313,7 @@ public class ExpenseCategoryService : IExpenseCategoryService
 
     public async Task DeleteAsync(string id)
     {
+        EnsureExpensesPermission();
         var entity = await _categoryRepo.GetByIdAsync(id)
             ?? throw new EntityNotFoundException(nameof(ExpenseCategory), id);
 

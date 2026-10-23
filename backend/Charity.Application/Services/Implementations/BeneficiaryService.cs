@@ -5,6 +5,7 @@ using Charity.Application.Services.Interfaces;
 using Charity.Domain.Entities;
 using Charity.Domain.Exceptions;
 using Charity.Domain.Interfaces;
+using Charity.Domain.Security;
 using Charity.Domain.Validation;
 
 namespace Charity.Application.Services.Implementations;
@@ -34,8 +35,38 @@ public class BeneficiaryService : IBeneficiaryService
         _unitOfWork = unitOfWork;
     }
 
+    private void EnsureViewPermission()
+    {
+        if (!_currentUserService.HasPermission(AppPermissions.BeneficiariesView))
+            throw new UnauthorizedDomainException("غير مصرح: ليس لديك صلاحية استعراض ملفات المستفيدين.");
+    }
+
+    private void EnsureEditPermission()
+    {
+        if (!_currentUserService.HasPermission(AppPermissions.BeneficiariesEdit))
+            throw new UnauthorizedDomainException("غير مصرح: ليس لديك صلاحية تعديل ملفات المستفيدين.");
+    }
+
+    private void MaskSensitiveDataIfRestricted(BeneficiaryDto dto)
+    {
+        if (_currentUserService.HasPermission(AppPermissions.BeneficiariesViewFull))
+            return;
+
+        dto.DebtNotes = "🔒 بيانات محجوبة (صلاحية خاصة)";
+        dto.TotalDebtAmount = null;
+        dto.DebtCreditor = "🔒 محجوب";
+        dto.HealthIssues = "🔒 بيانات طبية خاصة محجوبة";
+        dto.ChronicDiseaseDetails = "🔒 محجوب";
+        dto.ResearchNotes = "🔒 تقرير البحث الاجتماعي محجوب لدواعي الخصوصية";
+        dto.MonthlyIncome = null;
+        dto.IncomeSource = "🔒 محجوب";
+        dto.LandOrPropertyDetails = "🔒 محجوب";
+        dto.GovernmentPensionDetails = "🔒 محجوب";
+    }
+
     public async Task<IReadOnlyList<BeneficiaryDto>> GetAllAsync()
     {
+        EnsureViewPermission();
         var currentCharityId = _currentUserService.CharityId ?? string.Empty;
         var entities = await _beneficiaryRepo.GetAllAsync();
         var allMembers = await _familyMemberRepo.GetAllAsync();
@@ -55,11 +86,17 @@ public class BeneficiaryService : IBeneficiaryService
             }
         }
 
-        return entities.Select(b => b.ToDto(currentCharityId)).ToList();
+        var dtoList = entities.Select(b => b.ToDto(currentCharityId)).ToList();
+        foreach (var dto in dtoList)
+        {
+            MaskSensitiveDataIfRestricted(dto);
+        }
+        return dtoList;
     }
 
     public async Task<BeneficiaryDto?> GetByIdAsync(string id)
     {
+        EnsureViewPermission();
         var currentCharityId = _currentUserService.CharityId ?? string.Empty;
         var entity = await _beneficiaryRepo.GetByIdAsync(id);
         if (entity == null) return null;
@@ -70,11 +107,18 @@ public class BeneficiaryService : IBeneficiaryService
         var histories = await _headHistoryRepo.FindAsync(h => h.BeneficiaryId == id);
         entity.HeadHistories = histories.ToList();
 
-        return entity.ToDto(currentCharityId);
+        var dto = entity.ToDto(currentCharityId);
+        MaskSensitiveDataIfRestricted(dto);
+        return dto;
     }
 
     public async Task<BeneficiaryDto> CreateAsync(CreateBeneficiaryDto dto)
     {
+        if (!_currentUserService.HasPermission(AppPermissions.BeneficiariesCreate))
+        {
+            throw new UnauthorizedDomainException("غير مصرح: ليس لديك صلاحية فتح ملفات مستفيدين جديدة.");
+        }
+
         var charityId = _currentUserService.CharityId;
         if (string.IsNullOrWhiteSpace(charityId))
         {
@@ -120,6 +164,11 @@ public class BeneficiaryService : IBeneficiaryService
 
     public async Task<BeneficiaryDto> UpdateAsync(string id, UpdateBeneficiaryDto dto)
     {
+        if (!_currentUserService.HasPermission(AppPermissions.BeneficiariesEdit))
+        {
+            throw new UnauthorizedDomainException("غير مصرح: ليس لديك صلاحية تعديل بيانات المستفيدين.");
+        }
+
         var existing = await _beneficiaryRepo.GetByIdAsync(id)
             ?? throw new EntityNotFoundException(nameof(Beneficiary), id);
 
@@ -156,15 +205,15 @@ public class BeneficiaryService : IBeneficiaryService
         existing.Status = dto.Status;
 
         // البيانات الجغرافية ودرجة الاستحقاق
-        existing.GovernorateId = dto.GovernorateId;
+        existing.GovernorateId = string.IsNullOrWhiteSpace(dto.GovernorateId) ? null : dto.GovernorateId;
         existing.GovernorateName = dto.GovernorateName;
-        existing.DistrictId = dto.DistrictId;
+        existing.DistrictId = string.IsNullOrWhiteSpace(dto.DistrictId) ? null : dto.DistrictId;
         existing.DistrictName = dto.DistrictName;
-        existing.VillageId = dto.VillageId;
+        existing.VillageId = string.IsNullOrWhiteSpace(dto.VillageId) ? null : dto.VillageId;
         existing.VillageName = dto.VillageName;
-        existing.VillageAreaId = dto.VillageAreaId;
+        existing.VillageAreaId = string.IsNullOrWhiteSpace(dto.VillageAreaId) ? null : dto.VillageAreaId;
         existing.VillageAreaName = dto.VillageAreaName;
-        existing.AddressId = dto.AddressId;
+        existing.AddressId = string.IsNullOrWhiteSpace(dto.AddressId) ? null : dto.AddressId;
         existing.VillageOrDistrict = dto.VillageOrDistrict ?? string.Empty;
         existing.PriorityTier = dto.PriorityTier ?? "أ - أولوية قصوى ومعدم";
 
@@ -214,8 +263,14 @@ public class BeneficiaryService : IBeneficiaryService
             foreach (var fmDto in dto.FamilyMembers)
             {
                 var fmEntity = fmDto.ToEntity(existing.Id);
-                if (existingMembers.Any(m => m.Id == fmEntity.Id))
+                var previousMember = existingMembers.FirstOrDefault(m => m.Id == fmEntity.Id);
+                if (previousMember != null)
+                {
+                    fmEntity.CreatedAt = previousMember.CreatedAt;
+                    fmEntity.CreatedBy = previousMember.CreatedBy;
+                    fmEntity.CreatedByName = previousMember.CreatedByName;
                     await _familyMemberRepo.UpdateAsync(fmEntity);
+                }
                 else
                     await _familyMemberRepo.AddAsync(fmEntity);
             }
@@ -231,6 +286,7 @@ public class BeneficiaryService : IBeneficiaryService
 
     public async Task<BeneficiaryAidSummaryDto> GetAidSummaryAsync(string beneficiaryId)
     {
+        EnsureViewPermission();
         var beneficiary = await _beneficiaryRepo.GetByIdAsync(beneficiaryId)
             ?? throw new EntityNotFoundException(nameof(Beneficiary), beneficiaryId);
 
@@ -258,6 +314,7 @@ public class BeneficiaryService : IBeneficiaryService
 
     public async Task<BeneficiaryDto> SuspendAsync(string id, SuspendBeneficiaryDto dto)
     {
+        EnsureEditPermission();
         var existing = await _beneficiaryRepo.GetByIdAsync(id)
             ?? throw new EntityNotFoundException(nameof(Beneficiary), id);
 
@@ -299,6 +356,7 @@ public class BeneficiaryService : IBeneficiaryService
 
     public async Task<BeneficiaryDto> ReactivateAsync(string id)
     {
+        EnsureEditPermission();
         var existing = await _beneficiaryRepo.GetByIdAsync(id)
             ?? throw new EntityNotFoundException(nameof(Beneficiary), id);
 
@@ -327,6 +385,7 @@ public class BeneficiaryService : IBeneficiaryService
 
     public async Task<BeneficiaryDto> SeparateFamilyMemberAsync(string beneficiaryId, SeparateFamilyMemberDto dto)
     {
+        EnsureEditPermission();
         var existing = await _beneficiaryRepo.GetByIdAsync(beneficiaryId)
             ?? throw new EntityNotFoundException(nameof(Beneficiary), beneficiaryId);
 
@@ -409,6 +468,7 @@ public class BeneficiaryService : IBeneficiaryService
 
     public async Task<FamilyMemberDto> AddFamilyMemberAsync(string beneficiaryId, CreateFamilyMemberDto dto)
     {
+        EnsureEditPermission();
         var existing = await _beneficiaryRepo.GetByIdAsync(beneficiaryId)
             ?? throw new EntityNotFoundException(nameof(Beneficiary), beneficiaryId);
 
@@ -461,6 +521,7 @@ public class BeneficiaryService : IBeneficiaryService
 
     public async Task<BeneficiaryDto> TransferHeadshipAsync(string beneficiaryId, TransferHeadshipDto dto)
     {
+        EnsureEditPermission();
         var existing = await _beneficiaryRepo.GetByIdAsync(beneficiaryId)
             ?? throw new EntityNotFoundException(nameof(Beneficiary), beneficiaryId);
 
@@ -613,6 +674,11 @@ public class BeneficiaryService : IBeneficiaryService
 
     public async Task DeleteAsync(string id)
     {
+        if (!_currentUserService.HasPermission(AppPermissions.BeneficiariesDelete))
+        {
+            throw new UnauthorizedDomainException("غير مصرح: ليس لديك صلاحية حذف ملفات المستفيدين.");
+        }
+
         var existing = await _beneficiaryRepo.GetByIdAsync(id)
             ?? throw new EntityNotFoundException(nameof(Beneficiary), id);
 

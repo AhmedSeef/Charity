@@ -99,6 +99,7 @@
 
           <td>
             <strong style="color: #004d40; font-size: 15px;">{{ item.itemName }}</strong>
+            <div *ngIf="item.createdByName" style="font-size: 11px; color: #607d8b; margin-top: 3px;">أضافه: {{ item.createdByName }} <span *ngIf="item.updatedByName">· عدّله: {{ item.updatedByName }}</span></div>
             <div *ngIf="item.notes" style="color: #777; font-size: 12px; margin-top: 2px;">{{ item.notes }}</div>
           </td>
 

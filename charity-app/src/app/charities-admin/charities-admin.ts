@@ -87,6 +87,7 @@ import { Api } from '../api';
       <div *ngFor="let charity of charities" style="background: white; padding: 16px; margin: 10px 0; border-radius: 10px; display: flex; justify-content: space-between; gap: 12px; align-items: center; box-shadow: 0 1px 4px rgba(0,0,0,0.05);">
         <div>
           <div style="font-size: 16px; font-weight: bold; color: #004d40;">{{ charity.icon || '🏢' }} {{ charity.name }}</div>
+          <small *ngIf="charity.createdByName" style="color: #607d8b;">أضافها: {{ charity.createdByName }} <span *ngIf="charity.updatedByName">· عدّلها: {{ charity.updatedByName }}</span></small>
           <div style="font-size: 13px; color: #555; margin-top: 4px;">
             <span *ngIf="charity.governorateName" style="background: #e0f2f1; color: #004d40; padding: 2px 8px; border-radius: 4px; font-weight: bold; margin-left: 6px;">
               📍 {{ charity.governorateName }} - {{ charity.districtName || 'المركز الرئيسي' }}

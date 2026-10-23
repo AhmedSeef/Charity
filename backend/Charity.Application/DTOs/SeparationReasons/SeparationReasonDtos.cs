@@ -1,6 +1,7 @@
+using Charity.Application.DTOs.Audit;
 namespace Charity.Application.DTOs.SeparationReasons;
 
-public class SeparationReasonDto
+public class SeparationReasonDto : AuditedDto
 {
     public string Id { get; set; } = string.Empty;
     public string Title { get; set; } = string.Empty;

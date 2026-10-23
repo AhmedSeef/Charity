@@ -1,3 +1,4 @@
+using Charity.Application.DTOs.Audit;
 using Charity.Application.DTOs.Beneficiaries;
 using Charity.Application.DTOs.Dashboard;
 using Charity.Application.DTOs.Distributions;
@@ -13,8 +14,31 @@ namespace Charity.Application.Mappers;
 
 public static class EntityMappingExtensions
 {
+    private static T WithAudit<T>(this T dto, BaseEntity entity) where T : AuditedDto
+    {
+        dto.CreatedAt = entity.CreatedAt;
+        dto.CreatedBy = entity.CreatedBy;
+        dto.CreatedByName = entity.CreatedByName;
+        dto.UpdatedAt = entity.UpdatedAt;
+        dto.UpdatedBy = entity.UpdatedBy;
+        dto.UpdatedByName = entity.UpdatedByName;
+        dto.DeletedAt = entity.DeletedAt;
+        dto.DeletedBy = entity.DeletedBy;
+        dto.DeletedByName = entity.DeletedByName;
+        return dto;
+    }
+
+    public static CharitySettingsDto ToDto(this CharitySettings settings) => new CharitySettingsDto
+    {
+        CharityId = settings.CharityId,
+        CharityName = settings.CharityName,
+        Logo = settings.Logo,
+        Phone = settings.Phone,
+        Details = settings.Details
+    }.WithAudit(settings);
+
     // SuspensionReason
-    public static SuspensionReasonDto ToDto(this SuspensionReason r) => new()
+    public static SuspensionReasonDto ToDto(this SuspensionReason r) => new SuspensionReasonDto()
     {
         Id = r.Id,
         Title = r.Title,
@@ -22,10 +46,10 @@ public static class EntityMappingExtensions
         IsActive = r.IsActive,
         CharityId = r.CharityId ?? string.Empty,
         CharityName = r.CharityName ?? string.Empty
-    };
+    }.WithAudit(r);
 
     // SeparationReason
-    public static SeparationReasonDto ToDto(this SeparationReason r) => new()
+    public static SeparationReasonDto ToDto(this SeparationReason r) => new SeparationReasonDto()
     {
         Id = r.Id,
         Title = r.Title,
@@ -33,10 +57,10 @@ public static class EntityMappingExtensions
         IsActive = r.IsActive,
         CharityId = r.CharityId ?? string.Empty,
         CharityName = r.CharityName ?? string.Empty
-    };
+    }.WithAudit(r);
 
     // Charity
-    public static CharityDto ToDto(this Charity.Domain.Entities.Charity c) => new()
+    public static CharityDto ToDto(this Charity.Domain.Entities.Charity c) => new CharityDto()
     {
         Id = c.Id,
         Name = c.Name,
@@ -51,10 +75,10 @@ public static class EntityMappingExtensions
         GovernorateName = c.GovernorateName,
         DistrictId = c.DistrictId,
         DistrictName = c.DistrictName
-    };
+    }.WithAudit(c);
 
     // FamilyMember
-    public static FamilyMemberDto ToDto(this BeneficiaryFamilyMember m) => new()
+    public static FamilyMemberDto ToDto(this BeneficiaryFamilyMember m) => new FamilyMemberDto()
     {
         Id = m.Id,
         BeneficiaryId = m.BeneficiaryId,
@@ -77,10 +101,10 @@ public static class EntityMappingExtensions
         SeparationReasonId = m.SeparationReasonId,
         SeparationReason = m.SeparationReason,
         IsFormerHead = m.IsFormerHead
-    };
+    }.WithAudit(m);
 
     // BeneficiaryHeadHistory
-    public static BeneficiaryHeadHistoryDto ToDto(this BeneficiaryHeadHistory h) => new()
+    public static BeneficiaryHeadHistoryDto ToDto(this BeneficiaryHeadHistory h) => new BeneficiaryHeadHistoryDto()
     {
         Id = h.Id,
         BeneficiaryId = h.BeneficiaryId,
@@ -92,7 +116,7 @@ public static class EntityMappingExtensions
         Notes = h.Notes,
         TransferredAt = h.TransferredAt,
         TransferredByCharityName = h.TransferredByCharityName
-    };
+    }.WithAudit(h);
 
     public static BeneficiaryFamilyMember ToEntity(this CreateFamilyMemberDto dto, string beneficiaryId) => new()
     {
@@ -114,7 +138,7 @@ public static class EntityMappingExtensions
     };
 
     // Beneficiary
-    public static BeneficiaryDto ToDto(this Beneficiary b, string currentCharityId) => new()
+    public static BeneficiaryDto ToDto(this Beneficiary b, string currentCharityId) => new BeneficiaryDto()
     {
         Id = b.Id,
         FamilyCode = b.FamilyCode,
@@ -177,7 +201,7 @@ public static class EntityMappingExtensions
         IsEditableByCurrentCharity = !string.IsNullOrWhiteSpace(currentCharityId) && b.RegisteredByCharityId == currentCharityId,
         FamilyMembers = b.FamilyMembers?.Select(m => m.ToDto()).ToList() ?? new(),
         HeadHistories = b.HeadHistories?.Select(h => h.ToDto()).OrderByDescending(h => h.TransferredAt).ToList() ?? new()
-    };
+    }.WithAudit(b);
 
     public static Beneficiary ToEntity(this CreateBeneficiaryDto dto, string charityId, string charityName) => new()
     {
@@ -209,15 +233,15 @@ public static class EntityMappingExtensions
         NeedsPeriodicMedication = dto.NeedsPeriodicMedication,
         PeriodicMedicationDetails = dto.PeriodicMedicationDetails ?? string.Empty,
         MedicationFrequency = dto.MedicationFrequency ?? string.Empty,
-        GovernorateId = dto.GovernorateId,
+        GovernorateId = string.IsNullOrWhiteSpace(dto.GovernorateId) ? null : dto.GovernorateId,
         GovernorateName = dto.GovernorateName,
-        DistrictId = dto.DistrictId,
+        DistrictId = string.IsNullOrWhiteSpace(dto.DistrictId) ? null : dto.DistrictId,
         DistrictName = dto.DistrictName,
-        VillageId = dto.VillageId,
+        VillageId = string.IsNullOrWhiteSpace(dto.VillageId) ? null : dto.VillageId,
         VillageName = dto.VillageName,
-        VillageAreaId = dto.VillageAreaId,
+        VillageAreaId = string.IsNullOrWhiteSpace(dto.VillageAreaId) ? null : dto.VillageAreaId,
         VillageAreaName = dto.VillageAreaName,
-        AddressId = dto.AddressId,
+        AddressId = string.IsNullOrWhiteSpace(dto.AddressId) ? null : dto.AddressId,
         VillageOrDistrict = dto.VillageOrDistrict ?? string.Empty,
         PriorityTier = string.IsNullOrEmpty(dto.PriorityTier) ? "أ - أولوية قصوى ومعدم" : dto.PriorityTier,
         RoofType = string.IsNullOrEmpty(dto.RoofType) ? "خرساني مسلح" : dto.RoofType,
@@ -238,7 +262,7 @@ public static class EntityMappingExtensions
     };
 
     // Inventory
-    public static InventoryItemDto ToDto(this InventoryItem i) => new()
+    public static InventoryItemDto ToDto(this InventoryItem i) => new InventoryItemDto()
     {
         Id = i.Id,
         Code = i.Code,
@@ -250,7 +274,7 @@ public static class EntityMappingExtensions
         MinAlert = i.MinAlert,
         Notes = i.Notes,
         CharityId = i.CharityId
-    };
+    }.WithAudit(i);
 
     public static InventoryItem ToEntity(this CreateInventoryItemDto dto, string charityId) => new()
     {
@@ -268,7 +292,7 @@ public static class EntityMappingExtensions
     };
 
     // Donation
-    public static DonationDto ToDto(this Donation d) => new()
+    public static DonationDto ToDto(this Donation d) => new DonationDto()
     {
         Id = d.Id,
         DonorName = d.DonorName,
@@ -285,7 +309,7 @@ public static class EntityMappingExtensions
         Date = d.Date,
         Notes = d.Notes,
         CharityId = d.CharityId
-    };
+    }.WithAudit(d);
 
     public static Donation ToEntity(this CreateDonationDto dto, string charityId) => new()
     {
@@ -306,7 +330,7 @@ public static class EntityMappingExtensions
     };
 
     // Distribution
-    public static DistributionDto ToDto(this Distribution dist, string currentCharityId) => new()
+    public static DistributionDto ToDto(this Distribution dist, string currentCharityId) => new DistributionDto()
     {
         Id = dist.Id,
         BeneficiaryId = dist.BeneficiaryId,
@@ -328,7 +352,7 @@ public static class EntityMappingExtensions
         CharityId = dist.CharityId,
         CharityName = dist.CharityName,
         IsFromCurrentCharity = dist.CharityId == currentCharityId
-    };
+    }.WithAudit(dist);
 
     public static Distribution ToEntity(this CreateDistributionDto dto, string charityId, string charityName) => new()
     {
@@ -352,7 +376,7 @@ public static class EntityMappingExtensions
     };
 
     // Staff
-    public static StaffMemberDto ToDto(this StaffMember s) => new()
+    public static StaffMemberDto ToDto(this StaffMember s) => new StaffMemberDto()
     {
         Id = s.Id,
         NationalId = s.NationalId,
@@ -366,7 +390,7 @@ public static class EntityMappingExtensions
         Tasks = s.Tasks,
         Status = s.Status,
         CharityId = s.CharityId
-    };
+    }.WithAudit(s);
 
     public static StaffMember ToEntity(this CreateStaffMemberDto dto, string charityId) => new()
     {
@@ -384,15 +408,15 @@ public static class EntityMappingExtensions
     };
 
     // Geographic Lookups & Addresses
-    public static GovernorateDto ToDto(this Governorate g) => new()
+    public static GovernorateDto ToDto(this Governorate g) => new GovernorateDto()
     {
         Id = g.Id,
         Name = g.Name,
         NameEn = g.NameEn,
         DistrictsCount = g.Districts?.Count ?? 0
-    };
+    }.WithAudit(g);
 
-    public static DistrictDto ToDto(this District d) => new()
+    public static DistrictDto ToDto(this District d) => new DistrictDto()
     {
         Id = d.Id,
         GovernorateId = d.GovernorateId,
@@ -400,9 +424,9 @@ public static class EntityMappingExtensions
         Name = d.Name,
         NameEn = d.NameEn,
         VillagesCount = d.Villages?.Count ?? 0
-    };
+    }.WithAudit(d);
 
-    public static VillageDto ToDto(this Village v) => new()
+    public static VillageDto ToDto(this Village v) => new VillageDto()
     {
         Id = v.Id,
         DistrictId = v.DistrictId,
@@ -416,9 +440,9 @@ public static class EntityMappingExtensions
         BeneficiariesCount = v.Beneficiaries?.Count ?? 0,
         CharityId = v.CharityId,
         CharityName = v.CharityName
-    };
+    }.WithAudit(v);
 
-    public static VillageAreaDto ToDto(this VillageArea a) => new()
+    public static VillageAreaDto ToDto(this VillageArea a) => new VillageAreaDto()
     {
         Id = a.Id,
         VillageId = a.VillageId,
@@ -434,19 +458,19 @@ public static class EntityMappingExtensions
         BeneficiariesCount = a.Beneficiaries?.Count ?? 0,
         CharityId = a.CharityId,
         CharityName = a.CharityName
-    };
+    }.WithAudit(a);
 
-    public static AddressRecordDto ToDto(this AddressRecord a) => new()
+    public static AddressRecordDto ToDto(this AddressRecord a) => new AddressRecordDto()
     {
         Id = a.Id,
         GovernorateId = a.GovernorateId,
         DistrictId = a.DistrictId,
         AddressText = a.AddressText,
         UsageCount = a.UsageCount
-    };
+    }.WithAudit(a);
 
     // ExpenseCategory
-    public static ExpenseCategoryDto ToDto(this ExpenseCategory c) => new()
+    public static ExpenseCategoryDto ToDto(this ExpenseCategory c) => new ExpenseCategoryDto()
     {
         Id = c.Id,
         Name = c.Name,
@@ -455,5 +479,5 @@ public static class EntityMappingExtensions
         IsActive = c.IsActive,
         CharityId = c.CharityId,
         CharityName = c.CharityName
-    };
+    }.WithAudit(c);
 }

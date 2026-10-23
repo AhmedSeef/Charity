@@ -17,6 +17,8 @@ import { authGuard, adminGuard } from './auth.guard';
 import { CharitiesAdminComponent } from './charities-admin/charities-admin';
 import { AreaDistributionComponent } from './area-distribution/area-distribution';
 import { VillagesManagementComponent } from './villages-management/villages-management';
+import { AuditLogsComponent } from './audit-logs/audit-logs';
+import { charityManagerGuard } from './auth.guard';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'beneficiaries', pathMatch: 'full' },
@@ -43,5 +45,6 @@ export const routes: Routes = [
   { path: 'area-distribution', component: AreaDistributionComponent, canActivate: [authGuard] },
   { path: 'distributions', component: DistributionsComponent, canActivate: [authGuard] },
   { path: 'staff', component: StaffComponent, canActivate: [authGuard] },
+  { path: 'audit-logs', component: AuditLogsComponent, canActivate: [charityManagerGuard] },
   { path: 'settings', component: SettingsComponent, canActivate: [authGuard] }
 ];

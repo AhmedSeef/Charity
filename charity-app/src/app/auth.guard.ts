@@ -19,3 +19,10 @@ export const adminGuard = () => {
   if (!auth.isLoggedIn()) return router.parseUrl('/login');
   return auth.getCurrentUser()?.role === 'Admin' ? true : router.parseUrl('/beneficiaries');
 };
+
+export const charityManagerGuard = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  if (!auth.isLoggedIn()) return router.parseUrl('/login');
+  return auth.getCurrentUser()?.role === 'CharityManager' ? true : router.parseUrl('/beneficiaries');
+};

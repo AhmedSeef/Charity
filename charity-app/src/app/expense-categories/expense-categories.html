@@ -168,6 +168,7 @@
                 <td>
                   <div class="cat-name-cell">
                     <strong>{{ cat.name }}</strong>
+                    <small *ngIf="cat.createdByName" style="display: block; color: #607d8b;">أضافه: {{ cat.createdByName }} <span *ngIf="cat.updatedByName">· عدّله: {{ cat.updatedByName }}</span></small>
                     <span *ngIf="cat.charityName" class="tenant-tag">{{ cat.charityName }}</span>
                   </div>
                 </td>

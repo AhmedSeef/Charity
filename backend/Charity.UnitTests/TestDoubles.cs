@@ -45,8 +45,12 @@ internal sealed class FakeCurrentUser : ICurrentUserService
 {
     public string? UserId => "tester";
     public string? Username => "tester";
+    public string? FullName => "Test User";
     public string? CharityId { get; set; } = "c1";
     public string? CharityName => "جمعية الاختبار";
-    public string? Role { get; set; } = "Staff";
+    public string? Role { get; set; } = "CharityManager";
     public bool IsAuthenticated => true;
+    public List<string> GrantedPermissions { get; } = new();
+    public IReadOnlyList<string> Permissions => GrantedPermissions;
+    public bool HasPermission(string permission) => Role == "Admin" || Role == "CharityManager" || GrantedPermissions.Contains(permission);
 }

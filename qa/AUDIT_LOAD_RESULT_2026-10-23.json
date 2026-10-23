@@ -1,0 +1,76 @@
+{
+  "run": "20261023194646",
+  "database": "CharityQA_AuditDemo_20261023",
+  "base": "http://localhost:5073",
+  "charities": [
+    {
+      "charityId": "913a1a46-01da-4162-9cd3-8e4d114cc20c",
+      "charityName": "جمعية الرسالة لاختبار التدقيق 20261023194646",
+      "manager": "qa_20261023194646_1_manager",
+      "staff": {
+        "researcher": "qa_20261023194646_1_researcher",
+        "warehouse": "qa_20261023194646_1_warehouse",
+        "donations": "qa_20261023194646_1_donations",
+        "disburser": "qa_20261023194646_1_disburser",
+        "observer": "qa_20261023194646_1_observer"
+      },
+      "created": {
+        "staffUsers": 5,
+        "families": 12,
+        "inventoryItems": 6,
+        "donations": 12,
+        "distributions": 12
+      },
+      "auditLogCount": 96,
+      "auditActions": {
+        "Create": 71,
+        "Update": 24,
+        "Delete": 1
+      },
+      "deniedChecks": 5,
+      "categoryAudit": [
+        "Create",
+        "Delete",
+        "Update"
+      ]
+    },
+    {
+      "charityId": "8bf42c9f-960b-431b-9e09-287e18d1c9bd",
+      "charityName": "جمعية الأمل لاختبار التدقيق 20261023194646",
+      "manager": "qa_20261023194646_2_manager",
+      "staff": {
+        "researcher": "qa_20261023194646_2_researcher",
+        "warehouse": "qa_20261023194646_2_warehouse",
+        "donations": "qa_20261023194646_2_donations",
+        "disburser": "qa_20261023194646_2_disburser",
+        "observer": "qa_20261023194646_2_observer"
+      },
+      "created": {
+        "staffUsers": 5,
+        "families": 12,
+        "inventoryItems": 6,
+        "donations": 12,
+        "distributions": 12
+      },
+      "auditLogCount": 96,
+      "auditActions": {
+        "Create": 71,
+        "Update": 24,
+        "Delete": 1
+      },
+      "deniedChecks": 5,
+      "categoryAudit": [
+        "Create",
+        "Delete",
+        "Update"
+      ]
+    }
+  ],
+  "checks": {
+    "crossCharityIsolation": "passed",
+    "permissionRevocation": "passed",
+    "staffRestrictions": "passed",
+    "auditActorAndActionFilters": "passed"
+  },
+  "status": "passed"
+}

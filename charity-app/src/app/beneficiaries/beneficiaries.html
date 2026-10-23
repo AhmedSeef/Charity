@@ -48,7 +48,7 @@
         </button>
 
         <!-- أرشفة لينة للملف (حفظ الداتا التاريخية) -->
-        <button *ngIf="canEditBeneficiary(selectedBen)" 
+        <button *ngIf="canDeleteBeneficiary(selectedBen)" 
                 type="button" (click)="deleteBeneficiary(selectedBen)" 
                 style="background-color: #546e7a; color: white; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold; display: flex; align-items: center; gap: 4px;"
                 title="أرشفة وإيقاف الملف مع حفظ كامل الداتا التاريخية وحركات الصرف">
@@ -287,6 +287,16 @@
             <td style="padding: 8px 0; color: #555;">{{ selectedBen.appliancesSummary || 'أجهزة منزلية أساسية' }}</td>
           </tr>
         </table>
+      </div>
+
+      <!-- تنبيه أمني في حال حجب البيانات الحساسة -->
+      <div *ngIf="!auth.hasPermission('beneficiaries.view_full')" 
+           style="grid-column: 1 / -1; background-color: #fff8e1; border: 1px solid #ffe082; color: #b78103; padding: 14px 18px; border-radius: 8px; font-weight: bold; font-size: 14px; display: flex; align-items: center; gap: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+        <span style="font-size: 20px;">🔒</span>
+        <div>
+          <div>تم حجب التفاصيل الاجتماعية الحساسة (الديون، الأمراض، الدخل التفصيلي) لهذا الحساب الوظيفي.</div>
+          <div style="font-size: 12px; font-weight: normal; color: #8d6e63; margin-top: 2px;">للاطلاع على التقرير الاجتماعي الكامل، يلزم منح صلاحية (الاطلاع على البيانات الحساسة والبحث الاجتماعي) من مدير الجمعية.</div>
+        </div>
       </div>
 
       <!-- بطاقة الموقف المالي والدخل والممتلكات -->
@@ -1203,10 +1213,14 @@
       </div>
 
       <div>
-        <button *ngIf="auth.getCurrentUser()?.role !== 'Admin'" type="button" (click)="openAdd()" 
+        <button *ngIf="auth.getCurrentUser()?.role !== 'Admin' && auth.hasPermission('beneficiaries.create')" type="button" (click)="openAdd()" 
                 style="background-color: #004d40; color: white; border: none; padding: 12px 22px; border-radius: 6px; cursor: pointer; font-size: 15px; font-weight: bold; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
           ➕ فتح ملف حالة جديد
         </button>
+        <span *ngIf="auth.getCurrentUser()?.role !== 'Admin' && !auth.hasPermission('beneficiaries.create')" 
+              style="background-color: #f5f5f5; color: #616161; border: 1px dashed #bdbdbd; padding: 10px 16px; border-radius: 8px; font-weight: bold; font-size: 13px; display: inline-flex; align-items: center; gap: 8px;">
+          👁️ وضع استعراض الحالات (غير مصرح بفتح ملفات جديدة)
+        </span>
         <span *ngIf="auth.getCurrentUser()?.role === 'Admin'" 
               style="background-color: #e0f2f1; color: #004d40; border: 1px solid #80cbc4; padding: 10px 16px; border-radius: 8px; font-weight: bold; font-size: 13px; display: inline-flex; align-items: center; gap: 8px;">
           👁️ وضع استعراض وبحث الحالات (الإضافة والتعديل مقصورة على الجمعيات)
@@ -1276,6 +1290,7 @@
           <tr *ngFor="let b of paginatedBeneficiaries" (click)="openDetail(b)" class="clickable-row">
             <td>
               <strong style="color: #004d40; font-size: 15px;">{{ b.name }}</strong>
+              <div *ngIf="b.createdByName" style="font-size: 11px; color: #607d8b; margin-top: 3px;">أضافه: {{ b.createdByName }} <span *ngIf="b.updatedByName">· عدّله: {{ b.updatedByName }}</span></div>
               <div *ngIf="b.familyCode || b.familyName" style="margin: 3px 0; font-size: 12px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
                 <span style="background: #fff8e1; color: #b78103; border: 1px solid #ffe082; padding: 1px 6px; border-radius: 4px; font-family: monospace; font-weight: bold; font-size: 11px;">
                   🏷️ {{ b.familyCode || 'FAM-26-0001' }}

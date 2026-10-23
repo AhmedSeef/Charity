@@ -78,6 +78,26 @@ public sealed class CharityApiFactory : WebApplicationFactory<Program>, IAsyncLi
                 Assert.True(created.Succeeded);
                 var assigned = await userManager.AddToRoleAsync(user, sample.Role);
                 Assert.True(assigned.Succeeded);
+
+                if (sample.Role == "Staff")
+                {
+                    var permissions = new[]
+                    {
+                        Charity.Domain.Security.AppPermissions.BeneficiariesView,
+                        Charity.Domain.Security.AppPermissions.BeneficiariesViewFull,
+                        Charity.Domain.Security.AppPermissions.BeneficiariesCreate,
+                        Charity.Domain.Security.AppPermissions.BeneficiariesEdit,
+                        Charity.Domain.Security.AppPermissions.InventoryView,
+                        Charity.Domain.Security.AppPermissions.InventoryManage,
+                        Charity.Domain.Security.AppPermissions.DisbursementExecute,
+                        Charity.Domain.Security.AppPermissions.DisbursementView,
+                        Charity.Domain.Security.AppPermissions.ExpensesManage
+                    };
+                    foreach (var p in permissions)
+                    {
+                        await userManager.AddClaimAsync(user, new System.Security.Claims.Claim("permission", p));
+                    }
+                }
             }
 
             Assert.Equal(DatabaseName, db.Database.GetDbConnection().Database);

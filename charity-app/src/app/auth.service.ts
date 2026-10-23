@@ -30,7 +30,8 @@ export class AuthService {
             fullName: res.fullName,
             role: res.role,
             charityId: res.charityId,
-            charityName: res.charityName
+            charityName: res.charityName,
+            permissions: res.permissions || []
           };
           localStorage.setItem('currentUser', JSON.stringify(userObj));
           if (res.charityId) {
@@ -59,5 +60,15 @@ export class AuthService {
   getCurrentUser() {
     const user = localStorage.getItem('currentUser');
     return user ? JSON.parse(user) : null;
+  }
+
+  hasPermission(permission: string): boolean {
+    const user = this.getCurrentUser();
+    if (!user) return false;
+    if (user.role === 'Admin' || user.role === 'CharityManager') return true;
+    if (Array.isArray(user.permissions)) {
+      return user.permissions.includes(permission) || user.permissions.includes('*');
+    }
+    return false;
   }
 }

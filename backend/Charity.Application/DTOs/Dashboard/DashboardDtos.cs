@@ -1,3 +1,4 @@
+using Charity.Application.DTOs.Audit;
 namespace Charity.Application.DTOs.Dashboard;
 
 public class DashboardStatsDto
@@ -18,7 +19,7 @@ public class DashboardStatsDto
     public int TotalNetworkDistributionsCount { get; set; }
 }
 
-public class CharityDto
+public class CharityDto : AuditedDto
 {
     public string Id { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
@@ -35,7 +36,7 @@ public class CharityDto
     public string? DistrictName { get; set; }
 }
 
-public class CharitySettingsDto
+public class CharitySettingsDto : AuditedDto
 {
     public string CharityId { get; set; } = string.Empty;
     public string CharityName { get; set; } = string.Empty;

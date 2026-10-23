@@ -24,12 +24,24 @@ public class ExceptionHandlingMiddleware
         catch (Exception ex)
         {
             _logger.LogError(ex, "An unhandled exception occurred during request execution: {Message}", ex.Message);
-            await HandleExceptionAsync(context, ex);
+            try
+            {
+                await HandleExceptionAsync(context, ex);
+            }
+            catch (Exception fallbackEx)
+            {
+                _logger.LogWarning(fallbackEx, "Failed to write error response (response may have already started or client disconnected).");
+            }
         }
     }
 
-    private static Task HandleExceptionAsync(HttpContext context, Exception exception)
+    private static async Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
+        if (context.Response.HasStarted)
+        {
+            return;
+        }
+
         context.Response.ContentType = "application/json";
 
         var (statusCode, message) = exception switch
@@ -52,6 +64,6 @@ public class ExceptionHandlingMiddleware
         };
 
         var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
-        return context.Response.WriteAsync(JsonSerializer.Serialize(response, options));
+        await context.Response.WriteAsync(JsonSerializer.Serialize(response, options));
     }
 }

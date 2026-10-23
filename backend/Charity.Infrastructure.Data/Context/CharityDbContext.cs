@@ -2,13 +2,17 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Charity.Domain.Entities;
+using Charity.Application.Services.Interfaces;
 
 namespace Charity.Infrastructure.Data.Context;
 
 public class CharityDbContext : IdentityDbContext<ApplicationUser, IdentityRole, string>
 {
-    public CharityDbContext(DbContextOptions<CharityDbContext> options) : base(options)
+    private readonly ICurrentUserService? _currentUser;
+
+    public CharityDbContext(DbContextOptions<CharityDbContext> options, ICurrentUserService? currentUser = null) : base(options)
     {
+        _currentUser = currentUser;
     }
 
     public DbSet<Charity.Domain.Entities.Charity> Charities => Set<Charity.Domain.Entities.Charity>();
@@ -28,6 +32,122 @@ public class CharityDbContext : IdentityDbContext<ApplicationUser, IdentityRole,
     public DbSet<ExpenseCategory> ExpenseCategories => Set<ExpenseCategory>();
     public DbSet<Village> Villages => Set<Village>();
     public DbSet<VillageArea> VillageAreas => Set<VillageArea>();
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+
+    public override int SaveChanges(bool acceptAllChangesOnSuccess)
+    {
+        TrackAudit();
+        return base.SaveChanges(acceptAllChangesOnSuccess);
+    }
+
+    public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+    {
+        TrackAudit();
+        return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+    }
+
+    private void TrackAudit()
+    {
+        if (_currentUser?.IsAuthenticated != true || string.IsNullOrWhiteSpace(_currentUser.UserId)) return;
+
+        ChangeTracker.DetectChanges();
+        var now = DateTime.UtcNow;
+        var userId = _currentUser.UserId!;
+        var displayName = string.IsNullOrWhiteSpace(_currentUser.FullName) ? _currentUser.Username ?? userId : _currentUser.FullName;
+        foreach (var entry in ChangeTracker.Entries().ToList())
+        {
+            if (entry.Entity is not BaseEntity && entry.Entity is not ApplicationUser) continue;
+            if (entry.State is not (EntityState.Added or EntityState.Modified or EntityState.Deleted)) continue;
+
+            var entity = entry.Entity;
+            var action = entry.State switch
+            {
+                EntityState.Added => "Create",
+                EntityState.Deleted => "Delete",
+                _ when entity is BaseEntity soft && soft.IsDeleted && !soft.DeletedAt.HasValue => "Delete",
+                _ when entity is BaseEntity soft && soft.IsDeleted &&
+                    entry.Property(nameof(BaseEntity.IsDeleted)).OriginalValue is false => "Delete",
+                _ => "Update"
+            };
+
+            if (entity is BaseEntity record)
+            {
+                if (action == "Create")
+                {
+                    record.CreatedAt = now;
+                    record.CreatedBy = userId;
+                    record.CreatedByName = displayName;
+                }
+                else if (action == "Delete")
+                {
+                    record.DeletedAt ??= now;
+                    record.DeletedBy = userId;
+                    record.DeletedByName = displayName;
+                }
+                else
+                {
+                    record.UpdatedAt = now;
+                    record.UpdatedBy = userId;
+                    record.UpdatedByName = displayName;
+                }
+            }
+            else if (entity is ApplicationUser account)
+            {
+                if (action == "Create")
+                {
+                    account.CreatedAt = now;
+                    account.CreatedBy = userId;
+                    account.CreatedByName = displayName;
+                }
+                else if (action == "Update")
+                {
+                    account.UpdatedAt = now;
+                    account.UpdatedBy = userId;
+                    account.UpdatedByName = displayName;
+                }
+            }
+
+            var charityId = ResolveAuditCharityId(entity);
+            if (string.IsNullOrWhiteSpace(charityId)) continue;
+            AuditLogs.Add(new AuditLog
+            {
+                OccurredAt = now,
+                CharityId = charityId,
+                UserId = userId,
+                Username = _currentUser.Username ?? userId,
+                ActorName = displayName,
+                Action = action,
+                EntityType = entity.GetType().Name,
+                EntityId = entity is BaseEntity baseEntity ? baseEntity.Id : ((ApplicationUser)entity).Id,
+                EntityName = ResolveEntityName(entity)
+            });
+        }
+    }
+
+    private string? ResolveAuditCharityId(object entity)
+    {
+        if (entity is Charity.Domain.Entities.Charity charity) return charity.Id;
+        if (entity is Beneficiary beneficiary) return beneficiary.RegisteredByCharityId;
+        if (entity is BeneficiaryFamilyMember member)
+            return ChangeTracker.Entries<Beneficiary>().FirstOrDefault(e => e.Entity.Id == member.BeneficiaryId)?.Entity.RegisteredByCharityId
+                ?? Beneficiaries.IgnoreQueryFilters().Where(b => b.Id == member.BeneficiaryId)
+                .Select(b => b.RegisteredByCharityId).FirstOrDefault();
+        if (entity is BeneficiaryHeadHistory history)
+            return ChangeTracker.Entries<Beneficiary>().FirstOrDefault(e => e.Entity.Id == history.BeneficiaryId)?.Entity.RegisteredByCharityId
+                ?? Beneficiaries.IgnoreQueryFilters().Where(b => b.Id == history.BeneficiaryId)
+                .Select(b => b.RegisteredByCharityId).FirstOrDefault();
+        return entity.GetType().GetProperty("CharityId")?.GetValue(entity) as string ?? _currentUser?.CharityId;
+    }
+
+    private static string ResolveEntityName(object entity)
+    {
+        foreach (var name in new[] { "Name", "FullName", "Title", "ItemName", "ExpenseCategoryName", "Kind", "Username" })
+        {
+            if (entity.GetType().GetProperty(name)?.GetValue(entity) is string value && !string.IsNullOrWhiteSpace(value))
+                return value.Length > 200 ? value[..200] : value;
+        }
+        return string.Empty;
+    }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -51,6 +171,22 @@ public class CharityDbContext : IdentityDbContext<ApplicationUser, IdentityRole,
         builder.Entity<IdentityUserLogin<string>>(b => b.ToTable("UserLogins"));
         builder.Entity<IdentityRoleClaim<string>>(b => b.ToTable("RoleClaims"));
         builder.Entity<IdentityUserToken<string>>(b => b.ToTable("UserTokens"));
+
+        builder.Entity<AuditLog>(b =>
+        {
+            b.ToTable("AuditLogs");
+            b.HasKey(x => x.Id);
+            b.Property(x => x.CharityId).HasMaxLength(50).IsRequired();
+            b.Property(x => x.UserId).HasMaxLength(450).IsRequired();
+            b.Property(x => x.Username).HasMaxLength(256).IsRequired();
+            b.Property(x => x.ActorName).HasMaxLength(200).IsRequired();
+            b.Property(x => x.Action).HasMaxLength(40).IsRequired();
+            b.Property(x => x.EntityType).HasMaxLength(100).IsRequired();
+            b.Property(x => x.EntityId).HasMaxLength(450).IsRequired();
+            b.Property(x => x.EntityName).HasMaxLength(200).IsRequired();
+            b.HasIndex(x => new { x.CharityId, x.OccurredAt });
+            b.HasIndex(x => new { x.CharityId, x.UserId, x.Action });
+        });
 
         // Charity entity configuration
         builder.Entity<Charity.Domain.Entities.Charity>(b =>

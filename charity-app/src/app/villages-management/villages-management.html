@@ -144,6 +144,7 @@
                 <strong class="village-name-link" (click)="goToVillageAreas(v)" title="اضغط لعرض مناطق القرية">
                   🏘️ {{ v.name }}
                 </strong>
+                <small *ngIf="v.createdByName" style="display: block; color: #607d8b;">أضافها: {{ v.createdByName }} <span *ngIf="v.updatedByName">· عدّلها: {{ v.updatedByName }}</span></small>
                 <span *ngIf="v.name.includes('منية المرشد')" class="badge-focus">القرية النشطة</span>
               </td>
               <td><span class="code-badge">{{ v.nameEn || '-' }}</span></td>
@@ -225,6 +226,7 @@
                 <strong style="color: #004d40; font-size: 15px;">
                   📍 {{ a.name }}
                 </strong>
+                <small *ngIf="a.createdByName" style="display: block; color: #607d8b;">أضافها: {{ a.createdByName }} <span *ngIf="a.updatedByName">· عدّلها: {{ a.updatedByName }}</span></small>
               </td>
               <td>{{ a.villageName || getSelectedVillageName() }}</td>
               <td>

@@ -1,0 +1,57 @@
+<section class="audit-page" dir="rtl">
+  <header class="audit-header">
+    <div>
+      <h1>📋 سجل عمليات الجمعية</h1>
+      <p>كل إضافة وتعديل وحذف، مع اسم المستخدم والوقت ونوع السجل.</p>
+    </div>
+    <strong>{{ totalCount }} عملية</strong>
+  </header>
+
+  <form class="audit-filters" (ngSubmit)="search()">
+    <label>اسم المستخدم أو الموظف
+      <input name="name" [(ngModel)]="filters.name" placeholder="ابحث بالاسم" />
+    </label>
+    <label>العملية
+      <select name="action" [(ngModel)]="filters.action">
+        <option value="">كل العمليات</option>
+        <option *ngFor="let item of actions" [value]="item.value">{{ item.label }}</option>
+      </select>
+    </label>
+    <label>نوع السجل
+      <select name="entityType" [(ngModel)]="filters.entityType">
+        <option value="">كل الأنواع</option>
+        <option *ngFor="let item of entityTypes" [value]="item.value">{{ item.label }}</option>
+      </select>
+    </label>
+    <label>من تاريخ<input name="from" type="date" [(ngModel)]="filters.from" /></label>
+    <label>إلى تاريخ<input name="to" type="date" [(ngModel)]="filters.to" /></label>
+    <div class="audit-buttons">
+      <button type="submit">بحث</button>
+      <button type="button" class="light" (click)="clear()">إعادة ضبط</button>
+    </div>
+  </form>
+
+  <p *ngIf="error" class="audit-error">{{ error }}</p>
+  <div class="audit-table-wrap">
+    <table>
+      <thead><tr><th>الوقت</th><th>المستخدم</th><th>العملية</th><th>نوع السجل</th><th>العنصر</th><th>رقم السجل</th></tr></thead>
+      <tbody>
+        <tr *ngFor="let row of rows">
+          <td>{{ row.occurredAt | date:'yyyy/MM/dd h:mm a' }}</td>
+          <td><strong>{{ row.actorName || row.username }}</strong><small>{{ row.username }}</small></td>
+          <td><span class="action" [class.create]="row.action === 'Create'" [class.delete]="row.action === 'Delete'">{{ labelAction(row.action) }}</span></td>
+          <td>{{ labelEntity(row.entityType) }}</td>
+          <td>{{ row.entityName || '—' }}</td>
+          <td class="entity-id">{{ row.entityId }}</td>
+        </tr>
+        <tr *ngIf="!loading && rows.length === 0"><td colspan="6" class="empty">لا توجد عمليات مطابقة للفلاتر.</td></tr>
+        <tr *ngIf="loading"><td colspan="6" class="empty">جارٍ تحميل العمليات...</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <footer class="audit-pagination">
+    <span>صفحة {{ page }} من {{ totalPages }}</span>
+    <button type="button" (click)="changePage(page - 1)" [disabled]="page <= 1">السابق</button>
+    <button type="button" (click)="changePage(page + 1)" [disabled]="page >= totalPages">التالي</button>
+  </footer>
+</section>

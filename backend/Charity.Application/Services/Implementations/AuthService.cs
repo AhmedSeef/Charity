@@ -50,7 +50,12 @@ public class AuthService : IAuthService
         var charity = !string.IsNullOrEmpty(user.CharityId) ? await _charityRepo.GetByIdAsync(user.CharityId) : null;
         var charityName = charity?.Name ?? (role == "Admin" ? "إدارة شبكة الجمعيات" : string.Empty);
 
-        var token = GenerateJwtToken(user, charityName, role);
+        var userClaims = await _userManager.GetClaimsAsync(user);
+        var permissions = (role == "Admin" || role == "CharityManager")
+            ? Charity.Domain.Security.AppPermissions.All.ToList()
+            : userClaims.Where(c => c.Type == "permission").Select(c => c.Value).Distinct().ToList();
+
+        var token = GenerateJwtToken(user, charityName, role, permissions);
 
         return new AuthResponseDto
         {
@@ -60,7 +65,8 @@ public class AuthService : IAuthService
             FullName = user.FullName,
             CharityId = user.CharityId ?? string.Empty,
             CharityName = charityName,
-            Role = role
+            Role = role,
+            Permissions = permissions
         };
     }
 
@@ -77,6 +83,11 @@ public class AuthService : IAuthService
         var charity = !string.IsNullOrEmpty(user.CharityId) ? await _charityRepo.GetByIdAsync(user.CharityId) : null;
         var charityName = charity?.Name ?? (role == "Admin" ? "إدارة شبكة الجمعيات" : string.Empty);
 
+        var userClaims = await _userManager.GetClaimsAsync(user);
+        var permissions = (role == "Admin" || role == "CharityManager")
+            ? Charity.Domain.Security.AppPermissions.All.ToList()
+            : userClaims.Where(c => c.Type == "permission").Select(c => c.Value).Distinct().ToList();
+
         return new CurrentUserDto
         {
             UserId = user.Id,
@@ -84,11 +95,12 @@ public class AuthService : IAuthService
             FullName = user.FullName,
             CharityId = user.CharityId ?? string.Empty,
             CharityName = charityName,
-            Role = role
+            Role = role,
+            Permissions = permissions
         };
     }
 
-    private string GenerateJwtToken(ApplicationUser user, string charityName, string role)
+    private string GenerateJwtToken(ApplicationUser user, string charityName, string role, IEnumerable<string> permissions)
     {
         var jwtKey = _config["Jwt:Key"] ?? "CharitySuperSecretKeyForJwtAuthentication2026!#$";
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
@@ -101,8 +113,14 @@ public class AuthService : IAuthService
             new("FullName", user.FullName ?? string.Empty),
             new("CharityId", user.CharityId ?? string.Empty),
             new("CharityName", charityName),
+            new("security_stamp", user.SecurityStamp ?? string.Empty),
             new(ClaimTypes.Role, role)
         };
+
+        foreach (var perm in permissions)
+        {
+            claims.Add(new Claim("permission", perm));
+        }
 
         var token = new JwtSecurityToken(
             issuer: _config["Jwt:Issuer"] ?? "CharityApi",

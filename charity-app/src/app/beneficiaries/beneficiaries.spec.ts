@@ -5,7 +5,7 @@ function form() {
   const api = { addBeneficiary: vi.fn((_data: any) => EMPTY), updateBeneficiary: vi.fn((_data: any) => EMPTY), addFamilyMember: vi.fn((_id: any, _data: any) => EMPTY),
     getBeneficiarySharedHistory: vi.fn((_id: string): any => EMPTY), getAllDistributions: vi.fn() };
   const page = new BeneficiariesComponent(api as any, { detectChanges: () => {} } as any, {} as any, {} as any,
-    { getCurrentUser: () => ({ role: 'CharityManager', charityId: 'c1' }) } as any);
+    { getCurrentUser: () => ({ role: 'CharityManager', charityId: 'c1' }), hasPermission: () => true } as any);
   page.currentBen.name = 'QA identity';
   page.currentBen.nationalId = '28501011234567';
   return { page, api };

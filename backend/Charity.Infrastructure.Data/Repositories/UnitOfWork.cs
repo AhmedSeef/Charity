@@ -4,6 +4,7 @@ using Charity.Infrastructure.Data.Context;
 using Charity.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Charity.Domain.Exceptions;
+using Charity.Application.Services.Interfaces;
 using Microsoft.Data.SqlClient;
 
 namespace Charity.Infrastructure.Data.Repositories;
@@ -11,14 +12,16 @@ namespace Charity.Infrastructure.Data.Repositories;
 public class UnitOfWork : IUnitOfWork
 {
     private readonly CharityDbContext _context;
+    private readonly ICurrentUserService? _currentUser;
     private readonly ConcurrentDictionary<string, object> _repositories = new();
     private readonly List<(InventoryItem Item, double Delta, bool AllowNegative)> _inventoryChanges = new();
     private (string CharityId, decimal Amount, bool AllowNegative)? _cashDisbursement;
     public decimal? CashBalanceAfterDisbursement { get; private set; }
 
-    public UnitOfWork(CharityDbContext context)
+    public UnitOfWork(CharityDbContext context, ICurrentUserService? currentUser = null)
     {
         _context = context;
+        _currentUser = currentUser;
     }
 
     public IRepository<T> Repository<T>() where T : class
@@ -69,8 +72,17 @@ public class UnitOfWork : IUnitOfWork
         foreach (var (item, delta, allowNegative) in _inventoryChanges)
         {
             // Apply the delta in SQL so concurrent incoming and outgoing stock cannot overwrite each other.
-            var updated = await _context.InventoryItems.Where(i => i.Id == item.Id && (allowNegative || i.Quantity + delta >= 0))
-                .ExecuteUpdateAsync(setters => setters.SetProperty(i => i.Quantity, i => i.Quantity + delta), cancellationToken);
+            var stock = _context.InventoryItems.Where(i => i.Id == item.Id && (allowNegative || i.Quantity + delta >= 0));
+            var actorId = _currentUser?.IsAuthenticated == true ? _currentUser.UserId : null;
+            var actorName = _currentUser?.FullName ?? _currentUser?.Username;
+            var changedAt = DateTime.UtcNow;
+            var updated = actorId == null
+                ? await stock.ExecuteUpdateAsync(setters => setters.SetProperty(i => i.Quantity, i => i.Quantity + delta), cancellationToken)
+                : await stock.ExecuteUpdateAsync(setters => setters
+                    .SetProperty(i => i.Quantity, i => i.Quantity + delta)
+                    .SetProperty(i => i.UpdatedAt, changedAt)
+                    .SetProperty(i => i.UpdatedBy, actorId)
+                    .SetProperty(i => i.UpdatedByName, actorName), cancellationToken);
             if (updated != 1)
             {
                 await _context.Entry(item).ReloadAsync(cancellationToken);
@@ -78,6 +90,14 @@ public class UnitOfWork : IUnitOfWork
                     $"تغير رصيد الصنف ({item.ItemName}). المسجل الآن {item.Quantity} {item.Unit} والمطلوب {-delta}. سيصبح الرصيد {item.Quantity + delta}. هل تريد الاستمرار وتسجيل العجز؟");
             }
             await _context.Entry(item).ReloadAsync(cancellationToken);
+            if (actorId != null)
+                _context.AuditLogs.Add(new AuditLog
+                {
+                    OccurredAt = changedAt, CharityId = item.CharityId, UserId = actorId,
+                    Username = _currentUser?.Username ?? actorId, ActorName = actorName ?? actorId,
+                    Action = "Update", EntityType = nameof(InventoryItem), EntityId = item.Id,
+                    EntityName = item.ItemName
+                });
         }
         int result;
         try

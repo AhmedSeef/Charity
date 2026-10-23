@@ -22,6 +22,14 @@ export class Api {
     this.fetchCharities();
   }
 
+  getAuditLogs(filters: { name?: string; action?: string; entityType?: string; from?: string; to?: string; page?: number; pageSize?: number }): Observable<any> {
+    const params = new URLSearchParams();
+    for (const [key, value] of Object.entries(filters)) {
+      if (value !== undefined && value !== null && String(value).trim() !== '') params.set(key, String(value));
+    }
+    return this.http.get<any>(`${this.apiUrl}/audit-logs?${params.toString()}`);
+  }
+
   // ==========================================
   // Charities & Active Tenant Management
   // ==========================================
@@ -317,6 +325,26 @@ export class Api {
 
   deleteStaff(id: string): Observable<any> {
     return this.http.delete<any>(`${this.apiUrl}/staff/${id}`);
+  }
+
+  getStaffUsers(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/staff/users`);
+  }
+
+  createStaffUser(data: any): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/staff/users`, data);
+  }
+
+  updateStaffUserPermissions(userId: string, data: any): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/staff/users/${userId}/permissions`, data);
+  }
+
+  resetStaffUserPassword(userId: string, newPassword: string): Observable<void> {
+    return this.http.put<void>(`${this.apiUrl}/staff/users/${userId}/password`, { newPassword });
+  }
+
+  deleteStaffUser(userId: string): Observable<any> {
+    return this.http.delete<any>(`${this.apiUrl}/staff/users/${userId}`);
   }
 
   // ==========================================

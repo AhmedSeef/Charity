@@ -1,8 +1,9 @@
+using Charity.Application.DTOs.Audit;
 namespace Charity.Application.DTOs.Distributions;
 
 using Charity.Domain.Validation;
 
-public class DistributionDto
+public class DistributionDto : AuditedDto
 {
     public List<string> Warnings { get; set; } = new();
     public double? RemainingStock { get; set; }

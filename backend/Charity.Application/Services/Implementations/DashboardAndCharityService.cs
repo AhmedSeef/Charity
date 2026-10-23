@@ -105,14 +105,7 @@ public class CharityService : ICharityService
         var settings = await _settingsRepo.FirstOrDefaultAsync(s => s.CharityId == charityId);
         if (settings != null)
         {
-            return new CharitySettingsDto
-            {
-                CharityId = settings.CharityId,
-                CharityName = settings.CharityName,
-                Logo = settings.Logo,
-                Phone = settings.Phone,
-                Details = settings.Details
-            };
+            return settings.ToDto();
         }
 
         var charity = await _charityRepo.GetByIdAsync(charityId);
@@ -164,13 +157,6 @@ public class CharityService : ICharityService
 
         await _unitOfWork.SaveChangesAsync();
 
-        return new CharitySettingsDto
-        {
-            CharityId = charityId,
-            CharityName = existing.CharityName,
-            Logo = existing.Logo,
-            Phone = existing.Phone,
-            Details = existing.Details
-        };
+        return existing.ToDto();
     }
 }

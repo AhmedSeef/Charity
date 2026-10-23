@@ -17,6 +17,7 @@ public class CurrentUserService : ICurrentUserService
     public string? UserId => User?.FindFirstValue(ClaimTypes.NameIdentifier);
 
     public string? Username => User?.Identity?.Name;
+    public string? FullName => User?.FindFirstValue("FullName");
 
     public string? CharityId => User?.FindFirstValue("CharityId");
 
@@ -25,4 +26,15 @@ public class CurrentUserService : ICurrentUserService
     public string? Role => User?.FindFirstValue(ClaimTypes.Role);
 
     public bool IsAuthenticated => User?.Identity?.IsAuthenticated ?? false;
+
+    public IReadOnlyList<string> Permissions => 
+        User?.FindAll("permission").Select(c => c.Value).Distinct().ToList() ?? (IReadOnlyList<string>)Array.Empty<string>();
+
+    public bool HasPermission(string permission)
+    {
+        if (Role == "Admin" || Role == "CharityManager")
+            return true;
+
+        return Permissions.Contains(permission, StringComparer.OrdinalIgnoreCase);
+    }
 }

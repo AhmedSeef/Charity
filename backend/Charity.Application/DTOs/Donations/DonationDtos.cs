@@ -1,6 +1,7 @@
+using Charity.Application.DTOs.Audit;
 namespace Charity.Application.DTOs.Donations;
 
-public class DonationDto
+public class DonationDto : AuditedDto
 {
     public string Id { get; set; } = string.Empty;
     public string DonorName { get; set; } = string.Empty;

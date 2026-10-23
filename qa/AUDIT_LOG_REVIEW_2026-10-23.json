@@ -1,0 +1,71 @@
+{
+  "database": "CharityQA_AuditDemo_20261023",
+  "charities": [
+    {
+      "charityId": "913a1a46-01da-4162-9cd3-8e4d114cc20c",
+      "manager": "qa_20261023194646_1_manager",
+      "logCount": 99,
+      "actors": {
+        "qa_20261023194646_1_manager": 22,
+        "qa_20261023194646_1_disburser": 18,
+        "qa_20261023194646_1_donations": 18,
+        "qa_20261023194646_1_warehouse": 6,
+        "qa_20261023194646_1_researcher": 12,
+        "admin": 23
+      },
+      "entities": {
+        "ApplicationUser": 20,
+        "Distribution": 12,
+        "InventoryItem": 18,
+        "Donation": 12,
+        "Beneficiary": 12,
+        "ExpenseCategory": 11,
+        "SeparationReason": 6,
+        "SuspensionReason": 7,
+        "Charity": 1
+      },
+      "actions": {
+        "Update": 27,
+        "Create": 71,
+        "Delete": 1
+      },
+      "missingRequiredFields": 0,
+      "unexpectedActors": 23
+    },
+    {
+      "charityId": "8bf42c9f-960b-431b-9e09-287e18d1c9bd",
+      "manager": "qa_20261023194646_2_manager",
+      "logCount": 99,
+      "actors": {
+        "qa_20261023194646_2_manager": 22,
+        "qa_20261023194646_2_disburser": 18,
+        "qa_20261023194646_2_donations": 18,
+        "qa_20261023194646_2_warehouse": 6,
+        "qa_20261023194646_2_researcher": 12,
+        "admin": 23
+      },
+      "entities": {
+        "ApplicationUser": 20,
+        "Distribution": 12,
+        "InventoryItem": 18,
+        "Donation": 12,
+        "Beneficiary": 12,
+        "ExpenseCategory": 11,
+        "SeparationReason": 6,
+        "SuspensionReason": 7,
+        "Charity": 1
+      },
+      "actions": {
+        "Update": 27,
+        "Create": 71,
+        "Delete": 1
+      },
+      "missingRequiredFields": 0,
+      "unexpectedActors": 23
+    }
+  ],
+  "issues": [
+    "qa_20261023194646_1_manager: 23 unexpected actors",
+    "qa_20261023194646_2_manager: 23 unexpected actors"
+  ]
+}

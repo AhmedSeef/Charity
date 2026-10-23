@@ -25,6 +25,30 @@ public sealed class OverdraftTests(CharityApiFactory app)
         await client.PostAsJsonAsync("/api/beneficiaries", new CreateBeneficiaryDto
         { Name = "QA overdraft", NationalId = Interlocked.Increment(ref _identity).ToString() }));
 
+    [Fact]
+    public async Task Aid_requires_a_positive_amount_or_quantity_and_a_cash_or_catalog_choice()
+    {
+        using var client = await app.Login();
+        var family = await Family(client);
+        var item = await Read<InventoryItemDto>(await client.PostAsJsonAsync("/api/inventory",
+            new CreateInventoryItemDto { ItemName = "QA input rules", Quantity = 2, Kind = "صنف ملموس" }));
+        var invalidRequests = new (string Path, object Body)[]
+        {
+            ("/api/distributions", new CreateDistributionDto { BeneficiaryId = family.Id, InventoryItemId = item.Id, Quantity = 0 }),
+            ("/api/distributions", new CreateDistributionDto { BeneficiaryId = family.Id, Kind = "إعانة نقدية", Amount = 0 }),
+            ("/api/distributions", new CreateDistributionDto { BeneficiaryId = family.Id, Kind = "إعانة نقدية" }),
+            ("/api/distributions", new CreateDistributionDto { BeneficiaryId = family.Id, Kind = "صنف ملموس", Quantity = 1 }),
+            ("/api/distributions/bulk", new BulkDistributionRequestDto { BeneficiaryIds = [family.Id], Kind = "صنف ملموس", QuantityPerBeneficiary = 1 }),
+            ("/api/distributions/bulk", new BulkDistributionRequestDto { BeneficiaryIds = [family.Id], Kind = "إعانة نقدية", AmountPerBeneficiary = -1 }),
+            ("/api/distributions/bulk", new BulkDistributionRequestDto { BeneficiaryIds = [family.Id], InventoryItemId = item.Id, QuantityPerBeneficiary = 0 })
+        };
+        foreach (var (path, body) in invalidRequests)
+            Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsJsonAsync(path, body)).StatusCode);
+
+        Assert.False(await app.WithDb(db => db.Distributions.AnyAsync(d => d.BeneficiaryId == family.Id)));
+        Assert.Equal(2, (await Read<InventoryItemDto>(await client.GetAsync($"/api/inventory/{item.Id}"))).Quantity);
+    }
+
     [Theory]
     [InlineData(false, 2)]
     [InlineData(false, 0)]
