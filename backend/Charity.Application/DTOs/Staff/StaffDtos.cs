@@ -1,5 +1,7 @@
 namespace Charity.Application.DTOs.Staff;
 
+using Charity.Domain.Validation;
+
 public class StaffMemberDto
 {
     public string Id { get; set; } = string.Empty;
@@ -24,7 +26,7 @@ public class CreateStaffMemberDto
     public string Type { get; set; } = "متطوع";
     public string Role { get; set; } = "باحث اجتماعي";
     public decimal? Salary { get; set; }
-    public string JoinDate { get; set; } = DateTime.UtcNow.ToString("yyyy-MM-dd");
+    public string JoinDate { get; set; } = BusinessDate.TodayInCairo().ToString("yyyy-MM-dd");
     public string Address { get; set; } = string.Empty;
     public string Tasks { get; set; } = string.Empty;
 }

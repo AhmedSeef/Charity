@@ -1,0 +1,356 @@
+<div class="villages-container" dir="rtl">
+
+  <!-- رأس الصفحة -->
+  <div class="page-header">
+    <div class="header-titles">
+      <h2>🏘️ دليل القرى والمناطق الجغرافية</h2>
+      <p class="subtitle">
+        إدارة الهيكل الجغرافي الميداني للمراكز والقرى والمناطق التابعة (محافظة كفر الشيخ - مركز مطوبس - قرية منية المرشد ومناطقها)
+      </p>
+    </div>
+    <div class="header-actions" *ngIf="viewMode === 'list'">
+      <button *ngIf="activeTab === 'villages'" class="btn-primary" (click)="openNewVillageForm()">
+        ➕ إضافة قرية جديدة
+      </button>
+      <button *ngIf="activeTab === 'areas'" class="btn-primary" (click)="openNewAreaForm()">
+        ➕ إضافة منطقة جديدة للقرية
+      </button>
+    </div>
+    <div class="header-actions" *ngIf="viewMode === 'form'">
+      <button class="btn-secondary" (click)="cancelForm()">
+        ⬅️ العودة للقائمة
+      </button>
+    </div>
+  </div>
+
+  <!-- تنبيهات النجاح والخطأ -->
+  <div *ngIf="successMessage" class="alert alert-success">
+    ✅ {{ successMessage }}
+  </div>
+  <div *ngIf="errorMessage" class="alert alert-danger">
+    ⚠️ {{ errorMessage }}
+  </div>
+
+  <!-- بطاقات إحصائية سريعة -->
+  <div class="stats-row" *ngIf="viewMode === 'list'">
+    <div class="stat-card">
+      <div class="stat-icon">🏛️</div>
+      <div class="stat-body">
+        <span class="stat-label">المحافظة والمركز</span>
+        <strong class="stat-value">{{ getSelectedDistrictName() }}</strong>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">🏘️</div>
+      <div class="stat-body">
+        <span class="stat-label">إجمالي القرى بالمركز</span>
+        <strong class="stat-value">{{ villages.length }} قرية</strong>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">📍</div>
+      <div class="stat-body">
+        <span class="stat-label">المناطق بالقرية الحالية ({{ getSelectedVillageName() }})</span>
+        <strong class="stat-value">{{ villageAreas.length }} منطقة/حي</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- تبويبات التبديل بين القرى والمناطق -->
+  <div class="tabs-header" *ngIf="viewMode === 'list'">
+    <button class="tab-btn" [class.active]="activeTab === 'villages'" (click)="switchTab('villages')">
+      🏘️ القرى التابعة للمركز ({{ villages.length }})
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'areas'" (click)="switchTab('areas')">
+      📍 المناطق والأحياء التابعة للقرية ({{ villageAreas.length }})
+    </button>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- وضع العرض: القائمة الرئيسية (List View)                  -->
+  <!-- ======================================================== -->
+  <div *ngIf="viewMode === 'list'">
+
+    <!-- شريط الفلاتر والبحث -->
+    <div class="filters-card">
+      <div class="filters-grid">
+        <div class="filter-item">
+          <label>المحافظة:</label>
+          <select [(ngModel)]="selectedGovernorateId" (change)="onGovernorateChange()">
+            <option *ngFor="let g of governorates" [value]="g.id">{{ g.name }}</option>
+          </select>
+        </div>
+
+        <div class="filter-item">
+          <label>المركز / الحي:</label>
+          <select [(ngModel)]="selectedDistrictId" (change)="onDistrictChange()">
+            <option *ngFor="let d of districts" [value]="d.id">{{ d.name }}</option>
+          </select>
+        </div>
+
+        <!-- فلتر القرية خاص بتبويب المناطق -->
+        <div class="filter-item" *ngIf="activeTab === 'areas'">
+          <label>القرية المستهدفة:</label>
+          <select [(ngModel)]="selectedVillageId" (change)="onVillageFilterChange()">
+            <option *ngFor="let v of villages" [value]="v.id">{{ v.name }}</option>
+          </select>
+        </div>
+
+        <div class="filter-item search-item">
+          <label>بحث بالاسم:</label>
+          <input type="text" [(ngModel)]="searchTerm" placeholder="ابحث باسم القرية أو المنطقة أو الملاحظات...">
+        </div>
+      </div>
+    </div>
+
+    <!-- حالة التحميل -->
+    <div *ngIf="isLoading" class="loading-box">
+      <div class="spinner"></div>
+      <span>جاري تحميل البيانات الجغرافية...</span>
+    </div>
+
+    <!-- 1. جدول القرى (Villages Tab) -->
+    <div *ngIf="!isLoading && activeTab === 'villages'" class="content-card">
+      <div class="card-header-line">
+        <h3>قائمة القرى التابعة لـ {{ getSelectedDistrictName() }}</h3>
+        <span class="count-badge">{{ filteredVillages().length }} قرية</span>
+      </div>
+
+      <div *ngIf="filteredVillages().length === 0" class="empty-state">
+        <span class="empty-icon">🏘️</span>
+        <h4>لا توجد قرى مسجلة في هذا المركز حالياً</h4>
+        <p>يمكنك البدء بإضافة أول قرية بسهولة من خلال الزر أعلاه.</p>
+        <button class="btn-primary" (click)="openNewVillageForm()">➕ إضافة قرية الآن</button>
+      </div>
+
+      <div class="table-responsive" *ngIf="filteredVillages().length > 0">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>اسم القرية</th>
+              <th>الاسم اللاتيني / الرمز</th>
+              <th>المركز والجهة</th>
+              <th>المناطق التابعة</th>
+              <th>المستفيدين</th>
+              <th>الحالة</th>
+              <th>الإجراءات</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let v of filteredVillages(); let i = index" [class.highlighted-row]="v.name.includes('منية المرشد')">
+              <td>{{ i + 1 }}</td>
+              <td>
+                <strong class="village-name-link" (click)="goToVillageAreas(v)" title="اضغط لعرض مناطق القرية">
+                  🏘️ {{ v.name }}
+                </strong>
+                <span *ngIf="v.name.includes('منية المرشد')" class="badge-focus">القرية النشطة</span>
+              </td>
+              <td><span class="code-badge">{{ v.nameEn || '-' }}</span></td>
+              <td>{{ v.districtName || getSelectedDistrictName() }}</td>
+              <td>
+                <button class="badge-btn-areas" (click)="goToVillageAreas(v)">
+                  📍 {{ v.areasCount }} منطقة
+                </button>
+              </td>
+              <td>
+                <span class="count-pill">{{ v.beneficiariesCount }} أسرة</span>
+              </td>
+              <td>
+                <span class="status-pill" [class.active]="v.isActive !== false">
+                  {{ v.isActive !== false ? 'نشطة' : 'معطلة' }}
+                </span>
+              </td>
+              <td class="actions-cell">
+                <button class="btn-icon btn-areas" (click)="goToVillageAreas(v)" title="إدارة المناطق التابعة للقرية">
+                  📍 المناطق
+                </button>
+                <button class="btn-icon btn-edit" (click)="openEditVillage(v)" title="تعديل القرية">
+                  ✏️
+                </button>
+                <button class="btn-icon btn-delete" (click)="deleteVillage(v)" title="حذف القرية">
+                  🗑️
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 2. جدول المناطق التابعة للقرية (Village Areas Tab) -->
+    <div *ngIf="!isLoading && activeTab === 'areas'" class="content-card">
+      <div class="card-header-line">
+        <div>
+          <h3>المناطق والأحياء التابعة لقرية: <span class="highlight-village">{{ getSelectedVillageName() }}</span></h3>
+          <p class="section-desc">مثل: المنشر، السوق، الجسر، المضرب، الترب، وداير الناحية</p>
+        </div>
+        <button class="btn-primary btn-sm" (click)="openNewAreaForm()">
+          ➕ إضافة منطقة لهذه القرية
+        </button>
+      </div>
+
+      <!-- أزرار وصول سريعة للمناطق الرئيسية لمنية المرشد -->
+      <div class="quick-areas-pills" *ngIf="getSelectedVillageName().includes('منية المرشد')">
+        <span class="pills-label">المناطق الميدانية الرئيسية:</span>
+        <span class="quick-pill" *ngFor="let a of villageAreas">
+          📍 {{ a.name }} ({{ a.beneficiariesCount }} أسرة)
+        </span>
+      </div>
+
+      <div *ngIf="filteredAreas().length === 0" class="empty-state">
+        <span class="empty-icon">📍</span>
+        <h4>لا توجد مناطق مسجلة لهذه القرية بعد</h4>
+        <p>يمكنك إضافة مناطق وأحياء القرية الميدانية (مثل المنشر، السوق، الجسر، المضرب، الترب...)</p>
+        <button class="btn-primary" (click)="openNewAreaForm()">➕ إضافة أول منطقة</button>
+      </div>
+
+      <div class="table-responsive" *ngIf="filteredAreas().length > 0">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>اسم المنطقة / الحي</th>
+              <th>القرية التابعة</th>
+              <th>وصف وملاحظات المنطقة</th>
+              <th>المستفيدين المسجلين</th>
+              <th>الحالة</th>
+              <th>الإجراءات</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let a of filteredAreas(); let i = index">
+              <td>{{ i + 1 }}</td>
+              <td>
+                <strong style="color: #004d40; font-size: 15px;">
+                  📍 {{ a.name }}
+                </strong>
+              </td>
+              <td>{{ a.villageName || getSelectedVillageName() }}</td>
+              <td>
+                <span class="notes-text">{{ a.notes || 'لا توجد ملاحظات إضافية' }}</span>
+              </td>
+              <td>
+                <span class="count-pill">{{ a.beneficiariesCount }} أسرة</span>
+              </td>
+              <td>
+                <span class="status-pill" [class.active]="a.isActive !== false">
+                  {{ a.isActive !== false ? 'نشطة' : 'معطلة' }}
+                </span>
+              </td>
+              <td class="actions-cell">
+                <a [routerLink]="['/area-distribution']" [queryParams]="{ area: a.name }" class="btn-icon btn-distribute" title="بدء توزيع وصرف جماعي لهذه المنطقة">
+                  🚚 صرف ميداني
+                </a>
+                <button class="btn-icon btn-edit" (click)="openEditArea(a)" title="تعديل المنطقة">
+                  ✏️
+                </button>
+                <button class="btn-icon btn-delete" (click)="deleteArea(a)" title="حذف المنطقة">
+                  🗑️
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- وضع الإدخال والتعديل (Form View)                          -->
+  <!-- ======================================================== -->
+  <div *ngIf="viewMode === 'form'" class="form-wrapper">
+
+    <!-- نموذج القرية -->
+    <div *ngIf="activeTab === 'villages'" class="form-card">
+      <div class="form-header">
+        <h3>{{ isEditingVillage ? '✏️ تعديل بيانات قرية' : '➕ إضافة قرية جديدة إلى المركز' }}</h3>
+        <p>أدخل اسم القرية وحدد المركز التابع لها (مثل: قرية منية المرشد تابعة لمركز مطوبس)</p>
+      </div>
+
+      <div class="form-body">
+        <div class="form-group">
+          <label>المركز / الحي التابع له القرية: <span class="required">*</span></label>
+          <select [(ngModel)]="villageForm.districtId" class="form-control">
+            <option *ngFor="let d of districts" [value]="d.id">{{ d.name }}</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>اسم القرية بالعربية: <span class="required">*</span></label>
+          <input type="text" [(ngModel)]="villageForm.name" class="form-control" placeholder="مثال: منية المرشد، إبيانة، برمبال...">
+        </div>
+
+        <div class="form-group">
+          <label>الاسم بالإنجليزية / الرمز (اختياري):</label>
+          <input type="text" [(ngModel)]="villageForm.nameEn" class="form-control" placeholder="مثال: Monyat El-Morshid">
+        </div>
+
+        <div class="form-group checkbox-group" *ngIf="isEditingVillage">
+          <label>
+            <input type="checkbox" [(ngModel)]="villageForm.isActive">
+            قرية مفعلة ونشطة في القوائم
+          </label>
+        </div>
+
+        <div class="form-footer">
+          <button class="btn-secondary" (click)="cancelForm()">إلغاء</button>
+          <button class="btn-primary" [disabled]="isSaving" (click)="saveVillage()">
+            <span *ngIf="isSaving">جاري الحفظ...</span>
+            <span *ngIf="!isSaving">{{ isEditingVillage ? 'حفظ التعديلات' : 'إضافة القرية الآن' }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- نموذج المنطقة التابعة للقرية -->
+    <div *ngIf="activeTab === 'areas'" class="form-card">
+      <div class="form-header">
+        <h3>{{ isEditingArea ? '✏️ تعديل بيانات منطقة / حي' : '➕ إضافة منطقة جديدة للقرية' }}</h3>
+        <p>أدخل اسم المنطقة التابعة للقرية (مثل: المنشر، السوق، الجسر، المضرب، الترب...)</p>
+      </div>
+
+      <div class="form-body">
+        <div class="form-group">
+          <label>القرية التابع لها هذا الحي / المنطقة: <span class="required">*</span></label>
+          <select [(ngModel)]="areaForm.villageId" class="form-control">
+            <option *ngFor="let v of villages" [value]="v.id">{{ v.name }}</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>اسم المنطقة أو الحي: <span class="required">*</span></label>
+          <input type="text" [(ngModel)]="areaForm.name" class="form-control" placeholder="مثال: المنشر، السوق، الجسر، المضرب، الترب...">
+        </div>
+
+        <div class="form-group">
+          <label>الاسم بالإنجليزية (اختياري):</label>
+          <input type="text" [(ngModel)]="areaForm.nameEn" class="form-control" placeholder="مثال: Al-Manshar, Al-Souq...">
+        </div>
+
+        <div class="form-group">
+          <label>وصف المنطقة أو ملاحظات ميدانية:</label>
+          <textarea [(ngModel)]="areaForm.notes" class="form-control" rows="3" placeholder="مثال: تقع بجوار مسجد المنشر، أو مدخل البلد الرئيسي..."></textarea>
+        </div>
+
+        <div class="form-group checkbox-group" *ngIf="isEditingArea">
+          <label>
+            <input type="checkbox" [(ngModel)]="areaForm.isActive">
+            منطقة نشطة في التوزيع الميداني
+          </label>
+        </div>
+
+        <div class="form-footer">
+          <button class="btn-secondary" (click)="cancelForm()">إلغاء</button>
+          <button class="btn-primary" [disabled]="isSaving" (click)="saveArea()">
+            <span *ngIf="isSaving">جاري الحفظ...</span>
+            <span *ngIf="!isSaving">{{ isEditingArea ? 'حفظ التعديلات' : 'إضافة المنطقة الآن' }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>

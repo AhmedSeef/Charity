@@ -15,6 +15,8 @@ import { BiAnalyticsComponent } from './bi-analytics/bi-analytics';
 import { LoginComponent } from './login/login';
 import { authGuard, adminGuard } from './auth.guard';
 import { CharitiesAdminComponent } from './charities-admin/charities-admin';
+import { AreaDistributionComponent } from './area-distribution/area-distribution';
+import { VillagesManagementComponent } from './villages-management/villages-management';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'beneficiaries', pathMatch: 'full' },
@@ -23,6 +25,11 @@ export const routes: Routes = [
   { path: 'bi-analytics', component: BiAnalyticsComponent, canActivate: [adminGuard] },
   { path: 'charities-admin', component: CharitiesAdminComponent, canActivate: [adminGuard] },
   { path: 'beneficiaries', component: BeneficiariesComponent, canActivate: [authGuard] },
+  { path: 'villages-management', component: VillagesManagementComponent, canActivate: [authGuard] },
+  { path: 'villages', component: VillagesManagementComponent, canActivate: [authGuard], data: { tab: 'villages' } },
+  { path: 'villages/new', component: VillagesManagementComponent, canActivate: [authGuard], data: { formPage: true, tab: 'villages' } },
+  { path: 'village-areas', component: VillagesManagementComponent, canActivate: [authGuard], data: { tab: 'areas' } },
+  { path: 'village-areas/new', component: VillagesManagementComponent, canActivate: [authGuard], data: { formPage: true, tab: 'areas' } },
   { path: 'suspension-reasons', component: SuspensionReasonsComponent, canActivate: [authGuard] },
   { path: 'separation-reasons', component: SeparationReasonsComponent, canActivate: [authGuard] },
   { path: 'expense-categories', component: ExpenseCategoriesComponent, canActivate: [authGuard] },
@@ -33,6 +40,7 @@ export const routes: Routes = [
   { path: 'donations', component: DonationsComponent, canActivate: [authGuard] },
   { path: 'donations/new', component: DonationsComponent, canActivate: [authGuard], data: { formPage: true } },
   { path: 'disbursement', component: DisbursementComponent, canActivate: [authGuard] },
+  { path: 'area-distribution', component: AreaDistributionComponent, canActivate: [authGuard] },
   { path: 'distributions', component: DistributionsComponent, canActivate: [authGuard] },
   { path: 'staff', component: StaffComponent, canActivate: [authGuard] },
   { path: 'settings', component: SettingsComponent, canActivate: [authGuard] }

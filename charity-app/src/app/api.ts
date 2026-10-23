@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, BehaviorSubject, of } from 'rxjs';
+import { Observable, BehaviorSubject, of, throwError } from 'rxjs';
 import { tap, catchError } from 'rxjs/operators';
 
 @Injectable({
@@ -83,6 +83,10 @@ export class Api {
 
   getBeneficiaryById(id: string): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/beneficiaries/${id}`);
+  }
+
+  getBeneficiarySharedHistory(id: string): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/beneficiaries/${id}/aid-history`);
   }
 
   getNextFamilyCode(): Observable<{ familyCode: string }> {
@@ -171,24 +175,33 @@ export class Api {
   // ==========================================
   // 2c. Expense Categories (أنواع وبنود المصروفات)
   // ==========================================
-  getExpenseCategories(month?: string): Observable<any[]> {
-    const q = month ? `?month=${encodeURIComponent(month)}` : '';
+  getExpenseCategories(month?: string, from?: string, to?: string): Observable<any[]> {
+    const q = this.expensePeriodQuery(month, from, to);
     return this.http.get<any[]>(`${this.apiUrl}/expense-categories${q}`);
   }
 
-  getMonthlyExpenseMovements(year?: number): Observable<any[]> {
-    const q = year ? `?year=${year}` : '';
+  getMonthlyExpenseMovements(year?: number, from?: string, to?: string): Observable<any[]> {
+    const q = this.expensePeriodQuery(undefined, from, to, year);
     return this.http.get<any[]>(`${this.apiUrl}/expense-categories/monthly-movements${q}`);
   }
 
-  getExpenseCategoryById(id: string, month?: string): Observable<any> {
-    const q = month ? `?month=${encodeURIComponent(month)}` : '';
+  getExpenseCategoryById(id: string, month?: string, from?: string, to?: string): Observable<any> {
+    const q = this.expensePeriodQuery(month, from, to);
     return this.http.get<any>(`${this.apiUrl}/expense-categories/${id}${q}`);
   }
 
-  getExpenseCategoryBeneficiaries(id: string, month?: string): Observable<any[]> {
-    const q = month ? `?month=${encodeURIComponent(month)}` : '';
+  getExpenseCategoryBeneficiaries(id: string, month?: string, from?: string, to?: string): Observable<any[]> {
+    const q = this.expensePeriodQuery(month, from, to);
     return this.http.get<any[]>(`${this.apiUrl}/expense-categories/${id}/beneficiaries${q}`);
+  }
+
+  private expensePeriodQuery(month?: string, from?: string, to?: string, year?: number): string {
+    const params = new URLSearchParams();
+    if (month) params.set('month', month);
+    if (from) params.set('from', from);
+    if (to) params.set('to', to);
+    if (year) params.set('year', String(year));
+    return params.size ? `?${params.toString()}` : '';
   }
 
   addExpenseCategory(data: any): Observable<any> {
@@ -224,7 +237,25 @@ export class Api {
       ...data,
       inventoryItemId: data.inventoryItemId || data.inventoryId || null
     };
-    return this.http.post<any>(`${this.apiUrl}/distributions`, payload);
+    return this.postDistributionWithConfirmation(`${this.apiUrl}/distributions`, payload);
+  }
+
+  createBulkDistribution(data: any): Observable<any> {
+    const payload = {
+      ...data,
+      inventoryItemId: data.inventoryItemId || data.inventoryId || null
+    };
+    return this.postDistributionWithConfirmation(`${this.apiUrl}/distributions/bulk`, payload);
+  }
+
+  private postDistributionWithConfirmation(url: string, payload: any): Observable<any> {
+    return this.http.post<any>(url, payload).pipe(catchError(err => {
+      if (err.status === 409 && err.error?.code === 'balance_confirmation_required' &&
+          window.confirm(`⚠️ ${err.error.message}\n\nالاستمرار يسجل العملية والرصيد بالسالب. الإلغاء لا يسجل أي صرف.`)) {
+        return this.http.post<any>(url, { ...payload, allowNegativeBalance: true });
+      }
+      return throwError(() => err);
+    }));
   }
 
   // ==========================================
@@ -321,6 +352,50 @@ export class Api {
   getDistricts(governorateId?: string): Observable<any[]> {
     const q = governorateId ? `?governorateId=${encodeURIComponent(governorateId)}` : '';
     return this.http.get<any[]>(`${this.apiUrl}/lookups/districts${q}`);
+  }
+
+  // Villages (القرى)
+  getVillages(districtId?: string): Observable<any[]> {
+    const q = districtId ? `?districtId=${encodeURIComponent(districtId)}` : '';
+    return this.http.get<any[]>(`${this.apiUrl}/lookups/villages${q}`);
+  }
+
+  getVillageById(id: string): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/lookups/villages/${id}`);
+  }
+
+  createVillage(data: any): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/lookups/villages`, data);
+  }
+
+  updateVillage(id: string, data: any): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/lookups/villages/${id}`, data);
+  }
+
+  deleteVillage(id: string): Observable<any> {
+    return this.http.delete<any>(`${this.apiUrl}/lookups/villages/${id}`);
+  }
+
+  // Village Areas (المناطق والأحياء التابعة للقرى)
+  getVillageAreas(villageId?: string): Observable<any[]> {
+    const q = villageId ? `?villageId=${encodeURIComponent(villageId)}` : '';
+    return this.http.get<any[]>(`${this.apiUrl}/lookups/village-areas${q}`);
+  }
+
+  getVillageAreaById(id: string): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/lookups/village-areas/${id}`);
+  }
+
+  createVillageArea(data: any): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/lookups/village-areas`, data);
+  }
+
+  updateVillageArea(id: string, data: any): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/lookups/village-areas/${id}`, data);
+  }
+
+  deleteVillageArea(id: string): Observable<any> {
+    return this.http.delete<any>(`${this.apiUrl}/lookups/village-areas/${id}`);
   }
 
   autocompleteAddresses(query: string, governorateId?: string, districtId?: string, limit: number = 10): Observable<any[]> {

@@ -31,9 +31,11 @@ public class SeparationReasonService : ISeparationReasonService
 
     public async Task<IReadOnlyList<SeparationReasonDto>> GetAllAsync()
     {
-        var list = await _repository.GetAllAsync();
-        var allMembers = await _familyMemberRepository.GetAllIncludingDeletedAsync();
-        var allBeneficiaries = await _beneficiaryRepository.GetAllIncludingDeletedAsync();
+        var list = (await _repository.GetAllAsync()).Where(r => TenantAccess.CanRead(r.CharityId, _currentUserService));
+        var allBeneficiaries = (await _beneficiaryRepository.GetAllIncludingDeletedAsync())
+            .Where(b => TenantAccess.CanRead(b.RegisteredByCharityId, _currentUserService)).ToList();
+        var ownedIds = allBeneficiaries.Select(b => b.Id).ToHashSet();
+        var allMembers = (await _familyMemberRepository.GetAllIncludingDeletedAsync()).Where(m => ownedIds.Contains(m.BeneficiaryId)).ToList();
 
         return list.Select(r =>
         {
@@ -61,6 +63,8 @@ public class SeparationReasonService : ISeparationReasonService
         }
 
         var charityId = _currentUserService.CharityId;
+        if (string.IsNullOrWhiteSpace(charityId) && _currentUserService.Role != "Admin")
+            TenantAccess.RequireCharity(_currentUserService);
         var charityName = _currentUserService.CharityName ?? "النظام العام";
 
         var entity = new SeparationReason
@@ -82,16 +86,18 @@ public class SeparationReasonService : ISeparationReasonService
     {
         var existing = await _repository.GetByIdAsync(id)
             ?? throw new EntityNotFoundException(nameof(SeparationReason), id);
+        TenantAccess.DemandOwner(existing.CharityId, _currentUserService);
 
         // الشرط الإلزامي: التحقق من عدم وجود أي عملية انفصال سابقة تمت بهذا السبب
+        var allBeneficiaries = await _beneficiaryRepository.GetAllIncludingDeletedAsync();
+        var ownedIds = allBeneficiaries.Where(b => b.RegisteredByCharityId == existing.CharityId).Select(b => b.Id).ToHashSet();
         var allMembers = await _familyMemberRepository.GetAllIncludingDeletedAsync();
         var linkedMembers = allMembers
-            .Where(m => m.SeparationReasonId == existing.Id || (!string.IsNullOrEmpty(m.SeparationReason) && m.SeparationReason == existing.Title))
+            .Where(m => m.SeparationReasonId == existing.Id || (ownedIds.Contains(m.BeneficiaryId) && !string.IsNullOrEmpty(m.SeparationReason) && m.SeparationReason == existing.Title))
             .ToList();
 
-        var allBeneficiaries = await _beneficiaryRepository.GetAllIncludingDeletedAsync();
         var linkedBeneficiaries = allBeneficiaries
-            .Where(b => !string.IsNullOrEmpty(b.ResearchNotes) && b.ResearchNotes.Contains(existing.Title))
+            .Where(b => b.RegisteredByCharityId == existing.CharityId && !string.IsNullOrEmpty(b.ResearchNotes) && b.ResearchNotes.Contains(existing.Title))
             .ToList();
 
         var totalOperations = Math.Max(linkedMembers.Count, linkedBeneficiaries.Count);

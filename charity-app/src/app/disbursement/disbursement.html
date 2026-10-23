@@ -157,7 +157,7 @@
           <span class="section-icon">👥</span>
           <div>
             <h4 class="section-title">من هو المستلم الفعلي الذي حضر لاستلام المساعدة؟</h4>
-            <p class="section-desc">حدد بدقة فرد الأسرة أو المفوض الذي حضر إلى مقر الجمعية لاستلام المساعدة لتسجيل بياناته بالسند الرسمي:</p>
+            <p class="section-desc">حدد صاحب الملف أو فردًا مسجلًا في أسرته حضر لاستلام المساعدة:</p>
           </div>
         </div>
 
@@ -188,10 +188,10 @@
         <!-- خيار 2: أفراد الأسرة المقيمين -->
         <div *ngFor="let m of eligibleFamilyMembers" 
              class="recipient-card"
-             [class.active]="!isRecipientHead && !isCustomRecipient && selectedMemberRecipient?.id === m.id"
+             [class.active]="!isRecipientHead && selectedMemberRecipient?.id === m.id"
              (click)="selectRecipientMember(m)">
           <div class="rc-radio">
-            <span class="radio-dot" *ngIf="!isRecipientHead && !isCustomRecipient && selectedMemberRecipient?.id === m.id">✓</span>
+            <span class="radio-dot" *ngIf="!isRecipientHead && selectedMemberRecipient?.id === m.id">✓</span>
           </div>
           <div class="rc-info">
             <div class="rc-role">
@@ -204,43 +204,6 @@
           <div class="rc-icon">👨‍👩‍👧</div>
         </div>
 
-        <!-- خيار 3: توكيل رسمي / مفوض آخر -->
-        <div class="recipient-card custom-rc-card"
-             [class.active]="isCustomRecipient"
-             (click)="selectCustomRecipient()">
-          <div class="rc-radio">
-            <span class="radio-dot" *ngIf="isCustomRecipient">✓</span>
-          </div>
-          <div class="rc-info">
-            <div class="rc-role">مفوض / توكيل رسمي أو شخص آخر</div>
-            <div class="rc-name">{{ customRecipient.name ? customRecipient.name : 'شخص مفوض بموجب توكيل' }}</div>
-            <div class="rc-nid">{{ customRecipient.nationalId ? ('بطاقة: ' + customRecipient.nationalId) : 'تسجيل بيانات المفوض بالأسفل' }}</div>
-          </div>
-          <div class="rc-icon">📜</div>
-        </div>
-      </div>
-
-      <!-- حقول إدخال بيانات المفوض إن تم اختياره -->
-      <div *ngIf="isCustomRecipient" class="custom-recipient-form">
-        <h5 class="crf-title">بيانات الشخص المستلم (بموجب توكيل أو تفويض رسمي):</h5>
-        <div class="crf-grid">
-          <div>
-            <label class="form-label">اسم المستلم الفعلي بالكامل *</label>
-            <input type="text" [(ngModel)]="customRecipient.name" placeholder="الاسم الرباعي كما بالبطاقة" class="form-control" />
-          </div>
-          <div>
-            <label class="form-label">الرقم القومي للمستلم (14 رقماً) *</label>
-            <input type="text" [(ngModel)]="customRecipient.nationalId" maxlength="14" placeholder="الرقم القومي" class="form-control" />
-          </div>
-          <div>
-            <label class="form-label">صفة أو صلة المستلم بالأسرة *</label>
-            <input type="text" [(ngModel)]="customRecipient.relationship" placeholder="توكيل رسمي، ابن عم، جار..." class="form-control" />
-          </div>
-          <div>
-            <label class="form-label">ملاحظات التفويض أو رقم التوكيل</label>
-            <input type="text" [(ngModel)]="customRecipient.notes" placeholder="رقم توكيل الشهر العقاري أو سبب الاستلام بالنيابة..." class="form-control" />
-          </div>
-        </div>
       </div>
     </div>
 
@@ -344,6 +307,7 @@
             <input type="date" 
                    [(ngModel)]="distributionData.date" 
                    name="date" 
+                   [max]="todayInCairo()"
                    required 
                    class="form-control" />
           </div>
@@ -355,7 +319,7 @@
             💡 <strong>رصيد المخزن:</strong> المتوفر حالياً <strong>{{ selectedInventoryItem.quantity }} {{ selectedInventoryItem.unit }}</strong>. سيتبقى بعد الصرف: <strong>{{ selectedInventoryItem.quantity - distributionData.quantity }} {{ selectedInventoryItem.unit }}</strong>.
           </div>
           <div *ngIf="isStockInsufficient" class="stock-error">
-            ⚠️ <strong>عجز في الرصيد:</strong> الكمية المطلوبة ({{ distributionData.quantity }}) تتجاوز الرصيد المتاح بالمخزن ({{ selectedInventoryItem.quantity }} {{ selectedInventoryItem.unit }})!
+            ⚠️ <strong>عجز في الرصيد:</strong> الكمية المطلوبة ({{ distributionData.quantity }}) تتجاوز الرصيد المسجل ({{ selectedInventoryItem.quantity }} {{ selectedInventoryItem.unit }}). يمكنك الاستمرار بعد تأكيد التحذير؛ سيصبح الرصيد {{ selectedInventoryItem.quantity - distributionData.quantity }} {{ selectedInventoryItem.unit }}.
           </div>
         </div>
 
@@ -373,7 +337,7 @@
         <div class="submit-action-row">
           <button type="submit" 
                   class="btn-submit-disbursement"
-                  [disabled]="isSubmitting || isStockInsufficient || selectedBeneficiary?.isSuspended || selectedBeneficiary?.status === 'موقوف'">
+                  [disabled]="isSubmitting || selectedBeneficiary?.isSuspended || selectedBeneficiary?.status === 'موقوف'">
             <span *ngIf="!isSubmitting">
               📤 اعتماد الصرف وتسليم المساعدة لـ ({{ currentRecipientName }})
             </span>

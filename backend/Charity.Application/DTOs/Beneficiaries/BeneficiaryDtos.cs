@@ -84,6 +84,10 @@ public class BeneficiaryDto
     public string? GovernorateName { get; set; }
     public string? DistrictId { get; set; }
     public string? DistrictName { get; set; }
+    public string? VillageId { get; set; }
+    public string? VillageName { get; set; }
+    public string? VillageAreaId { get; set; }
+    public string? VillageAreaName { get; set; }
     public string? AddressId { get; set; }
     public string VillageOrDistrict { get; set; } = string.Empty;
     public string PriorityTier { get; set; } = "أ - أولوية قصوى ومعدم";
@@ -158,6 +162,10 @@ public class CreateBeneficiaryDto
     public string? GovernorateName { get; set; }
     public string? DistrictId { get; set; }
     public string? DistrictName { get; set; }
+    public string? VillageId { get; set; }
+    public string? VillageName { get; set; }
+    public string? VillageAreaId { get; set; }
+    public string? VillageAreaName { get; set; }
     public string? AddressId { get; set; }
     public string VillageOrDistrict { get; set; } = string.Empty;
     public string PriorityTier { get; set; } = "أ - أولوية قصوى ومعدم";
@@ -215,6 +223,10 @@ public class UpdateBeneficiaryDto
     public string? GovernorateName { get; set; }
     public string? DistrictId { get; set; }
     public string? DistrictName { get; set; }
+    public string? VillageId { get; set; }
+    public string? VillageName { get; set; }
+    public string? VillageAreaId { get; set; }
+    public string? VillageAreaName { get; set; }
     public string? AddressId { get; set; }
     public string VillageOrDistrict { get; set; } = string.Empty;
     public string PriorityTier { get; set; } = "أ - أولوية قصوى ومعدم";

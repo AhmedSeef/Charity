@@ -14,7 +14,9 @@ public class ExpenseCategoryDto
     public decimal TotalDisbursedAmount { get; set; }
     public int DisbursementsCount { get; set; }
     public int BeneficiariesCount { get; set; }
-    public bool CanDelete => DisbursementsCount == 0;
+    public List<string> BeneficiaryIds { get; set; } = new();
+    public bool HasHistoricalDisbursements { get; set; }
+    public bool CanDelete => !HasHistoricalDisbursements;
 }
 
 public class CreateExpenseCategoryDto
@@ -61,6 +63,7 @@ public class MonthlyExpenseMovementDto
     public decimal TotalAmount { get; set; }
     public int DisbursementsCount { get; set; }
     public int BeneficiariesCount { get; set; }
+    public List<string> BeneficiaryIds { get; set; } = new();
     public List<CategoryMonthlyShareDto> TopCategories { get; set; } = new();
 }
 

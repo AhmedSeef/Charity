@@ -1,0 +1,520 @@
+<div dir="rtl" class="area-dist-container">
+
+  <!-- تنبيهات النجاح والأخطاء -->
+  <div *ngIf="successMessage" class="alert-box alert-success">
+    <span>{{ successMessage }}</span>
+    <button type="button" class="btn-alert-close" (click)="successMessage = ''">✕</button>
+  </div>
+
+  <div *ngIf="errorMessage" class="alert-box alert-danger">
+    <span>{{ errorMessage }}</span>
+    <button type="button" class="btn-alert-close" (click)="errorMessage = ''">✕</button>
+  </div>
+
+  <!-- رأس الصفحة -->
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">
+        <span>🚚 التوزيع الميداني الجماعي وخطوط السير (توزيع المناطق)</span>
+      </h2>
+      <p class="page-subtitle">
+        تحديد وبحث أسر ومستفيدي منطقة أو شارع معين (مثل منطقة المنشر، القرى، الأحياء)، واختيارهم جماعياً لتنفيذ صرف المساعدات والوجبات وكراتين الطعام، واستخراج كشف خط سير ميداني مطبوع للمتطوع أو العامل.
+      </p>
+    </div>
+
+    <div class="header-quick-stats">
+      <div class="h-stat-pill">
+        <span class="h-stat-icon">🏢</span>
+        <span class="h-stat-label">{{ activeCharity?.name || 'جمعيتنا' }}</span>
+      </div>
+      <div class="h-stat-pill" [class.highlight]="selectedCount > 0">
+        <span class="h-stat-icon">☑️</span>
+        <span class="h-stat-label">المحدد للصرف: <strong>{{ selectedCount }} أسرة</strong></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- بطاقة البحث والتصفية الجغرافية الذكية -->
+  <div class="search-card">
+    <div class="search-title-row">
+      <span class="search-card-icon">📍</span>
+      <h3 class="search-card-title">تحديد منطقة التوزيع المستهدفة</h3>
+    </div>
+
+    <div class="search-main-row">
+      <!-- حقل البحث النصي بالمنطقة أو الشارع أو الحي -->
+      <div class="search-input-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" 
+               [(ngModel)]="areaSearchTerm" 
+               (ngModelChange)="onFilterChange()"
+               placeholder="اكتب اسم المنطقة، الشارع، الحي، أو القرية (مثال: المنشر، برج مغيزل، دسوق، العمرانية...)" 
+               class="search-main-input" />
+        <button *ngIf="areaSearchTerm" type="button" class="btn-clear-input" (click)="areaSearchTerm = ''; onFilterChange()" title="مسح">✕</button>
+      </div>
+
+      <!-- فلاتر مساندة -->
+      <div class="filter-controls">
+        <select [(ngModel)]="selectedGovernorateId" (change)="onGovernorateChange()" class="filter-select">
+          <option value="">كل المحافظات</option>
+          <option *ngFor="let g of governorates" [value]="g.id">{{ g.name }}</option>
+        </select>
+
+        <select [(ngModel)]="selectedDistrictId" (ngModelChange)="onFilterChange()" class="filter-select" [disabled]="!selectedGovernorateId">
+          <option value="">كل المراكز / الأحياء</option>
+          <option *ngFor="let d of districts" [value]="d.id">{{ d.name }}</option>
+        </select>
+
+        <select [(ngModel)]="selectedPriorityTier" (ngModelChange)="onFilterChange()" class="filter-select">
+          <option value="">كل درجات الأولوية</option>
+          <option value="أ - أولوية قصوى ومعدم">أ - أولوية قصوى ومعدم</option>
+          <option value="ب - متوسط الاحتياج">ب - متوسط الاحتياج</option>
+          <option value="ج - طوارئ وظرف مؤقت">ج - طوارئ وظرف مؤقت</option>
+        </select>
+
+        <label class="active-only-checkbox">
+          <input type="checkbox" [(ngModel)]="onlyActive" (ngModelChange)="onFilterChange()" />
+          <span>استبعاد الملفات الموقوفة</span>
+        </label>
+
+        <button type="button" class="btn-reset-filters" (click)="clearSearch()">
+          إعادة ضبط
+        </button>
+      </div>
+    </div>
+
+    <!-- أزرار المناطق الشائعة السريعة (Quick Area Chips) -->
+    <div class="quick-chips-row" *ngIf="quickAreaChips.length > 0">
+      <span class="chips-label">مناطق شائعة بالملفات:</span>
+      <button *ngFor="let area of quickAreaChips" 
+              type="button" 
+              class="area-chip"
+              [class.chip-active]="areaSearchTerm === area"
+              (click)="setAreaSearch(area)">
+        📍 {{ area }}
+      </button>
+    </div>
+  </div>
+
+  <!-- لوحة التوزيع الجماعي السريع (تظهر في المنتصف أو أعلى الجدول لتسهيل الصرف) -->
+  <div class="bulk-action-card" [class.has-selection]="selectedCount > 0">
+    <div class="bac-header">
+      <div class="bac-title-wrap">
+        <span class="bac-icon">📦</span>
+        <div>
+          <h4 class="bac-title">إعداد الصرف الجماعي وخط السير</h4>
+          <span class="bac-subtitle">
+            <ng-container *ngIf="selectedCount > 0">
+              تم تحديد <strong>{{ selectedCount }}</strong> أسرة (إجمالي <strong>{{ totalFamilyMembersCount }}</strong> فرد) في منطقة: <strong>{{ areaSearchTerm || 'المحددة' }}</strong>
+            </ng-container>
+            <ng-container *ngIf="selectedCount === 0">
+              يرجى تحديد الأسر من الجدول أدناه لتفعيل الصرف الجماعي.
+            </ng-container>
+          </span>
+        </div>
+      </div>
+
+      <!-- تبديل نوع المساعدة -->
+      <div class="aid-type-toggle">
+        <button type="button" 
+                class="att-btn" 
+                [class.att-active]="aidType === 'tangible'"
+                (click)="aidType = 'tangible'">
+          🥘 وجبات وأصناف المخزن
+        </button>
+        <button type="button" 
+                class="att-btn" 
+                [class.att-active]="aidType === 'cash'"
+                (click)="aidType = 'cash'">
+          💵 مساعدات نقدية
+        </button>
+      </div>
+    </div>
+
+    <div class="bac-body">
+      <div class="bac-form-grid">
+        
+        <!-- في حال المساعدات العينية / وجبات / كراتين -->
+        <ng-container *ngIf="aidType === 'tangible'">
+          <div class="form-group">
+            <label class="form-label">صنف المساعدة من المخزن *</label>
+            <select [(ngModel)]="selectedInventoryItemId" class="form-control font-bold">
+              <option *ngFor="let item of inventoryItems" [value]="item.id">
+                {{ item.itemName }} (الرصيد المتاح: {{ item.quantity }} {{ item.unit }})
+              </option>
+            </select>
+            <small *ngIf="selectedItemObject" class="stock-hint" [class.text-danger]="isStockInsufficient">
+              الرصيد المتاح بالمخزن: <strong>{{ selectedItemObject.quantity }} {{ selectedItemObject.unit }}</strong>
+              <span *ngIf="selectedCount > 0"> | المطلوب لخط السير: <strong>{{ totalRequiredQuantity }} {{ selectedItemObject.unit }}</strong></span>
+            </small>
+          </div>
+
+          <div class="form-group small-group">
+            <label class="form-label">الكمية لكل أسرة *</label>
+            <input type="number" 
+                   [(ngModel)]="quantityPerBeneficiary" 
+                   min="1" 
+                   class="form-control font-bold" />
+            <small class="form-hint">مثال: 1 كرتونة أو 2 وجبة</small>
+          </div>
+        </ng-container>
+
+        <!-- في حال المساعدات النقدية -->
+        <ng-container *ngIf="aidType === 'cash'">
+          <div class="form-group">
+            <label class="form-label">بند المصروف النقدي *</label>
+            <select [(ngModel)]="selectedExpenseCategoryId" class="form-control font-bold">
+              <option *ngFor="let cat of expenseCategories" [value]="cat.id">
+                [{{ cat.code }}] {{ cat.name }}
+              </option>
+            </select>
+            <small class="form-hint">يتم تحميل المبالغ على هذا البند المحاسبي.</small>
+          </div>
+
+          <div class="form-group small-group">
+            <label class="form-label">المبلغ لكل أسرة (ج.م) *</label>
+            <input type="number" 
+                   [(ngModel)]="cashAmountPerBeneficiary" 
+                   min="1" 
+                   class="form-control font-bold" />
+            <small class="form-hint">إجمالي: {{ totalRequiredCash | number:'1.0-0' }} ج.م</small>
+          </div>
+        </ng-container>
+
+        <!-- المتطوع أو المندوب المكلف -->
+        <div class="form-group">
+          <label class="form-label">المتطوع / المندوب المكلف بالخط *</label>
+          <div class="volunteer-input-combo">
+            <input type="text" 
+                   [(ngModel)]="volunteerName" 
+                   placeholder="اكتب اسم المتطوع أو اختر من القائمة..." 
+                   class="form-control" />
+            <select (change)="onVolunteerSelect($event)" class="volunteer-picker-select" title="اختر من متطوعي الجمعية المسجلين">
+              <option value="">اختر متطوع...</option>
+              <option *ngFor="let v of volunteers" [value]="v.name">{{ v.name }} ({{ v.role }})</option>
+            </select>
+          </div>
+          <small class="form-hint">يظهر اسم المتطوع في ترويسة كشف الاستلام والتسليم الميداني.</small>
+        </div>
+
+        <!-- هاتف المتطوع وتاريخ التوزيع -->
+        <div class="form-group small-group">
+          <label class="form-label">تاريخ خط السير</label>
+          <input type="date" [(ngModel)]="distributionDate" [max]="todayInCairo()" class="form-control" />
+        </div>
+
+      </div>
+
+      <!-- تنبيه عدم كفاية المخزن -->
+      <div *ngIf="isStockInsufficient" class="alert-box alert-danger m-top-sm">
+        <span>⚠️ الرصيد المسجل لا يكفي: المطلوب ({{ totalRequiredQuantity }} {{ selectedItemObject?.unit }}) والمسجل ({{ selectedItemObject?.quantity }} {{ selectedItemObject?.unit }}). يمكنك الاستمرار بعد تأكيد التحذير وتسجيل الرصيد بالسالب.</span>
+      </div>
+
+      <!-- أزرار الإجراءات الرئيسية -->
+      <div class="bac-actions-row">
+        <button type="button" 
+                class="btn btn-primary btn-lg" 
+                [disabled]="isSubmitting || selectedCount === 0"
+                (click)="executeBulkDisbursement()">
+          <span *ngIf="!isSubmitting">🚀 تنفيذ الصرف الجماعي واعتماد خط السير ({{ selectedCount }} أسر)</span>
+          <span *ngIf="isSubmitting">⏳ جاري تنفيذ الصرف وخصم المخزن...</span>
+        </button>
+
+        <button type="button" 
+                class="btn btn-outline btn-lg" 
+                [disabled]="selectedCount === 0"
+                (click)="previewRunSheet()"
+                title="معاينة كشف التسليم الميداني وطباعته للمتطوع">
+          <span>📋 معاينة كشف خط السير للمتطوع</span>
+        </button>
+
+        <div class="bulk-stats-summary" *ngIf="selectedCount > 0">
+          <span>إجمالي العهدة: 
+            <strong *ngIf="aidType === 'tangible'">{{ totalRequiredQuantity }} {{ selectedItemObject?.unit || 'وحدة' }}</strong>
+            <strong *ngIf="aidType === 'cash'">{{ totalRequiredCash | number:'1.0-0' }} ج.م</strong>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- شريط التحكم بجدول أسر المنطقة -->
+  <div class="table-control-bar">
+    <div class="tcb-right">
+      <button type="button" 
+              class="btn-select-all" 
+              (click)="toggleSelectAllFiltered()">
+        <span *ngIf="!isAllFilteredSelected">☑️ تحديد جميع أسر المنطقة ({{ filteredBeneficiaries.length }})</span>
+        <span *ngIf="isAllFilteredSelected">⏹️ إلغاء تحديد الكل</span>
+      </button>
+
+      <span class="tcb-stats">
+        عرض <strong>{{ filteredBeneficiaries.length }}</strong> أسرة في هذه المنطقة (تم تحديد: <strong>{{ selectedCount }}</strong>)
+      </span>
+    </div>
+
+    <div class="tcb-left">
+      <span *ngIf="areaSearchTerm" class="current-zone-badge">
+        المنطقة الحالية: <strong>{{ areaSearchTerm }}</strong>
+      </span>
+    </div>
+  </div>
+
+  <!-- جدول الأسر والمستفيدين بالمنطقة -->
+  <div class="table-card">
+    <div *ngIf="isLoading" class="loading-state">
+      <span>⏳ جاري جلب أسر المنطقة الجغرافية...</span>
+    </div>
+
+    <div *ngIf="!isLoading" class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width: 45px; text-align: center;">
+              <input type="checkbox" 
+                     [checked]="isAllFilteredSelected" 
+                     (change)="toggleSelectAllFiltered()" 
+                     title="تحديد أو إلغاء تحديد الكل" />
+            </th>
+            <th style="width: 110px;">كود الأسرة</th>
+            <th>اسم المستفيد (رب الأسرة)</th>
+            <th>العنوان التفصيلي بالمنطقة</th>
+            <th style="width: 120px;">القرية / الحي</th>
+            <th style="width: 120px;">الهاتف</th>
+            <th style="width: 75px; text-align: center;">الأفراد</th>
+            <th style="width: 130px;">درجة الأولوية</th>
+            <th style="width: 100px; text-align: center;">الحالة</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let b of filteredBeneficiaries" 
+              [class.row-selected]="isSelected(b.id)"
+              (click)="toggleSelection(b.id)"
+              style="cursor: pointer;">
+            
+            <!-- Checkbox -->
+            <td style="text-align: center;" (click)="$event.stopPropagation()">
+              <input type="checkbox" 
+                     [checked]="isSelected(b.id)" 
+                     (change)="toggleSelection(b.id)" />
+            </td>
+
+            <!-- كود الأسرة -->
+            <td>
+              <span class="family-code-badge">{{ b.familyCode }}</span>
+            </td>
+
+            <!-- اسم رب الأسرة -->
+            <td>
+              <div class="ben-name-wrap">
+                <strong class="ben-name">{{ b.name }}</strong>
+                <span *ngIf="b.nationalId" class="ben-nid">{{ b.nationalId }}</span>
+              </div>
+            </td>
+
+            <!-- العنوان التفصيلي بدقة -->
+            <td>
+              <div class="ben-address-cell">
+                <span class="ben-addr-text">{{ b.address || 'لم يسجل عنوان تفصيلي' }}</span>
+                <span *ngIf="b.districtName" class="ben-geo-tag">{{ b.governorateName }} - {{ b.districtName }}</span>
+              </div>
+            </td>
+
+            <!-- القرية / الحي -->
+            <td>
+              <span class="village-tag">{{ b.villageOrDistrict || 'المنطقة العامة' }}</span>
+            </td>
+
+            <!-- الهاتف -->
+            <td>
+              <span class="phone-link">{{ b.phone || '—' }}</span>
+            </td>
+
+            <!-- عدد الأفراد -->
+            <td style="text-align: center;">
+              <span class="family-count-pill">{{ b.familyCount || 1 }}</span>
+            </td>
+
+            <!-- درجة الأولوية -->
+            <td>
+              <span class="tier-pill" [class.tier-urgent]="b.priorityTier?.includes('أولوية قصوى')">
+                {{ b.priorityTier || 'أولوية قصوى' }}
+              </span>
+            </td>
+
+            <!-- الحالة -->
+            <td style="text-align: center;">
+              <span class="status-badge" [class.status-suspended]="b.isSuspended || b.status === 'موقوف'">
+                {{ b.isSuspended || b.status === 'موقوف' ? 'موقوف' : 'مستحق فعال' }}
+              </span>
+            </td>
+
+          </tr>
+
+          <!-- حالة عدم وجود نتائج -->
+          <tr *ngIf="filteredBeneficiaries.length === 0">
+            <td colspan="9" class="empty-state">
+              <div class="empty-wrap">
+                <span class="empty-icon">📍</span>
+                <h4>لا توجد أسر مسجلة مطابقة لمنطقة البحث: ({{ areaSearchTerm }})</h4>
+                <p>تأكد من كتابة اسم المنطقة أو الشارع بشكل صحيح، أو اختر المحافظة والمركز لتوسيع نطاق البحث.</p>
+                <button type="button" class="btn btn-outline btn-sm m-top-sm" (click)="clearSearch()">
+                  عرض جميع الأسر المسجلة
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- كشف خط سير التوزيع الميداني للمتطوع (Run-Sheet Modal & Print) -->
+  <!-- ======================================================== -->
+  <div *ngIf="showRunSheetModal" class="modal-backdrop" (click)="closeRunSheet()">
+    <div class="modal-dialog run-sheet-modal" (click)="$event.stopPropagation()">
+      
+      <!-- رأس النافذة التفاعلية -->
+      <div class="modal-header no-print">
+        <div class="modal-title-wrap">
+          <span class="modal-icon">📋</span>
+          <div>
+            <h3 class="modal-title">كشف خط سير التوزيع الميداني للمتطوع</h3>
+            <span class="modal-subtitle">
+              {{ isCommittedSheet ? '✅ تم اعتماد الصرف رسمياً وتجهيز الكشف للطباعة والتسليم' : '⚠️ مسودة خط سير للمعاينة قبل الاعتماد' }}
+            </span>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-primary btn-print" (click)="printRunSheet()">
+            🖨️ طباعة كشف خط السير للمتطوع
+          </button>
+          <button type="button" class="btn-close" (click)="closeRunSheet()">✕</button>
+        </div>
+      </div>
+
+      <!-- محتوى كشف خط السير الرسمي (المعد للطباعة) -->
+      <div class="run-sheet-printable" id="printable-run-sheet">
+        
+        <!-- ترويسة الكشف الرسمية -->
+        <div class="rs-header">
+          <div class="rs-logo-box">
+            <span class="rs-icon">{{ activeCharity?.icon || '🏢' }}</span>
+            <div class="rs-charity-info">
+              <h2>{{ runSheetData?.charityName }}</h2>
+              <p>{{ runSheetData?.charityAddress }} | هاتف: {{ runSheetData?.charityPhone }}</p>
+            </div>
+          </div>
+
+          <div class="rs-title-box">
+            <h1 class="rs-sheet-title">كشف خط سير توزيع مساعدات ميدانية</h1>
+            <span class="rs-date">تاريخ خط السير: {{ runSheetData?.date }}</span>
+          </div>
+        </div>
+
+        <!-- ملخص بيانات التكليف والعهدة المسلمة للمتطوع -->
+        <div class="rs-summary-card">
+          <div class="rs-sc-item">
+            <span class="rs-sc-label">منطقة خط السير المستهدفة:</span>
+            <span class="rs-sc-val text-primary">📍 {{ runSheetData?.targetAreaName || 'المنطقة المحددة' }}</span>
+          </div>
+          <div class="rs-sc-item">
+            <span class="rs-sc-label">المتطوع / المشرف الميداني:</span>
+            <span class="rs-sc-val">👤 {{ runSheetData?.volunteerOrWorkerName || 'مندوب التوزيع' }}</span>
+          </div>
+          <div class="rs-sc-item" *ngIf="runSheetData?.volunteerPhone">
+            <span class="rs-sc-label">هاتف المتطوع:</span>
+            <span class="rs-sc-val">📞 {{ runSheetData?.volunteerPhone }}</span>
+          </div>
+          <div class="rs-sc-item">
+            <span class="rs-sc-label">إجمالي الأسر المكلف بها:</span>
+            <span class="rs-sc-val font-bold">{{ runSheetData?.beneficiaries?.length }} أسرة</span>
+          </div>
+          <div class="rs-sc-item full-width">
+            <span class="rs-sc-label">بيان العهدة والمساعدة المسلمة:</span>
+            <span class="rs-sc-val text-emerald font-bold">📦 {{ runSheetData?.itemDescription }}</span>
+          </div>
+        </div>
+
+        <!-- تعليمات سريعة للمتطوع -->
+        <div class="rs-instructions no-print">
+          <span>💡 <strong>تعليمات للمتطوع:</strong> يرجى التحقق من بطاقة المستلم الفعلي بالأسرة، وتدوين اسمه ورقم بطاقته في الخانة المخصصة، وتوقيعه على الاستلام الميداني.</span>
+        </div>
+
+        <!-- جدول الحالات وخط السير -->
+        <div class="rs-table-wrap">
+          <table class="rs-table">
+            <thead>
+              <tr>
+                <th style="width: 35px;">#</th>
+                <th style="width: 100px;">كود الأسرة</th>
+                <th>اسم رب الأسرة</th>
+                <th>العنوان التفصيلي ومحل الإقامة</th>
+                <th style="width: 105px;">رقم الهاتف</th>
+                <th style="width: 50px; text-align: center;">الأفراد</th>
+                <th style="width: 140px;">اسم المستلم الفعلي</th>
+                <th style="width: 110px; text-align: center;">توقيع المستلم</th>
+                <th style="width: 120px;">ملاحظات المندوب</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let b of runSheetData?.beneficiaries; let idx = index">
+                <td style="text-align: center;">{{ idx + 1 }}</td>
+                <td><strong class="font-mono">{{ b.familyCode }}</strong></td>
+                <td><strong>{{ b.name }}</strong></td>
+                <td>
+                  <div class="rs-addr">
+                    <span>{{ b.address }}</span>
+                    <small *ngIf="b.villageOrDistrict">({{ b.villageOrDistrict }})</small>
+                  </div>
+                </td>
+                <td><span class="font-mono">{{ b.phone || '—' }}</span></td>
+                <td style="text-align: center;">{{ b.familyCount || 1 }}</td>
+                <!-- خانات فارغة للتسليم الميداني -->
+                <td class="cell-blank"></td>
+                <td class="cell-blank"></td>
+                <td class="cell-blank"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ذيل الكشف والإقرارات والتوقيعات الرسمية -->
+        <div class="rs-signatures">
+          <div class="rs-sig-box">
+            <span class="rs-sig-title">مسؤول التوزيع / أمين المخزن</span>
+            <p>أقر بتسليم العهدة المبينة أعلاه للمتطوع للتوزيع الميداني.</p>
+            <span class="rs-sig-line">التوقيع: .......................................</span>
+          </div>
+
+          <div class="rs-sig-box">
+            <span class="rs-sig-title">إقرار استلام المتطوع / المندوب</span>
+            <p>أقر باستلام عهدة المساعدات وتوزيعها على العناوين المذكورة.</p>
+            <span class="rs-sig-line">التوقيع: .......................................</span>
+          </div>
+
+          <div class="rs-sig-box">
+            <span class="rs-sig-title">اعتماد مدير الجمعية</span>
+            <p>يعتمد الصرف والتسليم الميداني.</p>
+            <span class="rs-sig-line">الخاتم والتوقيع: ..........................</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ذيل النافذة التفاعلية -->
+      <div class="modal-footer no-print">
+        <button type="button" class="btn btn-primary" (click)="printRunSheet()">
+          🖨️ طباعة الكشف للمتطوع الآن
+        </button>
+        <button type="button" class="btn btn-outline" (click)="closeRunSheet()">
+          إغلاق النافذة
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+</div>

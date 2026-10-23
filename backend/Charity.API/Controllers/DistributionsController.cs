@@ -25,6 +25,7 @@ public class DistributionsController : ControllerBase
     }
 
     [HttpGet("all-network")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<IReadOnlyList<DistributionDto>>> GetAllNetworkDistributions()
     {
         var result = await _distributionService.GetAllNetworkDistributionsAsync();
@@ -49,6 +50,13 @@ public class DistributionsController : ControllerBase
     public async Task<ActionResult<DistributionDto>> Create([FromBody] CreateDistributionDto dto)
     {
         var result = await _distributionService.CreateDistributionAsync(dto);
+        return Ok(result);
+    }
+
+    [HttpPost("bulk")]
+    public async Task<ActionResult<BulkDistributionResultDto>> CreateBulk([FromBody] BulkDistributionRequestDto dto)
+    {
+        var result = await _distributionService.CreateBulkDistributionAsync(dto);
         return Ok(result);
     }
 }

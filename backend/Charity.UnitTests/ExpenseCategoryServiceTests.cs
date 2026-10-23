@@ -46,7 +46,7 @@ public class ExpenseCategoryServiceTests
     {
         // Arrange
         var service = CreateService();
-        var existing = new ExpenseCategory { Id = "c1", Name = "مساعدات علاجية", Code = "EXP-001" };
+        var existing = new ExpenseCategory { Id = "c1", CharityId = "c1", Name = "مساعدات علاجية", Code = "EXP-001" };
         await _categoryRepo.AddAsync(existing);
 
         var dto = new CreateExpenseCategoryDto
@@ -64,8 +64,8 @@ public class ExpenseCategoryServiceTests
     {
         // Arrange
         var service = CreateService();
-        var cat1 = new ExpenseCategory { Id = "cat_med", Name = "إعانات علاجية", Code = "EXP-001" };
-        var cat2 = new ExpenseCategory { Id = "cat_edu", Name = "مصاريف تعليمية", Code = "EXP-002" };
+        var cat1 = new ExpenseCategory { Id = "cat_med", CharityId = "c1", Name = "إعانات علاجية", Code = "EXP-001" };
+        var cat2 = new ExpenseCategory { Id = "cat_edu", CharityId = "c1", Name = "مصاريف تعليمية", Code = "EXP-002" };
         await _categoryRepo.AddAsync(cat1);
         await _categoryRepo.AddAsync(cat2);
 
@@ -299,5 +299,33 @@ public class ExpenseCategoryServiceTests
         Assert.Equal("شهر 7/2026", jul.MonthLabel);
         Assert.Equal(3000, jul.TotalAmount);
         Assert.Equal(1, jul.DisbursementsCount);
+    }
+
+    [Fact]
+    public async Task HistoricalCashKindsAppearInMonthlyReportAndDateRangeMatchesDetails()
+    {
+        var service = CreateService();
+        await _categoryRepo.AddAsync(new ExpenseCategory { Id = "medical", Name = "علاج", Code = "EXP-001", CharityId = "c1" });
+        await _distributionRepo.AddAsync(new Distribution { Id = "old", BeneficiaryId = "family-1", ExpenseCategoryId = "medical", ExpenseCategoryName = "علاج", Kind = "نقدية", Amount = 1200, Date = "2026-10-20", CharityId = "c1" });
+        await _distributionRepo.AddAsync(new Distribution { Id = "new", BeneficiaryId = "family-2", ExpenseCategoryId = "medical", ExpenseCategoryName = "علاج", Kind = "إعانة نقدية", Amount = 5000, Date = "2026-10-21", CharityId = "c1" });
+
+        var months = await service.GetMonthlyMovementsAsync(2026);
+        Assert.Equal(6200, Assert.Single(months).TotalAmount);
+        Assert.Equal(2, Assert.Single(months).BeneficiariesCount);
+
+        var range = await service.GetAllAsync(from: "2026-10-20", to: "2026-10-20");
+        var category = Assert.Single(range);
+        Assert.Equal(1200, category.TotalDisbursedAmount);
+        Assert.Single(await service.GetDisbursementsByCategoryAsync("medical", from: "2026-10-20", to: "2026-10-20"));
+        Assert.False(category.CanDelete);
+        Assert.Empty(await service.GetMonthlyMovementsAsync(from: "2026-10-22", to: "2026-10-23"));
+    }
+
+    [Theory]
+    [InlineData("2026-10-22", "2026-10-20")]
+    [InlineData("2026-02-30", "2026-03-01")]
+    public async Task InvalidReportDateRangeIsRejected(string from, string to)
+    {
+        await Assert.ThrowsAsync<ValidationDomainException>(() => CreateService().GetAllAsync(from: from, to: to));
     }
 }

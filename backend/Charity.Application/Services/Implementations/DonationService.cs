@@ -66,8 +66,7 @@ public class DonationService : IDonationService
             entity.Unit = item.Unit;
             if (dto.DonationKind == "عيني")
             {
-                item.Quantity += dto.Quantity!.Value;
-                await _inventoryRepo.UpdateAsync(item);
+                _unitOfWork.ChangeInventoryBalance(item, dto.Quantity!.Value, allowNegativeBalance: true);
             }
         }
 

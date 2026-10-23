@@ -20,7 +20,11 @@ export class ExpenseCategoriesComponent implements OnInit {
 
   // تصفية بالشهر
   selectedMonth: string = ''; // '' تعني كل الشهور / الإجمالي التاريخي
-  selectedYear: number = new Date().getFullYear();
+  reportPeriod: 'all' | 'month' | 'range' = 'all';
+  dateFrom = '';
+  dateTo = '';
+  selectedYear: number | null = null;
+  reportYears = Array.from({ length: 10 }, (_, index) => new Date().getFullYear() - index);
   monthlyMovements: any[] = [];
   isLoadingMonthly: boolean = false;
 
@@ -88,8 +92,11 @@ export class ExpenseCategoriesComponent implements OnInit {
   }
 
   loadCategories(): void {
+    if (!this.validateReportPeriod()) return;
     this.isLoading = true;
-    this.api.getExpenseCategories(this.selectedMonth || undefined).subscribe({
+    this.api.getExpenseCategories(this.reportPeriod === 'month' ? this.selectedMonth || undefined : undefined,
+      this.reportPeriod === 'range' ? this.dateFrom : undefined,
+      this.reportPeriod === 'range' ? this.dateTo : undefined).subscribe({
       next: (data: any[]) => {
         this.categories = data || [];
         this.isLoading = false;
@@ -104,8 +111,11 @@ export class ExpenseCategoriesComponent implements OnInit {
   }
 
   loadMonthlyMovements(): void {
+    if (!this.validateReportPeriod()) return;
     this.isLoadingMonthly = true;
-    this.api.getMonthlyExpenseMovements(this.selectedYear).subscribe({
+    this.api.getMonthlyExpenseMovements(this.reportPeriod === 'range' ? undefined : this.selectedYear || undefined,
+      this.reportPeriod === 'range' ? this.dateFrom : undefined,
+      this.reportPeriod === 'range' ? this.dateTo : undefined).subscribe({
       next: (data: any[]) => {
         this.monthlyMovements = data || [];
         this.isLoadingMonthly = false;
@@ -120,22 +130,61 @@ export class ExpenseCategoriesComponent implements OnInit {
 
   onMonthFilterChange(month: string): void {
     this.selectedMonth = month;
+    this.reportPeriod = month ? 'month' : 'all';
     this.loadCategories();
   }
 
   filterByMonthFromMovement(monthYear: string): void {
     this.selectedMonth = monthYear;
+    this.reportPeriod = 'month';
     this.activeTab = 'categories';
     this.loadCategories();
   }
 
   resetMonthFilter(): void {
     this.selectedMonth = '';
+    this.reportPeriod = 'all';
     this.loadCategories();
   }
 
+  setReportPeriod(period: 'all' | 'month' | 'range'): void {
+    this.reportPeriod = period;
+    this.errorMessage = '';
+    if (period === 'all') this.selectedMonth = '';
+    if (period !== 'range' || this.validateReportPeriod()) {
+      this.loadCategories();
+      this.loadMonthlyMovements();
+    }
+  }
+
+  applyDateRange(): void {
+    this.reportPeriod = 'range';
+    if (this.validateReportPeriod()) {
+      this.loadCategories();
+      this.loadMonthlyMovements();
+    }
+  }
+
+  private validateReportPeriod(): boolean {
+    if (this.reportPeriod !== 'range') return true;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(this.dateFrom) || !/^\d{4}-\d{2}-\d{2}$/.test(this.dateTo) || this.dateFrom > this.dateTo) {
+      this.errorMessage = 'حدد تاريخ بداية ونهاية صحيحين، ويجب ألا تكون البداية بعد النهاية.';
+      return false;
+    }
+    this.errorMessage = '';
+    return true;
+  }
+
+  get reportPeriodLabel(): string {
+    if (this.reportPeriod === 'range') return `من ${this.dateFrom} إلى ${this.dateTo}`;
+    if (this.reportPeriod === 'month') return this.getSelectedMonthLabel();
+    return 'كل الفترات';
+  }
+
   onYearChange(): void {
+    this.reportPeriod = 'all';
     this.loadMonthlyMovements();
+    this.loadCategories();
   }
 
   getSelectedMonthLabel(): string {
@@ -277,7 +326,10 @@ export class ExpenseCategoriesComponent implements OnInit {
     this.drilldownSearchTerm = '';
     this.cdr.detectChanges();
 
-    this.api.getExpenseCategoryBeneficiaries(cat.id, this.selectedMonth || undefined).subscribe({
+    this.api.getExpenseCategoryBeneficiaries(cat.id,
+      this.reportPeriod === 'month' ? this.selectedMonth || undefined : undefined,
+      this.reportPeriod === 'range' ? this.dateFrom : undefined,
+      this.reportPeriod === 'range' ? this.dateTo : undefined).subscribe({
       next: (data: any[]) => {
         this.drilldownRecipients = data || [];
         this.isLoadingRecipients = false;
@@ -326,7 +378,7 @@ export class ExpenseCategoriesComponent implements OnInit {
   }
 
   get totalBeneficiariesCount(): number {
-    return this.categories.reduce((acc, c) => acc + (Number(c.beneficiariesCount) || 0), 0);
+    return new Set(this.categories.flatMap(c => c.beneficiaryIds || [])).size;
   }
 
   get monthlyYearTotalAmount(): number {
@@ -338,7 +390,7 @@ export class ExpenseCategoriesComponent implements OnInit {
   }
 
   get monthlyYearTotalBeneficiaries(): number {
-    return this.monthlyMovements.reduce((acc, m) => acc + (Number(m.beneficiariesCount) || 0), 0);
+    return new Set(this.monthlyMovements.flatMap(m => m.beneficiaryIds || [])).size;
   }
 
   get filteredRecipients(): any[] {

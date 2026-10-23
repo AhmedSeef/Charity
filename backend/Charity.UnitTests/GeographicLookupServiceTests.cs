@@ -59,6 +59,7 @@ public class GeographicLookupServiceTests
             new AddressRecord
             {
                 Id = "a1",
+                CharityId = "c1",
                 GovernorateId = "gov_kfs",
                 DistrictId = "dist_motobas",
                 AddressText = "قرية الجزيرة الخضراء",
@@ -68,6 +69,7 @@ public class GeographicLookupServiceTests
             new AddressRecord
             {
                 Id = "a2",
+                CharityId = "c1",
                 GovernorateId = "gov_kfs",
                 DistrictId = "dist_motobas",
                 AddressText = "قرية برج مغيزل",
@@ -77,6 +79,7 @@ public class GeographicLookupServiceTests
             new AddressRecord
             {
                 Id = "a3",
+                CharityId = "c1",
                 GovernorateId = "gov_kfs",
                 DistrictId = "dist_motobas",
                 AddressText = "قرية معدية مهدي",
@@ -85,7 +88,16 @@ public class GeographicLookupServiceTests
             }
         );
 
-        var service = new GeographicLookupService(govRepo, distRepo, addrRepo, new FakeCurrentUser(), new FakeUnitOfWork());
+        var service = new GeographicLookupService(
+            govRepo,
+            distRepo,
+            new FakeRepository<Village>(),
+            new FakeRepository<VillageArea>(),
+            new FakeRepository<Beneficiary>(),
+            addrRepo,
+            new FakeCurrentUser(),
+            new FakeUnitOfWork()
+        );
 
         // Act - search with typo / partial
         var results = await service.AutocompleteAddressesAsync("الجزيره", "gov_kfs", "dist_motobas");
@@ -102,6 +114,7 @@ public class GeographicLookupServiceTests
             new AddressRecord
             {
                 Id = "a1",
+                CharityId = "c1",
                 GovernorateId = "gov_kfs",
                 DistrictId = "dist_motobas",
                 AddressText = "قرية برنبال",
@@ -113,6 +126,9 @@ public class GeographicLookupServiceTests
         var service = new GeographicLookupService(
             new FakeRepository<Governorate>(),
             new FakeRepository<District>(),
+            new FakeRepository<Village>(),
+            new FakeRepository<VillageArea>(),
+            new FakeRepository<Beneficiary>(),
             addrRepo,
             new FakeCurrentUser(),
             new FakeUnitOfWork()
@@ -128,5 +144,67 @@ public class GeographicLookupServiceTests
         var recorded = await service.RecordAddressUsageAsync(dto);
 
         Assert.Equal(2, recorded.UsageCount);
+    }
+
+    [Fact]
+    public async Task VillagesAndAreas_CRUD_WorksAsExpected()
+    {
+        var distRepo = new FakeRepository<District>(
+            new District { Id = "dist_motobas", GovernorateId = "gov_kfs", Name = "مركز مطوبس" }
+        );
+        var villageRepo = new FakeRepository<Village>();
+        var areaRepo = new FakeRepository<VillageArea>();
+
+        var service = new GeographicLookupService(
+            new FakeRepository<Governorate>(),
+            distRepo,
+            villageRepo,
+            areaRepo,
+            new FakeRepository<Beneficiary>(),
+            new FakeRepository<AddressRecord>(),
+            new FakeCurrentUser(),
+            new FakeUnitOfWork()
+        );
+
+        // 1. Create Village
+        var villageDto = await service.CreateVillageAsync(new CreateVillageDto
+        {
+            DistrictId = "dist_motobas",
+            Name = "منية المرشد",
+            NameEn = "Monyat El-Morshid"
+        });
+
+        Assert.NotNull(villageDto.Id);
+        Assert.Equal("منية المرشد", villageDto.Name);
+
+        // 2. Create Area under Village
+        var areaDto = await service.CreateVillageAreaAsync(new CreateVillageAreaDto
+        {
+            VillageId = villageDto.Id,
+            Name = "المنشر",
+            NameEn = "Al-Manshar",
+            Notes = "منطقة المنشر"
+        });
+
+        Assert.NotNull(areaDto.Id);
+        Assert.Equal("المنشر", areaDto.Name);
+
+        // 3. Get Areas for Village
+        var areas = await service.GetVillageAreasAsync(villageDto.Id);
+        Assert.Single(areas);
+        Assert.Equal("المنشر", areas[0].Name);
+
+        // 4. Update Area
+        var updatedArea = await service.UpdateVillageAreaAsync(areaDto.Id, new UpdateVillageAreaDto
+        {
+            Name = "المنشر الجديد",
+            IsActive = true
+        });
+        Assert.Equal("المنشر الجديد", updatedArea.Name);
+
+        // 5. Delete Area
+        await service.DeleteVillageAreaAsync(areaDto.Id);
+        var areasAfterDelete = await service.GetVillageAreasAsync(villageDto.Id);
+        Assert.Empty(areasAfterDelete);
     }
 }

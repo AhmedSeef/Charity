@@ -101,7 +101,7 @@ public class CharityService : ICharityService
 
     public async Task<CharitySettingsDto> GetMySettingsAsync()
     {
-        var charityId = _currentUserService.CharityId ?? "c1";
+        var charityId = TenantAccess.RequireCharity(_currentUserService);
         var settings = await _settingsRepo.FirstOrDefaultAsync(s => s.CharityId == charityId);
         if (settings != null)
         {
@@ -128,7 +128,7 @@ public class CharityService : ICharityService
 
     public async Task<CharitySettingsDto> UpdateMySettingsAsync(CharitySettingsDto dto)
     {
-        var charityId = _currentUserService.CharityId ?? "c1";
+        var charityId = TenantAccess.RequireCharity(_currentUserService);
         var existing = await _settingsRepo.FirstOrDefaultAsync(s => s.CharityId == charityId);
 
         if (existing == null)

@@ -112,6 +112,48 @@ public static class DbInitializer
             await context.SaveChangesAsync();
         }
 
+        // 2d-1. Seed Villages (القرى التابعة للمراكز والأحياء - التركيز الأساسي على مركز مطوبس)
+        if (!await context.Villages.AnyAsync())
+        {
+            var villages = new List<Village>
+            {
+                new() { Id = "vil_monyat_morshid", DistrictId = "dist_motobas", Name = "منية المرشد", NameEn = "Monyat El-Morshid", IsActive = true, CharityName = "النظام العام" },
+                new() { Id = "vil_jazeera_khadra", DistrictId = "dist_motobas", Name = "الجزيرة الخضراء", NameEn = "Al-Jazeera Al-Khadra", IsActive = true, CharityName = "النظام العام" },
+                new() { Id = "vil_borg_meghizel", DistrictId = "dist_motobas", Name = "برج مغيزل", NameEn = "Borg Meghizel", IsActive = true, CharityName = "النظام العام" },
+                new() { Id = "vil_bernbal", DistrictId = "dist_motobas", Name = "برمبال", NameEn = "Bernbal", IsActive = true, CharityName = "النظام العام" },
+                new() { Id = "vil_ebiana", DistrictId = "dist_motobas", Name = "إبيانة", NameEn = "Ebiana", IsActive = true, CharityName = "النظام العام" },
+                new() { Id = "vil_bany_bakkar", DistrictId = "dist_motobas", Name = "بني بكار", NameEn = "Bany Bakkar", IsActive = true, CharityName = "النظام العام" },
+                new() { Id = "vil_basrat", DistrictId = "dist_motobas", Name = "البصراط", NameEn = "Al-Basrat", IsActive = true, CharityName = "النظام العام" },
+                new() { Id = "vil_qany", DistrictId = "dist_motobas", Name = "القني", NameEn = "Al-Qany", IsActive = true, CharityName = "النظام العام" },
+                new() { Id = "vil_sakarana", DistrictId = "dist_motobas", Name = "السكرانة", NameEn = "Al-Sakarana", IsActive = true, CharityName = "النظام العام" },
+                new() { Id = "vil_khalij_bahri", DistrictId = "dist_motobas", Name = "خليج بحري", NameEn = "Khalij Bahri", IsActive = true, CharityName = "النظام العام" },
+                new() { Id = "vil_ezbet_amr", DistrictId = "dist_motobas", Name = "عزبة عمرو", NameEn = "Ezbet Amr", IsActive = true, CharityName = "النظام العام" },
+                new() { Id = "vil_motobas_city", DistrictId = "dist_motobas", Name = "مدينة مطوبس", NameEn = "Motobas City", IsActive = true, CharityName = "النظام العام" }
+            };
+
+            await context.Villages.AddRangeAsync(villages);
+            await context.SaveChangesAsync();
+        }
+
+        // 2d-2. Seed VillageAreas (المناطق والأحياء التابعة للقرى - تحديداً قرية منية المرشد)
+        if (!await context.VillageAreas.AnyAsync())
+        {
+            var areas = new List<VillageArea>
+            {
+                new() { Id = "area_manshar", VillageId = "vil_monyat_morshid", Name = "المنشر", NameEn = "Al-Manshar", Notes = "منطقة المنشر - قرية منية المرشد", IsActive = true, CharityName = "النظام العام" },
+                new() { Id = "area_souq", VillageId = "vil_monyat_morshid", Name = "السوق", NameEn = "Al-Souq", Notes = "منطقة السوق التجاري والقديم - قرية منية المرشد", IsActive = true, CharityName = "النظام العام" },
+                new() { Id = "area_jesr", VillageId = "vil_monyat_morshid", Name = "الجسر", NameEn = "Al-Jesr", Notes = "منطقة الجسر وطريق البحر - قرية منية المرشد", IsActive = true, CharityName = "النظام العام" },
+                new() { Id = "area_madreb", VillageId = "vil_monyat_morshid", Name = "المضرب", NameEn = "Al-Madreb", Notes = "منطقة المضرب - قرية منية المرشد", IsActive = true, CharityName = "النظام العام" },
+                new() { Id = "area_torab", VillageId = "vil_monyat_morshid", Name = "الترب", NameEn = "Al-Torab", Notes = "منطقة الترب والمقابر - قرية منية المرشد", IsActive = true, CharityName = "النظام العام" },
+                new() { Id = "area_dair_nahya", VillageId = "vil_monyat_morshid", Name = "داير الناحية", NameEn = "Dayir Al-Nahya", Notes = "وسط البلد وداير الناحية - منية المرشد", IsActive = true, CharityName = "النظام العام" },
+                new() { Id = "area_sharq", VillageId = "vil_monyat_morshid", Name = "المنطقة الشرقية", NameEn = "Eastern Area", Notes = "شرق البلد - منية المرشد", IsActive = true, CharityName = "النظام العام" },
+                new() { Id = "area_gharb", VillageId = "vil_monyat_morshid", Name = "المنطقة الغربية", NameEn = "Western Area", Notes = "غرب البلد - منية المرشد", IsActive = true, CharityName = "النظام العام" }
+            };
+
+            await context.VillageAreas.AddRangeAsync(areas);
+            await context.SaveChangesAsync();
+        }
+
         // 2e. Seed AddressRecords (دليل العناوين والقرى المستقل مع النورماليزيشن)
         if (!await context.AddressRecords.AnyAsync())
         {
@@ -291,6 +333,7 @@ public static class DbInitializer
                 await userManager.AddToRoleAsync(adminUser, "Admin");
             }
         }
+        await TenantDefaults.EnsureAsync(context);
     }
 
     /// <summary>
@@ -469,6 +512,181 @@ public static class DbInitializer
             await context.SaveChangesAsync();
         }
 
+        // 2f. Seed Motobas / Monyat El-Morshid Beneficiaries
+        if (!await context.Beneficiaries.AnyAsync(b => b.DistrictId == "dist_motobas"))
+        {
+            var motobasBeneficiaries = new List<Beneficiary>
+            {
+                new()
+                {
+                    Id = "ben_motobas_1",
+                    FamilyCode = "FAM-MOT-01",
+                    FamilyName = "عائلة السيد عبد المجيد",
+                    NationalId = "28501011812341",
+                    Name = "السيد عبد المجيد إبراهيم",
+                    Category = "أرامل وأيتام",
+                    GovernorateId = "gov_kfs",
+                    GovernorateName = "كفر الشيخ",
+                    DistrictId = "dist_motobas",
+                    DistrictName = "مركز مطوبس",
+                    VillageId = "vil_monyat_morshid",
+                    VillageName = "منية المرشد",
+                    VillageAreaId = "area_manshar",
+                    VillageAreaName = "المنشر",
+                    Address = "منية المرشد، منطقة المنشر، بجوار مسجد المنشر",
+                    VillageOrDistrict = "المنشر - منية المرشد",
+                    PriorityTier = "أ - أولوية قصوى ومعدم",
+                    Status = "مستحق فعال",
+                    Phone = "01011122233",
+                    MaritalStatus = "متزوج",
+                    FamilyCount = 5,
+                    Housing = "ملك ريفي قديم",
+                    MonthlyIncome = 1200,
+                    IncomeSource = "يومية عمالة زراعية غير منتظمة",
+                    RoofType = "جريد وقش وبوص",
+                    WallType = "طوب أحمر ومحارة",
+                    WaterSource = "طلمبة حبشية",
+                    SanitationType = "بيارة/طرنش",
+                    ElectricitySource = "عداد كودي/ممارسة",
+                    ResearchNotes = "أسرة معدمة في منطقة المنشر بمنية المرشد، السقف خشب وبوص بحاجة لتسقيف وبطاطين ووجبات غذائية.",
+                    RegisteredByCharityId = "c3",
+                    RegisteredByCharityName = "جمعية رسالة الصداقة"
+                },
+                new()
+                {
+                    Id = "ben_motobas_2",
+                    FamilyCode = "FAM-MOT-02",
+                    FamilyName = "عائلة فتحي مصطفى عامر",
+                    NationalId = "27902021812342",
+                    Name = "فتحي مصطفى عامر",
+                    Category = "مرضى ومسنين",
+                    GovernorateId = "gov_kfs",
+                    GovernorateName = "كفر الشيخ",
+                    DistrictId = "dist_motobas",
+                    DistrictName = "مركز مطوبس",
+                    VillageId = "vil_monyat_morshid",
+                    VillageName = "منية المرشد",
+                    VillageAreaId = "area_souq",
+                    VillageAreaName = "السوق",
+                    Address = "منية المرشد، منطقة السوق، حارة العمدة",
+                    VillageOrDistrict = "السوق - منية المرشد",
+                    PriorityTier = "أ - أولوية قصوى ومعدم",
+                    Status = "مستحق فعال",
+                    Phone = "01122233344",
+                    MaritalStatus = "متزوج",
+                    FamilyCount = 3,
+                    Housing = "إيجار بسيط",
+                    MonthlyIncome = 900,
+                    IncomeSource = "لا يعمل لكبر السن وعجز طبي",
+                    HasChronicDisease = true,
+                    ChronicDiseaseDetails = "شلل جزئي وجلطة",
+                    NeedsPeriodicMedication = true,
+                    PeriodicMedicationDetails = "علاج أعصاب وسيولة",
+                    MedicationFrequency = "شهري",
+                    ResearchNotes = "مسن طريح الفراش في منطقة السوق القديم بمنية المرشد يحتاج كرتونة طعام وعلاج شهري.",
+                    RegisteredByCharityId = "c3",
+                    RegisteredByCharityName = "جمعية رسالة الصداقة"
+                },
+                new()
+                {
+                    Id = "ben_motobas_3",
+                    FamilyCode = "FAM-MOT-03",
+                    FamilyName = "عائلة أمينة حسن الدسوقي",
+                    NationalId = "29103031812343",
+                    Name = "أمينة حسن الدسوقي",
+                    Category = "أرامل وأيتام",
+                    GovernorateId = "gov_kfs",
+                    GovernorateName = "كفر الشيخ",
+                    DistrictId = "dist_motobas",
+                    DistrictName = "مركز مطوبس",
+                    VillageId = "vil_monyat_morshid",
+                    VillageName = "منية المرشد",
+                    VillageAreaId = "area_jesr",
+                    VillageAreaName = "الجسر",
+                    Address = "منية المرشد، منطقة الجسر، طريق البحر",
+                    VillageOrDistrict = "الجسر - منية المرشد",
+                    PriorityTier = "أ - أولوية قصوى ومعدم",
+                    Status = "مستحق فعال",
+                    Phone = "01233344455",
+                    MaritalStatus = "أرمل",
+                    FamilyCount = 4,
+                    Housing = "سكن متهالك",
+                    MonthlyIncome = 850,
+                    IncomeSource = "تكافل وكرامة",
+                    HasGovernmentPension = true,
+                    GovernmentPensionDetails = "معاش تكافل وكرامة 850 ج",
+                    RoofType = "خشب وألواح",
+                    ResearchNotes = "أرملة تعول 3 أيتام على طريق الجسر بمنية المرشد.",
+                    RegisteredByCharityId = "c3",
+                    RegisteredByCharityName = "جمعية رسالة الصداقة"
+                },
+                new()
+                {
+                    Id = "ben_motobas_4",
+                    FamilyCode = "FAM-MOT-04",
+                    FamilyName = "عائلة سعد راغب بدوي",
+                    NationalId = "28304041812344",
+                    Name = "سعد راغب بدوي",
+                    Category = "حالات طوارئ",
+                    GovernorateId = "gov_kfs",
+                    GovernorateName = "كفر الشيخ",
+                    DistrictId = "dist_motobas",
+                    DistrictName = "مركز مطوبس",
+                    VillageId = "vil_monyat_morshid",
+                    VillageName = "منية المرشد",
+                    VillageAreaId = "area_madreb",
+                    VillageAreaName = "المضرب",
+                    Address = "منية المرشد، منطقة المضرب، خلف مضرب الأرز",
+                    VillageOrDistrict = "المضرب - منية المرشد",
+                    PriorityTier = "ب - متوسط الاحتياج",
+                    Status = "مستحق فعال",
+                    Phone = "01544455566",
+                    MaritalStatus = "متزوج",
+                    FamilyCount = 6,
+                    Housing = "ملك ريفي",
+                    MonthlyIncome = 2200,
+                    IncomeSource = "عامل زراعي وصياد",
+                    ResearchNotes = "أسرة في منطقة المضرب تحتاج دعم غذائي دوري وحقائب مدرسية.",
+                    RegisteredByCharityId = "c3",
+                    RegisteredByCharityName = "جمعية رسالة الصداقة"
+                },
+                new()
+                {
+                    Id = "ben_motobas_5",
+                    FamilyCode = "FAM-MOT-05",
+                    FamilyName = "عائلة خضرة عبد العال",
+                    NationalId = "26805051812345",
+                    Name = "خضرة عبد العال مصطفى",
+                    Category = "أرامل وأيتام",
+                    GovernorateId = "gov_kfs",
+                    GovernorateName = "كفر الشيخ",
+                    DistrictId = "dist_motobas",
+                    DistrictName = "مركز مطوبس",
+                    VillageId = "vil_monyat_morshid",
+                    VillageName = "منية المرشد",
+                    VillageAreaId = "area_torab",
+                    VillageAreaName = "الترب",
+                    Address = "منية المرشد، منطقة الترب، بجوار المقابر الشرقية",
+                    VillageOrDistrict = "الترب - منية المرشد",
+                    PriorityTier = "أ - أولوية قصوى ومعدم",
+                    Status = "مستحق فعال",
+                    Phone = "01055566677",
+                    MaritalStatus = "أرمل",
+                    FamilyCount = 2,
+                    Housing = "غرفة ملحقة",
+                    MonthlyIncome = 700,
+                    IncomeSource = "مساعدات الأهالي",
+                    RoofType = "جريد وقش وبوص",
+                    ResearchNotes = "مسنة وأرملة في منطقة الترب بدون معيل وبحاجة ماسة للطعام والعلاج.",
+                    RegisteredByCharityId = "c3",
+                    RegisteredByCharityName = "جمعية رسالة الصداقة"
+                }
+            };
+
+            await context.Beneficiaries.AddRangeAsync(motobasBeneficiaries);
+            await context.SaveChangesAsync();
+        }
+
         // 3. Seed Test Beneficiary Family Members
         if (!await context.BeneficiaryFamilyMembers.AnyAsync())
         {
@@ -623,5 +841,6 @@ public static class DbInitializer
         }
 
         await RepresentativeDemoData.SeedAsync(context);
+        await TenantDefaults.EnsureAsync(context);
     }
 }

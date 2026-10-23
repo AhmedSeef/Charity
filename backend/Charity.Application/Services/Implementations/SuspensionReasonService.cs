@@ -28,9 +28,9 @@ public class SuspensionReasonService : ISuspensionReasonService
 
     public async Task<IReadOnlyList<SuspensionReasonDto>> GetAllAsync()
     {
-        var list = await _repository.GetAllAsync();
+        var list = (await _repository.GetAllAsync()).Where(r => TenantAccess.CanRead(r.CharityId, _currentUserService));
         var allBeneficiaries = await _beneficiaryRepository.GetAllAsync();
-        var suspendedCases = allBeneficiaries.Where(b => b.IsSuspended).ToList();
+        var suspendedCases = allBeneficiaries.Where(b => b.IsSuspended && TenantAccess.CanRead(b.RegisteredByCharityId, _currentUserService)).ToList();
 
         return list.Select(r =>
         {
@@ -50,6 +50,8 @@ public class SuspensionReasonService : ISuspensionReasonService
         }
 
         var charityId = _currentUserService.CharityId;
+        if (string.IsNullOrWhiteSpace(charityId) && _currentUserService.Role != "Admin")
+            TenantAccess.RequireCharity(_currentUserService);
         var charityName = _currentUserService.CharityName ?? "النظام العام";
 
         var entity = new SuspensionReason
@@ -71,11 +73,13 @@ public class SuspensionReasonService : ISuspensionReasonService
     {
         var existing = await _repository.GetByIdAsync(id)
             ?? throw new EntityNotFoundException(nameof(SuspensionReason), id);
+        TenantAccess.DemandOwner(existing.CharityId, _currentUserService);
 
         // التحقق الحاسم: منع حذف أي سبب إيقاف مرتبط بحالات موقوفة حالياً
         var allBeneficiaries = await _beneficiaryRepository.GetAllAsync();
         var linkedSuspendedCases = allBeneficiaries
-            .Where(b => b.IsSuspended && (b.SuspensionReasonId == existing.Id || b.SuspensionReasonTitle == existing.Title))
+            .Where(b => b.IsSuspended && (b.SuspensionReasonId == existing.Id ||
+                (b.RegisteredByCharityId == existing.CharityId && b.SuspensionReasonTitle == existing.Title)))
             .ToList();
 
         if (linkedSuspendedCases.Count > 0)

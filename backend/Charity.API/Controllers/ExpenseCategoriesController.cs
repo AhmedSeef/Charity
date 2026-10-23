@@ -18,30 +18,30 @@ public class ExpenseCategoriesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IReadOnlyList<ExpenseCategoryDto>>> GetAll([FromQuery] string? month)
+    public async Task<ActionResult<IReadOnlyList<ExpenseCategoryDto>>> GetAll([FromQuery] string? month, [FromQuery] string? from, [FromQuery] string? to)
     {
-        var categories = await _service.GetAllAsync(month);
+        var categories = await _service.GetAllAsync(month, from, to);
         return Ok(categories);
     }
 
     [HttpGet("monthly-movements")]
-    public async Task<ActionResult<IReadOnlyList<MonthlyExpenseMovementDto>>> GetMonthlyMovements([FromQuery] int? year)
+    public async Task<ActionResult<IReadOnlyList<MonthlyExpenseMovementDto>>> GetMonthlyMovements([FromQuery] int? year, [FromQuery] string? from, [FromQuery] string? to)
     {
-        var movements = await _service.GetMonthlyMovementsAsync(year);
+        var movements = await _service.GetMonthlyMovementsAsync(year, from, to);
         return Ok(movements);
     }
 
     [HttpGet("{id}")]
-    public async Task<ActionResult<ExpenseCategoryDto>> GetById(string id, [FromQuery] string? month)
+    public async Task<ActionResult<ExpenseCategoryDto>> GetById(string id, [FromQuery] string? month, [FromQuery] string? from, [FromQuery] string? to)
     {
-        var category = await _service.GetByIdAsync(id, month);
+        var category = await _service.GetByIdAsync(id, month, from, to);
         return Ok(category);
     }
 
     [HttpGet("{id}/beneficiaries")]
-    public async Task<ActionResult<IReadOnlyList<ExpenseCategoryDisbursementDetailDto>>> GetDisbursementsByCategory(string id, [FromQuery] string? month)
+    public async Task<ActionResult<IReadOnlyList<ExpenseCategoryDisbursementDetailDto>>> GetDisbursementsByCategory(string id, [FromQuery] string? month, [FromQuery] string? from, [FromQuery] string? to)
     {
-        var details = await _service.GetDisbursementsByCategoryAsync(id, month);
+        var details = await _service.GetDisbursementsByCategoryAsync(id, month, from, to);
         return Ok(details);
     }
 

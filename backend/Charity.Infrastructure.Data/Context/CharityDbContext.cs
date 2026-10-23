@@ -26,6 +26,8 @@ public class CharityDbContext : IdentityDbContext<ApplicationUser, IdentityRole,
     public DbSet<District> Districts => Set<District>();
     public DbSet<AddressRecord> AddressRecords => Set<AddressRecord>();
     public DbSet<ExpenseCategory> ExpenseCategories => Set<ExpenseCategory>();
+    public DbSet<Village> Villages => Set<Village>();
+    public DbSet<VillageArea> VillageAreas => Set<VillageArea>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -300,6 +302,39 @@ public class CharityDbContext : IdentityDbContext<ApplicationUser, IdentityRole,
              .OnDelete(DeleteBehavior.Cascade);
         });
 
+        // Village configuration (القرى والوحدات المحلية)
+        builder.Entity<Village>(b =>
+        {
+            b.ToTable("Villages");
+            b.HasKey(x => x.Id);
+            b.Property(x => x.Name).IsRequired().HasMaxLength(200);
+            b.Property(x => x.NameEn).HasMaxLength(200);
+            b.Property(x => x.CharityId).HasMaxLength(50).IsRequired(false);
+            b.Property(x => x.CharityName).HasMaxLength(200).IsRequired(false);
+
+            b.HasOne(x => x.District)
+             .WithMany(d => d.Villages)
+             .HasForeignKey(x => x.DistrictId)
+             .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // VillageArea configuration (المناطق والشوارع التابعة للقرية)
+        builder.Entity<VillageArea>(b =>
+        {
+            b.ToTable("VillageAreas");
+            b.HasKey(x => x.Id);
+            b.Property(x => x.Name).IsRequired().HasMaxLength(200);
+            b.Property(x => x.NameEn).HasMaxLength(200);
+            b.Property(x => x.Notes).HasMaxLength(500);
+            b.Property(x => x.CharityId).HasMaxLength(50).IsRequired(false);
+            b.Property(x => x.CharityName).HasMaxLength(200).IsRequired(false);
+
+            b.HasOne(x => x.Village)
+             .WithMany(v => v.Areas)
+             .HasForeignKey(x => x.VillageId)
+             .OnDelete(DeleteBehavior.Cascade);
+        });
+
         // ==========================================
         // Soft Delete: Global Query Filters
         // الداتا التاريخية محفوظة دائماً ولا يتم حذفها فعلياً من قاعدة البيانات
@@ -317,5 +352,7 @@ public class CharityDbContext : IdentityDbContext<ApplicationUser, IdentityRole,
         builder.Entity<District>().HasQueryFilter(x => !x.IsDeleted);
         builder.Entity<AddressRecord>().HasQueryFilter(x => !x.IsDeleted);
         builder.Entity<ExpenseCategory>().HasQueryFilter(x => !x.IsDeleted);
+        builder.Entity<Village>().HasQueryFilter(x => !x.IsDeleted);
+        builder.Entity<VillageArea>().HasQueryFilter(x => !x.IsDeleted);
     }
 }

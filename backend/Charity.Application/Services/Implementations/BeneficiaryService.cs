@@ -5,6 +5,7 @@ using Charity.Application.Services.Interfaces;
 using Charity.Domain.Entities;
 using Charity.Domain.Exceptions;
 using Charity.Domain.Interfaces;
+using Charity.Domain.Validation;
 
 namespace Charity.Application.Services.Implementations;
 
@@ -82,6 +83,10 @@ public class BeneficiaryService : IBeneficiaryService
         var charityName = _currentUserService.CharityName ?? "الجمعية المسجلة";
 
         // التدقيق في عدم تكرار الرقم القومي سواء لصاحب الملف أو لأفراد الأسرة
+        dto.Name = ValidatePersonDetails(dto.Name, dto.MonthlyIncome, "اسم صاحب الملف");
+        ValidateFamilyCount(dto.FamilyCount);
+        await ValidatePrivateLookupsAsync(dto.VillageId, dto.VillageAreaId, dto.AddressId);
+        dto.NationalId = EgyptianNationalId.Validate(dto.NationalId, "الرقم القومي لصاحب الملف");
         await ValidateNationalIdsAsync(null, dto.NationalId, dto.FamilyMembers);
 
         var entity = dto.ToEntity(charityId, charityName);
@@ -119,10 +124,10 @@ public class BeneficiaryService : IBeneficiaryService
             ?? throw new EntityNotFoundException(nameof(Beneficiary), id);
 
         var currentCharityId = _currentUserService.CharityId ?? string.Empty;
-        bool isSuperAdmin = string.Equals(_currentUserService.Role, "Admin", StringComparison.OrdinalIgnoreCase);
 
-        // Strict Authorization Rule: ONLY the registering charity or Super Admin can update beneficiary CRM profile!
-        if (!isSuperAdmin && (string.IsNullOrWhiteSpace(currentCharityId) || (!string.IsNullOrEmpty(existing.RegisteredByCharityId) && existing.RegisteredByCharityId != currentCharityId)))
+
+        // Strict Authorization Rule: Only the registering charity can update the beneficiary profile.
+        if (string.IsNullOrWhiteSpace(currentCharityId) || existing.RegisteredByCharityId != currentCharityId)
         {
             throw new UnauthorizedDomainException(
                 $"غير مصرح: لا تملك صلاحية تعديل بيانات هذا المستفيد. التعديل مقصور قانونياً على الجمعية التي قامت بفتح الملف ({existing.RegisteredByCharityName})."
@@ -130,6 +135,10 @@ public class BeneficiaryService : IBeneficiaryService
         }
 
         // التدقيق في عدم تكرار الرقم القومي
+        dto.Name = ValidatePersonDetails(dto.Name, dto.MonthlyIncome, "اسم صاحب الملف");
+        ValidateFamilyCount(dto.FamilyCount);
+        await ValidatePrivateLookupsAsync(dto.VillageId, dto.VillageAreaId, dto.AddressId);
+        dto.NationalId = EgyptianNationalId.Validate(dto.NationalId, "الرقم القومي لصاحب الملف");
         await ValidateNationalIdsAsync(id, dto.NationalId, dto.FamilyMembers);
 
         existing.NationalId = dto.NationalId.Trim();
@@ -151,6 +160,10 @@ public class BeneficiaryService : IBeneficiaryService
         existing.GovernorateName = dto.GovernorateName;
         existing.DistrictId = dto.DistrictId;
         existing.DistrictName = dto.DistrictName;
+        existing.VillageId = dto.VillageId;
+        existing.VillageName = dto.VillageName;
+        existing.VillageAreaId = dto.VillageAreaId;
+        existing.VillageAreaName = dto.VillageAreaName;
         existing.AddressId = dto.AddressId;
         existing.VillageOrDistrict = dto.VillageOrDistrict ?? string.Empty;
         existing.PriorityTier = dto.PriorityTier ?? "أ - أولوية قصوى ومعدم";
@@ -249,15 +262,23 @@ public class BeneficiaryService : IBeneficiaryService
             ?? throw new EntityNotFoundException(nameof(Beneficiary), id);
 
         var currentCharityId = _currentUserService.CharityId ?? string.Empty;
-        bool isSuperAdmin = string.Equals(_currentUserService.Role, "Admin", StringComparison.OrdinalIgnoreCase);
 
-        if (!isSuperAdmin && (string.IsNullOrWhiteSpace(currentCharityId) || (!string.IsNullOrEmpty(existing.RegisteredByCharityId) && existing.RegisteredByCharityId != currentCharityId)))
+
+        if (string.IsNullOrWhiteSpace(currentCharityId) || existing.RegisteredByCharityId != currentCharityId)
         {
             throw new UnauthorizedDomainException(
                 $"غير مصرح: إيقاف الملف مقصور على الجمعية المسجلة له ({existing.RegisteredByCharityName})."
             );
         }
 
+        if (!string.IsNullOrWhiteSpace(dto.SuspensionReasonId))
+        {
+            var reason = await _unitOfWork.Repository<SuspensionReason>().GetByIdAsync(dto.SuspensionReasonId)
+                ?? throw new EntityNotFoundException(nameof(SuspensionReason), dto.SuspensionReasonId);
+            TenantAccess.DemandOwner(reason.CharityId, _currentUserService);
+            if (!reason.IsActive) throw new ValidationDomainException("سبب الإيقاف غير فعال.");
+            dto.SuspensionReasonTitle = reason.Title;
+        }
         existing.IsSuspended = true;
         existing.Status = "موقوف";
         existing.SuspensionReasonId = dto.SuspensionReasonId;
@@ -282,9 +303,9 @@ public class BeneficiaryService : IBeneficiaryService
             ?? throw new EntityNotFoundException(nameof(Beneficiary), id);
 
         var currentCharityId = _currentUserService.CharityId ?? string.Empty;
-        bool isSuperAdmin = string.Equals(_currentUserService.Role, "Admin", StringComparison.OrdinalIgnoreCase);
 
-        if (!isSuperAdmin && (string.IsNullOrWhiteSpace(currentCharityId) || (!string.IsNullOrEmpty(existing.RegisteredByCharityId) && existing.RegisteredByCharityId != currentCharityId)))
+
+        if (string.IsNullOrWhiteSpace(currentCharityId) || existing.RegisteredByCharityId != currentCharityId)
         {
             throw new UnauthorizedDomainException(
                 $"غير مصرح: إعادة تفعيل الملف مقصورة على الجمعية المسجلة له ({existing.RegisteredByCharityName})."
@@ -310,9 +331,9 @@ public class BeneficiaryService : IBeneficiaryService
             ?? throw new EntityNotFoundException(nameof(Beneficiary), beneficiaryId);
 
         var currentCharityId = _currentUserService.CharityId ?? string.Empty;
-        bool isSuperAdmin = string.Equals(_currentUserService.Role, "Admin", StringComparison.OrdinalIgnoreCase);
 
-        if (!isSuperAdmin && (string.IsNullOrWhiteSpace(currentCharityId) || (!string.IsNullOrEmpty(existing.RegisteredByCharityId) && existing.RegisteredByCharityId != currentCharityId)))
+
+        if (string.IsNullOrWhiteSpace(currentCharityId) || existing.RegisteredByCharityId != currentCharityId)
         {
             throw new UnauthorizedDomainException(
                 $"غير مصرح: إدارة وفصل أفراد الأسرة مقصورة على الجمعية المسجلة للملف ({existing.RegisteredByCharityName})."
@@ -321,6 +342,20 @@ public class BeneficiaryService : IBeneficiaryService
 
         var member = await _familyMemberRepo.FirstOrDefaultAsync(m => m.Id == dto.FamilyMemberId && m.BeneficiaryId == beneficiaryId)
             ?? throw new EntityNotFoundException(nameof(BeneficiaryFamilyMember), dto.FamilyMemberId);
+        if (!string.IsNullOrWhiteSpace(dto.SeparationReasonId))
+        {
+            var reason = await _unitOfWork.Repository<SeparationReason>().GetByIdAsync(dto.SeparationReasonId)
+                ?? throw new EntityNotFoundException(nameof(SeparationReason), dto.SeparationReasonId);
+            TenantAccess.DemandOwner(reason.CharityId, _currentUserService);
+            if (!reason.IsActive) throw new ValidationDomainException("سبب الانفصال غير فعال.");
+            dto.Reason = reason.Title;
+        }
+
+        if (dto.CreateIndependentBeneficiaryProfile)
+        {
+            member.Name = ValidatePersonDetails(member.Name, member.IncomeAmount, "اسم الفرد المراد فصله");
+            member.NationalId = EgyptianNationalId.Validate(member.NationalId, "الرقم القومي للفرد المراد فصله");
+        }
 
         member.IsSeparated = true;
         member.SeparatedAt = DateTime.UtcNow;
@@ -378,26 +413,19 @@ public class BeneficiaryService : IBeneficiaryService
             ?? throw new EntityNotFoundException(nameof(Beneficiary), beneficiaryId);
 
         var currentCharityId = _currentUserService.CharityId ?? string.Empty;
-        bool isSuperAdmin = string.Equals(_currentUserService.Role, "Admin", StringComparison.OrdinalIgnoreCase);
 
-        if (!isSuperAdmin && (string.IsNullOrWhiteSpace(currentCharityId) || (!string.IsNullOrEmpty(existing.RegisteredByCharityId) && existing.RegisteredByCharityId != currentCharityId)))
+
+        if (string.IsNullOrWhiteSpace(currentCharityId) || existing.RegisteredByCharityId != currentCharityId)
         {
             throw new UnauthorizedDomainException(
                 $"غير مصرح: إضافة أفراد مقصورة على الجمعية المسجلة للملف ({existing.RegisteredByCharityName})."
             );
         }
 
-        var nid = (dto.NationalId ?? string.Empty).Trim();
-        if (nid.Length != 14 || !nid.All(char.IsDigit))
-        {
-            throw new ValidationDomainException("الرقم القومي يجب أن يتكون من 14 رقماً صحيحاً.");
-        }
+        var nid = EgyptianNationalId.Validate(dto.NationalId, "الرقم القومي لفرد الأسرة");
+        dto.NationalId = nid;
 
-        var name = (dto.Name ?? string.Empty).Trim();
-        if (string.IsNullOrWhiteSpace(name))
-        {
-            throw new ValidationDomainException("اسم فرد الأسرة مطلوب.");
-        }
+        dto.Name = ValidatePersonDetails(dto.Name, dto.IncomeAmount, "اسم فرد الأسرة");
 
         var alreadyExistsInFamily = await _familyMemberRepo.FirstOrDefaultAsync(
             m => m.BeneficiaryId == beneficiaryId && m.NationalId == nid
@@ -411,6 +439,9 @@ public class BeneficiaryService : IBeneficiaryService
         {
             throw new ValidationDomainException("هذا الرقم القومي مسجل كصاحب الملف الأساسي حالياً.");
         }
+
+        // Apply the same network-wide identity checks used when creating or editing a file.
+        await ValidateNationalIdsAsync(beneficiaryId, existing.NationalId, [dto]);
 
         var member = dto.ToEntity(beneficiaryId);
         if (string.IsNullOrWhiteSpace(member.Id))
@@ -435,9 +466,9 @@ public class BeneficiaryService : IBeneficiaryService
 
         var currentCharityId = _currentUserService.CharityId ?? string.Empty;
         var currentCharityName = _currentUserService.CharityName ?? (existing.RegisteredByCharityName ?? "الجمعية المسجلة");
-        bool isSuperAdmin = string.Equals(_currentUserService.Role, "Admin", StringComparison.OrdinalIgnoreCase);
 
-        if (!isSuperAdmin && (string.IsNullOrWhiteSpace(currentCharityId) || (!string.IsNullOrEmpty(existing.RegisteredByCharityId) && existing.RegisteredByCharityId != currentCharityId)))
+
+        if (string.IsNullOrWhiteSpace(currentCharityId) || existing.RegisteredByCharityId != currentCharityId)
         {
             throw new UnauthorizedDomainException(
                 $"غير مصرح: نقل ولاية الملف مقصورة على الجمعية المسجلة له ({existing.RegisteredByCharityName})."
@@ -448,6 +479,11 @@ public class BeneficiaryService : IBeneficiaryService
             ?? throw new EntityNotFoundException(nameof(BeneficiaryFamilyMember), dto.NewHeadFamilyMemberId);
 
         bool keepFormerHeadInFamily = dto.FormerHeadAction != "RemoveFromFamily";
+        newHeadMember.Name = ValidatePersonDetails(newHeadMember.Name, newHeadMember.IncomeAmount, "اسم العائل الجديد");
+        newHeadMember.NationalId = EgyptianNationalId.Validate(newHeadMember.NationalId, "الرقم القومي للعائل الجديد");
+        await ValidateNationalIdsAsync(beneficiaryId, newHeadMember.NationalId, null);
+        if (keepFormerHeadInFamily)
+            existing.NationalId = EgyptianNationalId.Validate(existing.NationalId, "الرقم القومي للعائل السابق");
         bool isDeath = (dto.Reason ?? string.Empty).Contains("وفاة");
         var actionDescription = keepFormerHeadInFamily ? "نقل ولاية مع بقاء العائل السابق بالأسرة (حي ومعال)" : "نقل ولاية مع حذف واستبعاد العائل السابق من الأسرة";
 
@@ -581,9 +617,9 @@ public class BeneficiaryService : IBeneficiaryService
             ?? throw new EntityNotFoundException(nameof(Beneficiary), id);
 
         var currentCharityId = _currentUserService.CharityId ?? string.Empty;
-        bool isSuperAdmin = string.Equals(_currentUserService.Role, "Admin", StringComparison.OrdinalIgnoreCase);
 
-        if (!isSuperAdmin && (string.IsNullOrWhiteSpace(currentCharityId) || (!string.IsNullOrEmpty(existing.RegisteredByCharityId) && existing.RegisteredByCharityId != currentCharityId)))
+
+        if (string.IsNullOrWhiteSpace(currentCharityId) || existing.RegisteredByCharityId != currentCharityId)
         {
             throw new UnauthorizedDomainException(
                 $"غير مصرح: حذف أو أرشفة ملف الحالة مقصورة على الجمعية المسجلة له ({existing.RegisteredByCharityName})."
@@ -596,14 +632,46 @@ public class BeneficiaryService : IBeneficiaryService
         await _unitOfWork.SaveChangesAsync();
     }
 
+    private async Task ValidatePrivateLookupsAsync(string? villageId, string? areaId, string? addressId)
+    {
+        if (!string.IsNullOrWhiteSpace(villageId))
+        {
+            var village = await _unitOfWork.Repository<Village>().GetByIdAsync(villageId)
+                ?? throw new EntityNotFoundException(nameof(Village), villageId);
+            TenantAccess.DemandOwner(village.CharityId, _currentUserService);
+        }
+        if (!string.IsNullOrWhiteSpace(areaId))
+        {
+            var area = await _unitOfWork.Repository<VillageArea>().GetByIdAsync(areaId)
+                ?? throw new EntityNotFoundException(nameof(VillageArea), areaId);
+            TenantAccess.DemandOwner(area.CharityId, _currentUserService);
+        }
+        if (!string.IsNullOrWhiteSpace(addressId))
+        {
+            var address = await _unitOfWork.Repository<AddressRecord>().GetByIdAsync(addressId)
+                ?? throw new EntityNotFoundException(nameof(AddressRecord), addressId);
+            TenantAccess.DemandOwner(address.CharityId, _currentUserService);
+        }
+    }
+
+    private static string ValidatePersonDetails(string? name, decimal? income, string nameField)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            throw new ValidationDomainException($"{nameField} مطلوب ولا يمكن أن يكون فارغاً أو مسافات فقط.");
+        if (income < 0)
+            throw new ValidationDomainException("الدخل لا يمكن أن يكون سالباً؛ أدخل صفراً أو قيمة أكبر.");
+        return name.Trim();
+    }
+
+    private static void ValidateFamilyCount(int familyCount)
+    {
+        if (familyCount < 1)
+            throw new ValidationDomainException("عدد أفراد الأسرة يجب أن يكون واحداً على الأقل.");
+    }
+
     private async Task ValidateNationalIdsAsync(string? currentBeneficiaryId, string beneficiaryNationalId, List<CreateFamilyMemberDto>? familyMembers)
     {
-        beneficiaryNationalId = beneficiaryNationalId.Trim();
-
-        if (string.IsNullOrWhiteSpace(beneficiaryNationalId))
-        {
-            throw new ValidationDomainException("الرقم القومي لصاحب الملف مطلوب!");
-        }
+        beneficiaryNationalId = EgyptianNationalId.Validate(beneficiaryNationalId, "الرقم القومي لصاحب الملف");
 
         // 1. فحص عدم تكرار الرقم القومي لصاحب الملف مع أي مستفيد آخر
         var existingBen = await _beneficiaryRepo.FirstOrDefaultAsync(b => b.NationalId == beneficiaryNationalId && b.Id != currentBeneficiaryId);
@@ -625,11 +693,9 @@ public class BeneficiaryService : IBeneficiaryService
 
             foreach (var member in familyMembers)
             {
-                var mNatId = member.NationalId?.Trim();
-                if (string.IsNullOrWhiteSpace(mNatId))
-                {
-                    throw new ValidationDomainException($"الرقم القومي لفرد الأسرة ({member.Name}) مطلوب!");
-                }
+                member.Name = ValidatePersonDetails(member.Name, member.IncomeAmount, "اسم فرد الأسرة");
+                var mNatId = EgyptianNationalId.Validate(member.NationalId, $"الرقم القومي لفرد الأسرة ({member.Name})");
+                member.NationalId = mNatId;
 
                 // منع تطابق الرقم القومي للفرد مع الرقم القومي لصاحب الملف نفسه
                 if (string.Equals(mNatId, beneficiaryNationalId, StringComparison.OrdinalIgnoreCase))

@@ -896,7 +896,16 @@
 .month-filter-quick {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 10px;
+}
+
+.month-filter-quick label,
+.mh-controls label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
 }
 
 .month-filter-label {
@@ -1016,6 +1025,7 @@
 .mh-controls {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 10px;
   font-weight: 700;
   color: #334155;

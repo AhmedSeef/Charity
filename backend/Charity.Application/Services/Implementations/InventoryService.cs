@@ -62,7 +62,8 @@ public class InventoryService : IInventoryService
             throw new UnauthorizedDomainException("غير مصرح: لا يمكنك تعديل صنف مخزني لجمعية أخرى!");
         }
 
-        ValidateStock(dto.Quantity ?? existing.Quantity, dto.MinAlert);
+        // Metadata-only edits must preserve a negative balance created by confirmed disbursements.
+        ValidateStock(dto.Quantity ?? 0, dto.MinAlert);
 
         existing.Code = dto.Code;
         existing.ItemName = dto.ItemName;

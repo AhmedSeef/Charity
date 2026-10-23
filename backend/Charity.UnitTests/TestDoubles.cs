@@ -32,6 +32,9 @@ internal sealed class FakeRepository<T> : IRepository<T> where T : BaseEntity
 
 internal sealed class FakeUnitOfWork : IUnitOfWork
 {
+    public void ChangeInventoryBalance(InventoryItem item, double delta, bool allowNegativeBalance) => item.Quantity += delta;
+    public void CheckCashDisbursement(string charityId, decimal amount, bool allowNegativeBalance) { }
+    public decimal? CashBalanceAfterDisbursement => null;
     public int SaveCalls { get; private set; }
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) { SaveCalls++; return Task.FromResult(1); }
     public IRepository<T> Repository<T>() where T : class => throw new NotSupportedException();

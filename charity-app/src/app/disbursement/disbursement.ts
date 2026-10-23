@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
 import { Api } from '../api';
 import { AuthService } from '../auth.service';
+import { isTodayOrEarlier, todayInCairo } from '../business-date';
 
 @Component({
   selector: 'app-disbursement',
@@ -29,13 +30,6 @@ export class DisbursementComponent implements OnInit {
   // المستلم الفعلي للمساعدة
   selectedMemberRecipient: any = null; // فرد الأسرة المختار إن وُجد
   isRecipientHead: boolean = true;       // هل المستلم هو رب الأسرة الأساسي
-  isCustomRecipient: boolean = false;    // هل المستلم شخص آخر بموجب توكيل/تفويض
-  customRecipient = {
-    name: '',
-    nationalId: '',
-    relationship: 'مفوض / توكيل رسمي',
-    notes: ''
-  };
 
   // بيانات حركة الصرف
   distributionData = {
@@ -47,7 +41,7 @@ export class DisbursementComponent implements OnInit {
     quantity: 1,
     unit: 'وحدة',
     amount: null as number | null,
-    date: new Date().toISOString().split('T')[0],
+    date: todayInCairo(),
     notes: ''
   };
 
@@ -70,6 +64,10 @@ export class DisbursementComponent implements OnInit {
     private cdr: ChangeDetectorRef,
     private router: Router
   ) {}
+
+  todayInCairo(): string {
+    return todayInCairo();
+  }
 
   ngOnInit(): void {
     this.activeCharity = this.api.getActiveCharity();
@@ -202,7 +200,6 @@ export class DisbursementComponent implements OnInit {
     this.selectedBeneficiary = null;
     this.selectedMemberRecipient = null;
     this.isRecipientHead = true;
-    this.isCustomRecipient = false;
     this.recentAidHistory = [];
     this.distributionData.inventoryItemId = '';
     this.distributionData.itemName = '';
@@ -216,29 +213,17 @@ export class DisbursementComponent implements OnInit {
   // ==========================================
   selectRecipientHead(): void {
     this.isRecipientHead = true;
-    this.isCustomRecipient = false;
     this.selectedMemberRecipient = null;
     this.cdr.detectChanges();
   }
 
   selectRecipientMember(m: any): void {
     this.isRecipientHead = false;
-    this.isCustomRecipient = false;
     this.selectedMemberRecipient = m;
     this.cdr.detectChanges();
   }
 
-  selectCustomRecipient(): void {
-    this.isRecipientHead = false;
-    this.isCustomRecipient = true;
-    this.selectedMemberRecipient = null;
-    this.cdr.detectChanges();
-  }
-
   get currentRecipientName(): string {
-    if (this.isCustomRecipient) {
-      return (this.customRecipient.name || '').trim();
-    }
     if (this.selectedMemberRecipient) {
       return this.selectedMemberRecipient.name;
     }
@@ -246,9 +231,6 @@ export class DisbursementComponent implements OnInit {
   }
 
   get currentRecipientNationalId(): string {
-    if (this.isCustomRecipient) {
-      return (this.customRecipient.nationalId || '').trim();
-    }
     if (this.selectedMemberRecipient) {
       return this.selectedMemberRecipient.nationalId;
     }
@@ -256,9 +238,6 @@ export class DisbursementComponent implements OnInit {
   }
 
   get currentRecipientRelationship(): string {
-    if (this.isCustomRecipient) {
-      return (this.customRecipient.relationship || 'مفوض / توكيل').trim();
-    }
     if (this.selectedMemberRecipient) {
       return this.selectedMemberRecipient.relationship || 'فرد أسرة';
     }
@@ -361,8 +340,8 @@ export class DisbursementComponent implements OnInit {
       return;
     }
 
-    if (this.isCustomRecipient && (!recNid || recNid.length !== 14)) {
-      this.errorMessage = 'يرجى إدخال الرقم القومي الصحيح للمفوض (14 رقماً).';
+    if (!isTodayOrEarlier(this.distributionData.date)) {
+      this.errorMessage = 'تاريخ الصرف يجب أن يكون صحيحًا ولا يتجاوز اليوم.';
       return;
     }
 
@@ -377,12 +356,6 @@ export class DisbursementComponent implements OnInit {
       }
     } else if (!this.distributionData.inventoryItemId) {
       this.errorMessage = 'يرجى اختيار الصنف أو المساعدة المراد صرفها من المخزن.';
-      return;
-    }
-
-    if (this.isStockInsufficient) {
-      const item = this.selectedInventoryItem;
-      this.errorMessage = `⚠️ الكمية المطلوبة (${this.distributionData.quantity}) أكبر من رصيد المخزن المتاح (${item.quantity} ${item.unit})!`;
       return;
     }
 
@@ -402,8 +375,8 @@ export class DisbursementComponent implements OnInit {
       expenseCategoryName: this.distributionData.kind === 'إعانة نقدية' ? this.distributionData.expenseCategoryName : null,
       date: this.distributionData.date,
       notes: this.distributionData.notes,
-      receivedByMemberId: (!this.isRecipientHead && !this.isCustomRecipient && this.selectedMemberRecipient) 
-        ? this.selectedMemberRecipient.id 
+      receivedByMemberId: (!this.isRecipientHead && this.selectedMemberRecipient)
+        ? this.selectedMemberRecipient.id
         : null,
       receivedByName: recName,
       receivedByNationalId: recNid,
@@ -414,6 +387,10 @@ export class DisbursementComponent implements OnInit {
       next: (created: any) => {
         this.isSubmitting = false;
         this.successMessage = `✅ تم بنجاح صرف (${payload.kind === 'إعانة نقدية' ? (payload.amount + ' ج.م - ' + payload.itemName) : (payload.quantity + ' ' + payload.unit + ' - ' + payload.itemName)})، وتسليمها للمستلم الفعلي: (${recName}) [${this.currentRecipientRelationship}].`;
+        if (created.warnings?.length) {
+          this.successMessage += ' ⚠️ تم التسجيل بعجز في الرصيد. الرصيد المتبقي: ' +
+            (created.remainingCashBalance ?? created.remainingStock);
+        }
 
         // إعداد بيانات سند الاستلام
         this.lastReceiptData = {

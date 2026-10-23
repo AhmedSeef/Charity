@@ -103,4 +103,13 @@ public class InventoryServiceTests
         Assert.Equal(10, updated.Quantity);
         Assert.Equal("أرز معبأ", updated.ItemName);
     }
+
+    [Fact]
+    public async Task CatalogMetadataUpdatePreservesAnOverdrawnBalance()
+    {
+        _item.Quantity = -3;
+        var updated = await _service.UpdateAsync("stock", new() { ItemName = "أرز معبأ", Kind = "صنف ملموس", MinAlert = 5 });
+        Assert.Equal(-3, updated.Quantity);
+        Assert.Equal("أرز معبأ", updated.ItemName);
+    }
 }

@@ -740,8 +740,30 @@
           </div>
 
           <div>
-            <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">القرية / العزبة / الحي (المنطقة الجغرافية) *</label>
-            <input type="text" [(ngModel)]="currentBen.villageOrDistrict" name="villageOrDistrict" placeholder="مثال: كفر الجزار، خورشيد، عزبة خير الله..." required 
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <label style="font-size: 13px; color: #555;">القرية التابعة للمركز *</label>
+              <a routerLink="/villages-management" [queryParams]="{ tab: 'villages' }" target="_blank" style="font-size: 11px; color: #004d40; font-weight: bold; text-decoration: none;">+ إضافة قرية جديدة</a>
+            </div>
+            <select [(ngModel)]="currentBen.villageId" name="villageId" (change)="onVillageChange()" required
+                    style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #004d40; box-sizing: border-box; font-weight: bold; background: #f0fdf4;">
+              <option *ngFor="let v of filteredVillages" [value]="v.id">{{ v.name }}</option>
+            </select>
+          </div>
+
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <label style="font-size: 13px; color: #555;">المنطقة / الحي داخل القرية *</label>
+              <a routerLink="/villages-management" [queryParams]="{ tab: 'areas' }" target="_blank" style="font-size: 11px; color: #004d40; font-weight: bold; text-decoration: none;">+ إضافة منطقة للقرية</a>
+            </div>
+            <select [(ngModel)]="currentBen.villageAreaId" name="villageAreaId" (change)="onVillageAreaChange()" required
+                    style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #004d40; box-sizing: border-box; font-weight: bold; background: #f0fdf4;">
+              <option *ngFor="let a of filteredVillageAreas" [value]="a.id">{{ a.name }}</option>
+            </select>
+          </div>
+
+          <div>
+            <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">الموقع الميداني المفصل (المنطقة والقرية) *</label>
+            <input type="text" [(ngModel)]="currentBen.villageOrDistrict" name="villageOrDistrict" placeholder="مثال: المنشر - منية المرشد..." required 
                    style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; font-weight: bold;">
           </div>
 

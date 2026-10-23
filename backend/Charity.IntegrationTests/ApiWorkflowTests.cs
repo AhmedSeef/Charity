@@ -20,7 +20,7 @@ namespace Charity.IntegrationTests;
 [Collection("API")]
 public sealed class ApiWorkflowTests(CharityApiFactory app)
 {
-    private static long _identity = 29001010000000;
+    private static long _identity = 29001010100000;
     private static string NationalId() => Interlocked.Increment(ref _identity).ToString();
 
     private static async Task<T> Read<T>(HttpResponseMessage response)
@@ -141,14 +141,14 @@ public sealed class ApiWorkflowTests(CharityApiFactory app)
     }
 
     [Fact]
-    public async Task Insufficient_stock_rejects_distribution_without_partial_writes()
+    public async Task Insufficient_stock_requires_confirmation_without_partial_writes()
     {
         using var client = await app.Login();
         var item = await Item(client, 2);
         var family = await Family(client);
         var response = await client.PostAsJsonAsync("/api/distributions", new CreateDistributionDto
         { BeneficiaryId = family.Id, InventoryItemId = item.Id, Quantity = 3 });
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
         Assert.Equal(2, (await Read<InventoryItemDto>(await client.GetAsync($"/api/inventory/{item.Id}"))).Quantity);
         Assert.Empty(await Read<List<DistributionDto>>(await client.GetAsync($"/api/distributions/beneficiary/{family.Id}")));
     }
@@ -275,6 +275,46 @@ public sealed class ApiWorkflowTests(CharityApiFactory app)
         Assert.Equal(1, await app.WithDb(db => db.Beneficiaries.CountAsync(b => b.NationalId == family.NationalId)));
     }
 
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public async Task Adding_a_member_rejects_an_identity_in_another_active_file(bool existingDependent, bool otherCharity)
+    {
+        using var owner = await app.Login();
+        using var targetClient = otherCharity ? await app.Login("amal", "Amal@123") : await app.Login();
+        var source = await Family(owner, withMember: existingDependent);
+        var target = await Family(targetClient);
+        var nationalId = existingDependent ? Assert.Single(source.FamilyMembers).NationalId : source.NationalId;
+
+        var response = await targetClient.PostAsJsonAsync($"/api/beneficiaries/{target.Id}/members",
+            new CreateFamilyMemberDto { Name = "QA duplicate identity", NationalId = $" {nationalId} " });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var error = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Contains("مسجل مسبقاً", error.GetProperty("message").GetString());
+        Assert.False(await app.WithDb(db => db.BeneficiaryFamilyMembers.AnyAsync(m => m.BeneficiaryId == target.Id)));
+        var persisted = await Read<BeneficiaryDto>(await targetClient.GetAsync($"/api/beneficiaries/{target.Id}"));
+        Assert.Equal(target.FamilyCount, persisted.FamilyCount);
+        Assert.Equal(source.NationalId, (await Read<BeneficiaryDto>(await owner.GetAsync($"/api/beneficiaries/{source.Id}"))).NationalId);
+    }
+
+    [Fact]
+    public async Task Adding_a_member_with_an_unused_identity_persists_normally()
+    {
+        using var client = await app.Login();
+        var family = await Family(client);
+        var nationalId = NationalId();
+        var member = await Read<FamilyMemberDto>(await client.PostAsJsonAsync($"/api/beneficiaries/{family.Id}/members",
+            new CreateFamilyMemberDto { Name = "QA new dependent", NationalId = nationalId }));
+
+        var persisted = await Read<BeneficiaryDto>(await client.GetAsync($"/api/beneficiaries/{family.Id}"));
+        Assert.Equal(member.Id, Assert.Single(persisted.FamilyMembers).Id);
+        Assert.Equal(nationalId, persisted.FamilyMembers[0].NationalId);
+        Assert.Equal(2, persisted.FamilyCount);
+    }
+
     [Fact]
     public async Task Editing_an_existing_family_member_preserves_identity_without_EF_tracking_errors()
     {
@@ -299,7 +339,9 @@ public sealed class ApiWorkflowTests(CharityApiFactory app)
         var suspended = await Read<BeneficiaryDto>(await client.PostAsJsonAsync($"/api/beneficiaries/{family.Id}/suspend", new SuspendBeneficiaryDto
         { SuspensionReasonTitle = "QA review" }));
         Assert.True(suspended.IsSuspended);
-        var aid = new CreateDistributionDto { BeneficiaryId = family.Id, Kind = "إعانة نقدية", ItemName = "QA cash aid", Amount = 100, Quantity = 1 };
+        var categories = await Read<List<Charity.Application.DTOs.Lookups.ExpenseCategoryDto>>(await client.GetAsync("/api/expense-categories"));
+        var aid = new CreateDistributionDto { BeneficiaryId = family.Id, Kind = "إعانة نقدية", ItemName = "QA cash aid", Amount = 100, Quantity = 1,
+            ExpenseCategoryId = categories.First().Id, AllowNegativeBalance = true };
         Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsJsonAsync("/api/distributions", aid)).StatusCode);
         var active = await Read<BeneficiaryDto>(await client.PostAsync($"/api/beneficiaries/{family.Id}/reactivate", null));
         Assert.False(active.IsSuspended);
@@ -326,12 +368,13 @@ public sealed class ApiWorkflowTests(CharityApiFactory app)
         using var owner = await app.Login();
         using var other = await app.Login("amal", "Amal@123");
         var staff = await Read<StaffMemberDto>(await owner.PostAsJsonAsync("/api/staff", new CreateStaffMemberDto
-        { Name = "QA volunteer", NationalId = NationalId() }));
+        { Name = "QA volunteer", NationalId = NationalId(), Phone = "01012345678" }));
         Assert.Equal("c1", staff.CharityId);
         Assert.Equal(HttpStatusCode.NotFound, (await other.GetAsync($"/api/staff/{staff.Id}")).StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, (await other.DeleteAsync($"/api/staff/{staff.Id}")).StatusCode);
         var updated = await Read<StaffMemberDto>(await owner.PutAsJsonAsync($"/api/staff/{staff.Id}", new UpdateStaffMemberDto
-        { Name = "QA senior volunteer", NationalId = staff.NationalId, JoinDate = staff.JoinDate }));
+        { Name = "QA senior volunteer", NationalId = staff.NationalId, Phone = staff.Phone,
+          Role = staff.Role, JoinDate = staff.JoinDate }));
         Assert.Equal("QA senior volunteer", updated.Name);
         Assert.Equal(HttpStatusCode.NoContent, (await owner.DeleteAsync($"/api/staff/{staff.Id}")).StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, (await owner.GetAsync($"/api/staff/{staff.Id}")).StatusCode);

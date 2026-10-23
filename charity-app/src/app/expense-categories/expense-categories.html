@@ -59,26 +59,27 @@
         </button>
       </div>
 
-      <!-- منتقي الشهر السريع عند التواجد في تبويب البنود -->
+      <!-- فترة التقرير تنطبق على الإجماليات وكشف المستفيدين معاً -->
       <div *ngIf="activeTab === 'categories'" class="month-filter-quick">
-        <label class="month-filter-label">📅 تصفية المنصرف بالشهر:</label>
+        <label class="month-filter-label">📅 فترة التقرير:</label>
+        <button type="button" class="btn-clear-month" (click)="setReportPeriod('all')">الإجمالي</button>
         <select class="month-select" [ngModel]="selectedMonth" (ngModelChange)="onMonthFilterChange($event)">
-          <option value="">كل الشهور (الإجمالي التاريخي)</option>
+          <option value="">اختر شهرًا</option>
           <option *ngFor="let m of monthlyMovements" [value]="m.monthYear">
             {{ m.monthLabel }} ({{ m.totalAmount | number:'1.0-0' }} ج.م)
           </option>
         </select>
-        <button *ngIf="selectedMonth" type="button" class="btn-clear-month" (click)="resetMonthFilter()" title="إلغاء تصفية الشهر">
-          ✕ إظهار الكل
-        </button>
+        <label>من <input type="date" [(ngModel)]="dateFrom" class="month-select" /></label>
+        <label>إلى <input type="date" [(ngModel)]="dateTo" class="month-select" /></label>
+        <button type="button" class="btn-clear-month" (click)="applyDateRange()">عرض الفترة</button>
       </div>
     </div>
 
     <!-- تنبيه تصفية الشهر المفعل -->
-    <div *ngIf="selectedMonth && activeTab === 'categories'" class="active-filter-alert">
+    <div *ngIf="reportPeriod !== 'all' && activeTab === 'categories'" class="active-filter-alert">
       <div class="afa-content">
         <span class="afa-icon">📅</span>
-        <span>يتم الآن احتساب وعرض مبالغ وحركات الصرف الخاصة بـ: <strong>{{ getSelectedMonthLabel() }}</strong> فقط.</span>
+        <span>يتم الآن احتساب وعرض مبالغ وحركات الصرف: <strong>{{ reportPeriodLabel }}</strong>.</span>
       </div>
       <button type="button" class="btn-reset-filter" (click)="resetMonthFilter()">
         ✕ إظهار الإجمالي التاريخي (كل الشهور)
@@ -103,7 +104,7 @@
         <div class="stat-card">
           <div class="stat-icon-wrap bg-emerald">💰</div>
           <div class="stat-details">
-            <span class="stat-label">{{ selectedMonth ? 'منصرف ' + getSelectedMonthLabel() : (isCharityManager ? 'إجمالي منصرف الجمعية' : 'إجمالي المنصرف المالي') }}</span>
+            <span class="stat-label">منصرف {{ reportPeriodLabel }}</span>
             <span class="stat-value text-emerald">{{ totalDisbursedAll | number:'1.0-2' }} <small>ج.م</small></span>
           </div>
         </div>
@@ -111,7 +112,7 @@
         <div class="stat-card">
           <div class="stat-icon-wrap bg-blue">📋</div>
           <div class="stat-details">
-            <span class="stat-label">{{ selectedMonth ? 'حركات الصرف لشهر ' + getSelectedMonthLabel() : 'إجمالي حركات الصرف' }}</span>
+            <span class="stat-label">حركات الصرف: {{ reportPeriodLabel }}</span>
             <span class="stat-value">{{ totalDisbursementsCount }} عملية</span>
           </div>
         </div>
@@ -119,7 +120,7 @@
         <div class="stat-card">
           <div class="stat-icon-wrap bg-purple">👨‍👩‍👧‍👦</div>
           <div class="stat-details">
-            <span class="stat-label">{{ selectedMonth ? 'المستفيدون في ' + getSelectedMonthLabel() : 'إجمالي الأسر والمستفيدين' }}</span>
+            <span class="stat-label">الأسر الفريدة المستفيدة: {{ reportPeriodLabel }}</span>
             <span class="stat-value">{{ totalBeneficiariesCount }} أسرة</span>
           </div>
         </div>
@@ -150,7 +151,7 @@
                 <th>الوصف والضوابط</th>
                 <th style="width: 100px;">الحالة</th>
                 <th style="width: 160px; text-align: left;">
-                  {{ selectedMonth ? 'منصرف ' + getSelectedMonthLabel() : 'إجمالي المنصرف' }}
+                  منصرف {{ reportPeriodLabel }}
                 </th>
                 <th style="width: 130px; text-align: center;">الحركات والعمليات</th>
                 <th style="width: 220px; text-align: center;">الإجراءات والتقارير</th>
@@ -257,16 +258,18 @@
       <!-- رأس التقرير واختيار السنة -->
       <div class="monthly-header-bar">
         <div class="mh-title">
-          <h3>📊 حركة المصروف الشهري لصندوق {{ activeCharity?.name || 'الجمعية' }} لعام {{ selectedYear }}</h3>
+          <h3>📊 حركة المصروف الشهري لصندوق {{ activeCharity?.name || 'الجمعية' }} — {{ reportPeriod === 'range' ? reportPeriodLabel : (selectedYear || 'كل السنوات') }}</h3>
           <p>تتبع إجمالي النفقات والمساعدات النقدية الخارجة شهراً بشهر (مثل شهر 8/2026، شهر 7/2026)، وتوزيع المبالغ المنصرفة على بنود الصرف.</p>
         </div>
         <div class="mh-controls">
           <label>السنة المالية:</label>
           <select [(ngModel)]="selectedYear" (ngModelChange)="onYearChange()" class="year-select">
-            <option [value]="2026">2026</option>
-            <option [value]="2025">2025</option>
-            <option [value]="2024">2024</option>
+            <option [ngValue]="null">كل السنوات</option>
+            <option *ngFor="let year of reportYears" [ngValue]="year">{{ year }}</option>
           </select>
+          <label>من <input type="date" [(ngModel)]="dateFrom" class="year-select" /></label>
+          <label>إلى <input type="date" [(ngModel)]="dateTo" class="year-select" /></label>
+          <button type="button" class="btn-clear-month" (click)="applyDateRange()">عرض الفترة</button>
         </div>
       </div>
 
@@ -275,7 +278,7 @@
         <div class="stat-card">
           <div class="stat-icon-wrap bg-emerald">💰</div>
           <div class="stat-details">
-            <span class="stat-label">إجمالي منصرف سنة {{ selectedYear }}</span>
+            <span class="stat-label">إجمالي المنصرف: {{ reportPeriod === 'range' ? reportPeriodLabel : (selectedYear || 'كل السنوات') }}</span>
             <span class="stat-value text-emerald">{{ monthlyYearTotalAmount | number:'1.0-2' }} <small>ج.م</small></span>
           </div>
         </div>
@@ -370,7 +373,7 @@
                 <td colspan="6" class="empty-state">
                   <div class="empty-wrap">
                     <span class="empty-icon">📅</span>
-                    <p>لا توجد حركات صرف مسجلة لسنة {{ selectedYear }}.</p>
+                    <p>لا توجد حركات صرف مسجلة للفترة المختارة.</p>
                   </div>
                 </td>
               </tr>

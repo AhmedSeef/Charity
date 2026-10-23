@@ -47,9 +47,16 @@ public class Beneficiary : BaseEntity
     public string? GovernorateName { get; set; }
     public string? DistrictId { get; set; }
     public string? DistrictName { get; set; }
+    public string? VillageId { get; set; }
+    public string? VillageName { get; set; }
+    public string? VillageAreaId { get; set; }
+    public string? VillageAreaName { get; set; }
     public string? AddressId { get; set; } // ربط العنوان بجدول العناوين المستقل
     public string VillageOrDistrict { get; set; } = string.Empty; // القرية / العزبة / النجع / الحي
     public string PriorityTier { get; set; } = "أ - أولوية قصوى ومعدم"; // أ - أولوية قصوى ومعدم | ب - متوسط الاحتياج | ج - طوارئ وظرف مؤقت
+
+    public Village? Village { get; set; }
+    public VillageArea? VillageArea { get; set; }
 
     // مواصفات السكن والبيئة التحتية (تسقيف البيوت والمرافق)
     public string RoofType { get; set; } = "خرساني مسلح"; // خرساني مسلح، خشب وألواح، جريد وقش وبوص، صاج وزينك، بدون سقف/مكشوف

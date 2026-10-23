@@ -34,6 +34,7 @@ public class ExceptionHandlingMiddleware
 
         var (statusCode, message) = exception switch
         {
+            BalanceConfirmationRequiredException balance => (HttpStatusCode.Conflict, balance.Message),
             UnauthorizedDomainException unauth => (HttpStatusCode.Forbidden, unauth.Message),
             EntityNotFoundException notFound => (HttpStatusCode.NotFound, notFound.Message),
             ValidationDomainException valEx => (HttpStatusCode.BadRequest, valEx.Message),
@@ -46,6 +47,7 @@ public class ExceptionHandlingMiddleware
         {
             statusCode = (int)statusCode,
             message,
+            code = exception is BalanceConfirmationRequiredException ? "balance_confirmation_required" : null,
             timestamp = DateTime.UtcNow
         };
 

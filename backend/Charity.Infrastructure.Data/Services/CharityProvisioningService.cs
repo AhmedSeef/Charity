@@ -5,6 +5,7 @@ using Charity.Domain.Exceptions;
 using Charity.Infrastructure.Data.Context;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Charity.Infrastructure.Data.Seed;
 
 namespace Charity.Infrastructure.Data.Services;
 
@@ -38,6 +39,7 @@ public sealed class CharityProvisioningService(
         await db.SaveChangesAsync();
 
         await AddManagerAsync(charity.Id, request.ManagerUsername, request.ManagerPassword, request.ManagerFullName);
+        await TenantDefaults.EnsureAsync(db, charity.Id);
         await transaction.CommitAsync();
         return ToDto(charity);
     }

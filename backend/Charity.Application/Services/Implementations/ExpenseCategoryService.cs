@@ -4,6 +4,7 @@ using Charity.Application.Services.Interfaces;
 using Charity.Domain.Entities;
 using Charity.Domain.Exceptions;
 using Charity.Domain.Interfaces;
+using System.Globalization;
 
 namespace Charity.Application.Services.Implementations;
 
@@ -29,87 +30,71 @@ public class ExpenseCategoryService : IExpenseCategoryService
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<IReadOnlyList<ExpenseCategoryDto>> GetAllAsync(string? month = null)
+    public async Task<IReadOnlyList<ExpenseCategoryDto>> GetAllAsync(string? month = null, string? from = null, string? to = null)
     {
-        var currentCharityId = _currentUserService.CharityId;
-        var isAdmin = _currentUserService.Role == "Admin";
 
-        // عرض البنود: بنود النظام العام + بنود جمعية المستخدم (إذا كان مدير جمعية)
+        // Each charity reads its own copies; platform oversight is read-only across charities.
         var allCategories = await _categoryRepo.GetAllAsync();
-        var categories = (!isAdmin && !string.IsNullOrEmpty(currentCharityId))
-            ? allCategories.Where(c => c.CharityId == null || c.CharityId == currentCharityId).ToList()
-            : allCategories.ToList();
+        var categories = allCategories.Where(c => TenantAccess.CanRead(c.CharityId, _currentUserService)).ToList();
 
         // حساب حركات الصرف: إذا كان مدير جمعية، تُحسب المبالغ والحركات الخاصة بجمعيتهم
         var allDistributions = await _distributionRepo.GetAllAsync();
-        var distributions = (!isAdmin && !string.IsNullOrEmpty(currentCharityId))
-            ? allDistributions.Where(d => d.CharityId == currentCharityId).ToList()
-            : allDistributions.ToList();
+        var distributions = allDistributions.Where(d => TenantAccess.CanRead(d.CharityId, _currentUserService)).ToList();
+        var historicalCategoryIds = distributions.Where(d => d.ExpenseCategoryId != null).Select(d => d.ExpenseCategoryId).ToHashSet();
 
         // فلترة بالشهر إن وُجد (مثلاً: "2026-08" أو "2026-10")
-        if (!string.IsNullOrWhiteSpace(month) && month != "all")
-        {
-            var trimmedMonth = month.Trim();
-            distributions = distributions.Where(d => !string.IsNullOrEmpty(d.Date) && d.Date.StartsWith(trimmedMonth)).ToList();
-        }
+        distributions = FilterPeriod(distributions, month, from, to).ToList();
 
         return categories.Select(c =>
         {
             var dto = c.ToDto();
+            dto.HasHistoricalDisbursements = historicalCategoryIds.Contains(c.Id);
             var catDists = distributions.Where(d => d.ExpenseCategoryId == c.Id).ToList();
 
             dto.TotalDisbursedAmount = catDists.Sum(d => d.Amount ?? 0);
             dto.DisbursementsCount = catDists.Count;
             dto.BeneficiariesCount = catDists.Select(d => d.BeneficiaryId).Distinct().Count();
+            dto.BeneficiaryIds = catDists.Select(d => d.BeneficiaryId).Distinct().ToList();
             return dto;
         }).OrderBy(c => c.Code).ToList();
     }
 
-    public async Task<ExpenseCategoryDto> GetByIdAsync(string id, string? month = null)
+    public async Task<ExpenseCategoryDto> GetByIdAsync(string id, string? month = null, string? from = null, string? to = null)
     {
         var category = await _categoryRepo.GetByIdAsync(id)
             ?? throw new EntityNotFoundException(nameof(ExpenseCategory), id);
+        if (!TenantAccess.CanRead(category.CharityId, _currentUserService))
+            throw new EntityNotFoundException(nameof(ExpenseCategory), id);
 
-        var currentCharityId = _currentUserService.CharityId;
-        var isAdmin = _currentUserService.Role == "Admin";
 
         var allDistributions = await _distributionRepo.FindAsync(d => d.ExpenseCategoryId == id);
-        var catDists = (!isAdmin && !string.IsNullOrEmpty(currentCharityId))
-            ? allDistributions.Where(d => d.CharityId == currentCharityId).ToList()
-            : allDistributions.ToList();
+        var catDists = allDistributions.Where(d => TenantAccess.CanRead(d.CharityId, _currentUserService)).ToList();
+        var hasHistoricalDisbursements = catDists.Count > 0;
 
-        if (!string.IsNullOrWhiteSpace(month) && month != "all")
-        {
-            var trimmedMonth = month.Trim();
-            catDists = catDists.Where(d => !string.IsNullOrEmpty(d.Date) && d.Date.StartsWith(trimmedMonth)).ToList();
-        }
+        catDists = FilterPeriod(catDists, month, from, to).ToList();
 
         var dto = category.ToDto();
+        dto.HasHistoricalDisbursements = hasHistoricalDisbursements;
         dto.TotalDisbursedAmount = catDists.Sum(d => d.Amount ?? 0);
         dto.DisbursementsCount = catDists.Count;
         dto.BeneficiariesCount = catDists.Select(d => d.BeneficiaryId).Distinct().Count();
+        dto.BeneficiaryIds = catDists.Select(d => d.BeneficiaryId).Distinct().ToList();
 
         return dto;
     }
 
-    public async Task<IReadOnlyList<ExpenseCategoryDisbursementDetailDto>> GetDisbursementsByCategoryAsync(string categoryId, string? month = null)
+    public async Task<IReadOnlyList<ExpenseCategoryDisbursementDetailDto>> GetDisbursementsByCategoryAsync(string categoryId, string? month = null, string? from = null, string? to = null)
     {
         var category = await _categoryRepo.GetByIdAsync(categoryId)
             ?? throw new EntityNotFoundException(nameof(ExpenseCategory), categoryId);
+        if (!TenantAccess.CanRead(category.CharityId, _currentUserService))
+            throw new EntityNotFoundException(nameof(ExpenseCategory), categoryId);
 
-        var currentCharityId = _currentUserService.CharityId;
-        var isAdmin = _currentUserService.Role == "Admin";
 
         var distributions = await _distributionRepo.FindAsync(d => d.ExpenseCategoryId == categoryId);
-        var distList = (!isAdmin && !string.IsNullOrEmpty(currentCharityId))
-            ? distributions.Where(d => d.CharityId == currentCharityId).ToList()
-            : distributions.ToList();
+        var distList = distributions.Where(d => TenantAccess.CanRead(d.CharityId, _currentUserService)).ToList();
 
-        if (!string.IsNullOrWhiteSpace(month) && month != "all")
-        {
-            var trimmedMonth = month.Trim();
-            distList = distList.Where(d => !string.IsNullOrEmpty(d.Date) && d.Date.StartsWith(trimmedMonth)).ToList();
-        }
+        distList = FilterPeriod(distList, month, from, to).ToList();
 
         distList = distList.OrderByDescending(d => d.Date).ToList();
 
@@ -148,19 +133,14 @@ public class ExpenseCategoryService : IExpenseCategoryService
         }).ToList();
     }
 
-    public async Task<IReadOnlyList<MonthlyExpenseMovementDto>> GetMonthlyMovementsAsync(int? year = null)
+    public async Task<IReadOnlyList<MonthlyExpenseMovementDto>> GetMonthlyMovementsAsync(int? year = null, string? from = null, string? to = null)
     {
-        var currentCharityId = _currentUserService.CharityId;
-        var isAdmin = _currentUserService.Role == "Admin";
 
         var allDistributions = await _distributionRepo.GetAllAsync();
-        // فقط الحركات النقدية المرتبطة ببند مصروفات
-        var distributions = allDistributions.Where(d => d.Kind == "إعانة نقدية" && !string.IsNullOrEmpty(d.ExpenseCategoryId));
+        // الربط ببند المصروف والمبلغ هو مصدر الحقيقة؛ السجلات القديمة تستخدم «نقدية» والجديدة «إعانة نقدية».
+        var distributions = allDistributions.Where(d => !string.IsNullOrEmpty(d.ExpenseCategoryId) && d.Amount.HasValue
+            && TenantAccess.CanRead(d.CharityId, _currentUserService));
 
-        if (!isAdmin && !string.IsNullOrEmpty(currentCharityId))
-        {
-            distributions = distributions.Where(d => d.CharityId == currentCharityId);
-        }
 
         if (year.HasValue)
         {
@@ -168,7 +148,7 @@ public class ExpenseCategoryService : IExpenseCategoryService
             distributions = distributions.Where(d => !string.IsNullOrEmpty(d.Date) && d.Date.StartsWith(yearStr));
         }
 
-        var list = distributions.ToList();
+        var list = FilterPeriod(distributions, null, from, to).ToList();
 
         // التجميع حسب الشهر والسنة (YYYY-MM)
         var grouped = list
@@ -213,11 +193,29 @@ public class ExpenseCategoryService : IExpenseCategoryService
                 TotalAmount = g.Sum(d => d.Amount ?? 0),
                 DisbursementsCount = g.Count(),
                 BeneficiariesCount = g.Select(d => d.BeneficiaryId).Distinct().Count(),
+                BeneficiaryIds = g.Select(d => d.BeneficiaryId).Distinct().ToList(),
                 TopCategories = topCats
             });
         }
 
         return result;
+    }
+
+    private static IEnumerable<Distribution> FilterPeriod(IEnumerable<Distribution> distributions, string? month, string? from, string? to)
+    {
+        if (!string.IsNullOrWhiteSpace(month) && month != "all")
+        {
+            if (!DateOnly.TryParseExact(month + "-01", "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out _))
+                throw new ValidationDomainException("الشهر المطلوب غير صحيح. استخدم yyyy-MM.");
+            distributions = distributions.Where(d => d.Date?.StartsWith(month, StringComparison.Ordinal) == true);
+        }
+
+        if (string.IsNullOrWhiteSpace(from) && string.IsNullOrWhiteSpace(to)) return distributions;
+        if (string.IsNullOrWhiteSpace(from) || string.IsNullOrWhiteSpace(to) ||
+            !DateOnly.TryParseExact(from, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var start) ||
+            !DateOnly.TryParseExact(to, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var end) || start > end)
+            throw new ValidationDomainException("حدد تاريخ بداية ونهاية صحيحين، ويجب ألا تكون البداية بعد النهاية.");
+        return distributions.Where(d => string.CompareOrdinal(d.Date, from) >= 0 && string.CompareOrdinal(d.Date, to) <= 0);
     }
 
     public async Task<ExpenseCategoryDto> CreateAsync(CreateExpenseCategoryDto dto)
@@ -228,11 +226,13 @@ public class ExpenseCategoryService : IExpenseCategoryService
         }
 
         var charityId = _currentUserService.CharityId;
+        if (string.IsNullOrWhiteSpace(charityId) && _currentUserService.Role != "Admin")
+            TenantAccess.RequireCharity(_currentUserService);
         var charityName = _currentUserService.CharityName ?? "النظام العام";
 
         var trimmedName = dto.Name.Trim();
         var existing = await _categoryRepo.FirstOrDefaultAsync(c =>
-            c.Name.ToLower() == trimmedName.ToLower() && (c.CharityId == null || c.CharityId == charityId));
+            c.Name.ToLower() == trimmedName.ToLower() && c.CharityId == charityId);
 
         if (existing != null)
         {
@@ -242,7 +242,7 @@ public class ExpenseCategoryService : IExpenseCategoryService
         var code = dto.Code?.Trim();
         if (string.IsNullOrWhiteSpace(code))
         {
-            var totalCount = await _categoryRepo.CountAsync();
+            var totalCount = await _categoryRepo.CountAsync(c => c.CharityId == charityId);
             code = $"EXP-{(totalCount + 1):D3}";
         }
 
@@ -272,17 +272,12 @@ public class ExpenseCategoryService : IExpenseCategoryService
         var entity = await _categoryRepo.GetByIdAsync(id)
             ?? throw new EntityNotFoundException(nameof(ExpenseCategory), id);
 
-        var currentCharityId = _currentUserService.CharityId;
-        var isAdmin = _currentUserService.Role == "Admin";
 
-        if (!isAdmin && entity.CharityId != null && entity.CharityId != currentCharityId)
-        {
-            throw new UnauthorizedDomainException("لا يمكنك تعديل بند مصروفات يتبع جمعية أخرى.");
-        }
+        TenantAccess.DemandOwner(entity.CharityId, _currentUserService);
 
         var trimmedName = dto.Name.Trim();
         var duplicate = await _categoryRepo.FirstOrDefaultAsync(c =>
-            c.Id != id && c.Name.ToLower() == trimmedName.ToLower() && (c.CharityId == null || c.CharityId == currentCharityId));
+            c.Id != id && c.Name.ToLower() == trimmedName.ToLower() && c.CharityId == _currentUserService.CharityId);
 
         if (duplicate != null)
         {
@@ -308,18 +303,8 @@ public class ExpenseCategoryService : IExpenseCategoryService
         var entity = await _categoryRepo.GetByIdAsync(id)
             ?? throw new EntityNotFoundException(nameof(ExpenseCategory), id);
 
-        var currentCharityId = _currentUserService.CharityId;
-        var isAdmin = _currentUserService.Role == "Admin";
 
-        if (!isAdmin && entity.CharityId == null)
-        {
-            throw new ValidationDomainException("⛔ محظور الحذف: لا يمكن لمدير الجمعية حذف بنود المصروفات العامة للنظام، ويُسمح فقط بحذف البنود المضافة من قبل جمعيتكم.");
-        }
-
-        if (!isAdmin && entity.CharityId != currentCharityId)
-        {
-            throw new UnauthorizedDomainException("لا يمكنك حذف بند مصروفات يتبع جمعية أخرى.");
-        }
+        TenantAccess.DemandOwner(entity.CharityId, _currentUserService);
 
         // قاعدة منع الحذف الصارمة: التحقق من عدم وجود أي حركة صرف تمت على هذا البند
         var allDistributions = await _distributionRepo.GetAllIncludingDeletedAsync();

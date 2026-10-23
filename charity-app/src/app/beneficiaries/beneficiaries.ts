@@ -1,16 +1,17 @@
 import { Component, ChangeDetectorRef, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { Api } from '../api';
 import { AuthService } from '../auth.service';
 import { PaginationComponent } from '../pagination/pagination';
+import { nationalIdError, normalizeNationalId } from '../egyptian-national-id';
 
 @Component({
   selector: 'app-beneficiaries',
   standalone: true,
-  imports: [CommonModule, FormsModule, PaginationComponent],
+  imports: [CommonModule, FormsModule, PaginationComponent, RouterModule],
   templateUrl: './beneficiaries.html',
   styleUrls: ['./beneficiaries.css']
 })
@@ -40,6 +41,10 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
   governorates: any[] = [];
   allDistricts: any[] = [];
   filteredDistricts: any[] = [];
+  allVillages: any[] = [];
+  filteredVillages: any[] = [];
+  allVillageAreas: any[] = [];
+  filteredVillageAreas: any[] = [];
   selectedGovFilter: string = 'الكل';
   selectedDistrictFilter: string = 'الكل';
   filterDistrictsList: any[] = [];
@@ -61,10 +66,14 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
     governorateName: 'كفر الشيخ',
     districtId: 'dist_motobas',
     districtName: 'مركز مطوبس',
+    villageId: 'vil_monyat_morshid',
+    villageName: 'منية المرشد',
+    villageAreaId: 'area_manshar',
+    villageAreaName: 'المنشر',
     addressId: null,
     address: '', 
     housing: 'إيجار جديد',
-    villageOrDistrict: '',
+    villageOrDistrict: 'المنشر - منية المرشد',
     priorityTier: 'أ - أولوية قصوى ومعدم',
     roofType: 'خرساني مسلح',
     wallType: 'طوب أحمر',
@@ -234,11 +243,6 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
       this.initRouteSync();
       this.cdr.detectChanges(); 
     });
-    // Load ALL distributions across the federated network for the beneficiary profile
-    this.api.getAllDistributions().subscribe((data: any[]) => { 
-      this.distributions = data; 
-      this.cdr.detectChanges(); 
-    });
     this.api.getAllInventory().subscribe((data: any[]) => { 
       this.inventory = data; 
       this.cdr.detectChanges(); 
@@ -261,6 +265,7 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
         if (found) {
           this.selectedBen = found;
           this.viewMode = 'detail';
+          this.loadSharedHistory(found.id);
         } else {
           this.viewMode = 'list';
         }
@@ -305,8 +310,24 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
   canEditBeneficiary(b: any): boolean {
     if (!b) return false;
     if (this.auth.getCurrentUser()?.role === 'Admin') return false;
-    const activeId = this.api.getActiveCharityId();
-    return !b.registeredByCharityId || b.registeredByCharityId === activeId;
+    const activeId = this.auth.getCurrentUser()?.charityId;
+    return !!activeId && b.registeredByCharityId === activeId;
+  }
+
+  private loadSharedHistory(id: string) {
+    this.distributions = [];
+    this.api.getBeneficiarySharedHistory(id).subscribe({
+      next: summary => {
+        if (this.selectedBen?.id !== id || this.viewMode !== 'detail') return;
+        this.distributions = summary.aidHistory || [];
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        if (this.selectedBen?.id !== id || this.viewMode !== 'detail') return;
+        this.errorMessage = 'تعذر تحميل سجل مساعدات المستفيد.';
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   // View switchers
@@ -453,10 +474,14 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
       governorateName: 'كفر الشيخ',
       districtId: 'dist_motobas',
       districtName: 'مركز مطوبس',
+      villageId: 'vil_monyat_morshid',
+      villageName: 'منية المرشد',
+      villageAreaId: 'area_manshar',
+      villageAreaName: 'المنشر',
       addressId: null,
       address: '', 
       housing: 'إيجار جديد',
-      villageOrDistrict: '',
+      villageOrDistrict: 'المنشر - منية المرشد',
       priorityTier: 'أ - أولوية قصوى ومعدم',
       roofType: 'خرساني مسلح',
       wallType: 'طوب أحمر',
@@ -512,9 +537,44 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
       return;
     }
 
-    if (!this.currentBen.name || !this.currentBen.nationalId) {
-      this.errorMessage = 'يرجى إدخال اسم المستفيد والرقم القومي بشكل صحيح.';
+    const headName = (this.currentBen.name || '').trim();
+    if (!headName) {
+      this.errorMessage = 'اسم المستفيد مطلوب ولا يمكن أن يكون مسافات فقط.';
       return;
+    }
+    this.currentBen.name = headName;
+    if (this.invalidIncome(this.currentBen.monthlyIncome)) {
+      this.errorMessage = 'الدخل الشهري يجب أن يكون صفراً أو أكثر، ولا يقبل قيمة سالبة.';
+      return;
+    }
+    if (!Number.isInteger(Number(this.currentBen.familyCount)) || Number(this.currentBen.familyCount) < 1) {
+      this.errorMessage = 'عدد أفراد الأسرة يجب أن يكون واحداً على الأقل.';
+      return;
+    }
+
+    const headError = nationalIdError(this.currentBen.nationalId);
+    if (headError) {
+      this.errorMessage = `الرقم القومي لصاحب الملف: ${headError}`;
+      return;
+    }
+    this.currentBen.nationalId = normalizeNationalId(this.currentBen.nationalId);
+    for (const member of this.currentBen.familyMembers || []) {
+      const memberName = (member.name || '').trim();
+      if (!memberName) {
+        this.errorMessage = 'اسم فرد الأسرة مطلوب ولا يمكن أن يكون مسافات فقط.';
+        return;
+      }
+      if (this.invalidIncome(member.incomeAmount)) {
+        this.errorMessage = `دخل فرد الأسرة (${memberName}) يجب أن يكون صفراً أو أكثر.`;
+        return;
+      }
+      member.name = memberName;
+      const memberError = nationalIdError(member.nationalId);
+      if (memberError) {
+        this.errorMessage = `الرقم القومي لفرد الأسرة (${member.name || 'بدون اسم'}): ${memberError}`;
+        return;
+      }
+      member.nationalId = normalizeNationalId(member.nationalId);
     }
 
     this.errorMessage = '';
@@ -827,22 +887,34 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
+  private invalidIncome(value: any): boolean {
+    return value != null && value !== '' && (!Number.isFinite(Number(value)) || Number(value) < 0);
+  }
+
   saveAndSelectNewMember() {
     if (!this.selectedBen) return;
     const name = (this.newMemberData.name || '').trim();
-    const nid = (this.newMemberData.nationalId || '').trim();
+    const nid = normalizeNationalId(this.newMemberData.nationalId);
 
     if (!name) {
       this.errorMessage = 'يرجى إدخال اسم فرد الأسرة بالكامل.';
       this.cdr.detectChanges();
       return;
     }
-
-    if (nid.length !== 14 || !/^\d{14}$/.test(nid)) {
-      this.errorMessage = 'الرقم القومي يجب أن يتكون من 14 رقماً صحيحاً.';
+    if (this.invalidIncome(this.newMemberData.incomeAmount)) {
+      this.errorMessage = 'دخل فرد الأسرة يجب أن يكون صفراً أو أكثر.';
       this.cdr.detectChanges();
       return;
     }
+    this.newMemberData.name = name;
+
+    const identityError = nationalIdError(nid);
+    if (identityError) {
+      this.errorMessage = identityError;
+      this.cdr.detectChanges();
+      return;
+    }
+    this.newMemberData.nationalId = nid;
 
     this.isAddingMember = true;
     this.errorMessage = '';
@@ -962,6 +1034,22 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
         this.cdr.detectChanges();
       }
     });
+
+    this.api.getVillages().subscribe({
+      next: vils => {
+        this.allVillages = vils || [];
+        this.filterVillagesByDistrict();
+        this.cdr.detectChanges();
+      }
+    });
+
+    this.api.getVillageAreas().subscribe({
+      next: areas => {
+        this.allVillageAreas = areas || [];
+        this.filterAreasByVillage();
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   onGovernorateChange() {
@@ -975,6 +1063,55 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
   onDistrictChange() {
     const d = this.allDistricts.find(x => x.id === this.currentBen.districtId);
     this.currentBen.districtName = d ? d.name : '';
+    this.filterVillagesByDistrict();
+    if (this.filteredVillages.length > 0) {
+      // تفضيل منية المرشد إن وجدت
+      const monyat = this.filteredVillages.find(v => v.id === 'vil_monyat_morshid' || v.name.includes('منية المرشد'));
+      this.currentBen.villageId = monyat ? monyat.id : this.filteredVillages[0].id;
+    } else {
+      this.currentBen.villageId = '';
+    }
+    this.onVillageChange();
+  }
+
+  onVillageChange() {
+    const v = this.allVillages.find(x => x.id === this.currentBen.villageId);
+    this.currentBen.villageName = v ? v.name : '';
+    this.filterAreasByVillage();
+    if (this.filteredVillageAreas.length > 0) {
+      // تفضيل المنشر إن وجد
+      const manshar = this.filteredVillageAreas.find(a => a.id === 'area_manshar' || a.name.includes('المنشر'));
+      this.currentBen.villageAreaId = manshar ? manshar.id : this.filteredVillageAreas[0].id;
+    } else {
+      this.currentBen.villageAreaId = '';
+    }
+    this.onVillageAreaChange();
+  }
+
+  onVillageAreaChange() {
+    const a = this.allVillageAreas.find(x => x.id === this.currentBen.villageAreaId);
+    this.currentBen.villageAreaName = a ? a.name : '';
+    if (this.currentBen.villageName && this.currentBen.villageAreaName) {
+      this.currentBen.villageOrDistrict = `${this.currentBen.villageAreaName} - ${this.currentBen.villageName}`;
+    } else if (this.currentBen.villageName) {
+      this.currentBen.villageOrDistrict = this.currentBen.villageName;
+    }
+  }
+
+  filterVillagesByDistrict() {
+    if (this.currentBen.districtId) {
+      this.filteredVillages = this.allVillages.filter(v => v.districtId === this.currentBen.districtId);
+    } else {
+      this.filteredVillages = [...this.allVillages];
+    }
+  }
+
+  filterAreasByVillage() {
+    if (this.currentBen.villageId) {
+      this.filteredVillageAreas = this.allVillageAreas.filter(a => a.villageId === this.currentBen.villageId);
+    } else {
+      this.filteredVillageAreas = [...this.allVillageAreas];
+    }
   }
 
   filterDistrictsByGov() {

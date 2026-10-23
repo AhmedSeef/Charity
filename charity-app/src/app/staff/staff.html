@@ -221,13 +221,13 @@
 
           <div>
             <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">تاريخ بدء العمل / الانضمام *</label>
-            <input type="date" [(ngModel)]="newStaff.joinDate" name="joinDate" required 
+            <input type="date" [(ngModel)]="newStaff.joinDate" name="joinDate" [max]="todayInCairo()" required
                    style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box;">
           </div>
 
           <div *ngIf="newStaff.type === 'موظف براتب'">
             <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">الراتب الأساسي الشهري (ج.م) *</label>
-            <input type="number" [(ngModel)]="newStaff.salary" name="salary" placeholder="مثال: 4500" required min="1" 
+            <input type="number" [(ngModel)]="newStaff.salary" name="salary" placeholder="مثال: 4500" required min="0"
                    style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; font-weight: bold; color: #004d40;">
           </div>
 

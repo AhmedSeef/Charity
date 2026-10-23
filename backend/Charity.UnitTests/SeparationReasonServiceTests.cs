@@ -48,6 +48,7 @@ public class SeparationReasonServiceTests
         var reason = new SeparationReason
         {
             Id = "sep_unused",
+            CharityId = "c1",
             Title = "سبب تجريبي لم يُستخدم",
             Description = "وصف"
         };
@@ -68,6 +69,7 @@ public class SeparationReasonServiceTests
         var reason = new SeparationReason
         {
             Id = "sep_used",
+            CharityId = "c1",
             Title = "استقلال بعد الزواج",
             Description = "تم تنفيذ عملية فصل بناء عليه"
         };

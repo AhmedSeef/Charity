@@ -5,6 +5,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { Api } from '../api';
 import { PaginationComponent } from '../pagination/pagination';
+import { nationalIdError, normalizeNationalId } from '../egyptian-national-id';
+import { isTodayOrEarlier, todayInCairo } from '../business-date';
 
 @Component({
   selector: 'app-staff',
@@ -42,7 +44,7 @@ export class StaffComponent implements OnInit, OnDestroy {
     type: 'متطوع', 
     role: 'باحث اجتماعي', 
     salary: null, 
-    joinDate: new Date().toISOString().split('T')[0],
+    joinDate: todayInCairo(),
     tasks: '',
     status: 'نشط على رأس العمل'
   };
@@ -60,6 +62,10 @@ export class StaffComponent implements OnInit, OnDestroy {
   ];
 
   private querySub?: Subscription;
+
+  todayInCairo(): string {
+    return todayInCairo();
+  }
 
   constructor(
     private api: Api, 
@@ -181,22 +187,46 @@ export class StaffComponent implements OnInit, OnDestroy {
       type: 'متطوع', 
       role: 'باحث اجتماعي ميداني', 
       salary: null, 
-      joinDate: new Date().toISOString().split('T')[0],
+      joinDate: todayInCairo(),
       tasks: '',
       status: 'نشط على رأس العمل'
     };
   }
 
   onSubmit() {
-    if (!this.newStaff.name || !this.newStaff.nationalId) {
-      this.errorMessage = 'يرجى إدخال اسم العضو والرقم القومي بشكل صحيح.';
+    this.newStaff.name = (this.newStaff.name || '').trim();
+    this.newStaff.nationalId = normalizeNationalId(this.newStaff.nationalId);
+    const idError = nationalIdError(this.newStaff.nationalId);
+    if (!this.newStaff.name || idError) {
+      this.errorMessage = idError || 'اسم عضو فريق العمل مطلوب.';
+      return;
+    }
+    this.newStaff.phone = (this.newStaff.phone || '').trim();
+    if (!/^01[0125][0-9]{8}$/.test(this.newStaff.phone)) {
+      this.errorMessage = 'رقم الهاتف يجب أن يكون رقم محمول مصريًا صحيحًا من 11 رقمًا.';
+      return;
+    }
+    if (!this.newStaff.role || !isTodayOrEarlier(this.newStaff.joinDate)) {
+      this.errorMessage = 'راجع المسمى الوظيفي وتاريخ الانضمام؛ لا يجوز تاريخ مستقبلي.';
+      return;
+    }
+    if (this.newStaff.type === 'موظف براتب' &&
+        (this.newStaff.salary === null || this.newStaff.salary === '' ||
+         !Number.isFinite(Number(this.newStaff.salary)) || Number(this.newStaff.salary) < 0)) {
+      this.errorMessage = 'راتب الموظف يجب أن يكون صفرًا أو أكثر.';
+      return;
+    }
+    if (this.newStaff.type === 'متطوع') {
+      this.newStaff.salary = null;
+    } else if (this.newStaff.type !== 'موظف براتب') {
+      this.errorMessage = 'نوع عضو فريق العمل غير صحيح.';
       return;
     }
 
     this.errorMessage = '';
 
     if (this.newStaff.id) {
-      this.api.updateStaff(this.newStaff).subscribe(() => {
+      this.api.updateStaff(this.newStaff).subscribe({ next: () => {
         this.successMessage = `✅ تم تحديث بيانات (${this.newStaff.name}) بنجاح!`;
         this.api.getStaff().subscribe((data: any[]) => {
           this.staffList = data;
@@ -204,9 +234,9 @@ export class StaffComponent implements OnInit, OnDestroy {
           this.cdr.detectChanges();
         });
         setTimeout(() => { this.successMessage = ''; this.cdr.detectChanges(); }, 4000);
-      });
+      }, error: (err: any) => { this.errorMessage = err.error?.message || 'فشل تحديث بيانات عضو فريق العمل.'; this.cdr.detectChanges(); } });
     } else {
-      this.api.addStaff(this.newStaff).subscribe((added: any) => {
+      this.api.addStaff(this.newStaff).subscribe({ next: (added: any) => {
         this.successMessage = `✅ تم إضافة (${added.name}) إلى فريق العمل بنجاح!`;
         this.api.getStaff().subscribe((data: any[]) => {
           this.staffList = data;
@@ -214,7 +244,7 @@ export class StaffComponent implements OnInit, OnDestroy {
           this.cdr.detectChanges();
         });
         setTimeout(() => { this.successMessage = ''; this.cdr.detectChanges(); }, 4000);
-      });
+      }, error: (err: any) => { this.errorMessage = err.error?.message || 'فشل إضافة عضو فريق العمل.'; this.cdr.detectChanges(); } });
     }
   }
 

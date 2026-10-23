@@ -352,6 +352,18 @@ namespace Charity.Infrastructure.Data.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<string>("VillageAreaId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("VillageAreaName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("VillageId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("VillageName")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("VillageOrDistrict")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -373,6 +385,10 @@ namespace Charity.Infrastructure.Data.Migrations
                         .HasFilter("[IsDeleted] = 0");
 
                     b.HasIndex("RegisteredByCharityId");
+
+                    b.HasIndex("VillageAreaId");
+
+                    b.HasIndex("VillageId");
 
                     b.ToTable("Beneficiaries", (string)null);
                 });
@@ -1144,6 +1160,103 @@ namespace Charity.Infrastructure.Data.Migrations
                     b.ToTable("SuspensionReasons", (string)null);
                 });
 
+            modelBuilder.Entity("Charity.Domain.Entities.Village", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("CharityId")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("CharityName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DistrictId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("NameEn")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DistrictId");
+
+                    b.ToTable("Villages", (string)null);
+                });
+
+            modelBuilder.Entity("Charity.Domain.Entities.VillageArea", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("CharityId")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("CharityName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("NameEn")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Notes")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("VillageId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("VillageId");
+
+                    b.ToTable("VillageAreas", (string)null);
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
                 {
                     b.Property<string>("Id")
@@ -1314,7 +1427,19 @@ namespace Charity.Infrastructure.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("Charity.Domain.Entities.VillageArea", "VillageArea")
+                        .WithMany("Beneficiaries")
+                        .HasForeignKey("VillageAreaId");
+
+                    b.HasOne("Charity.Domain.Entities.Village", "Village")
+                        .WithMany("Beneficiaries")
+                        .HasForeignKey("VillageId");
+
                     b.Navigation("RegisteredByCharity");
+
+                    b.Navigation("Village");
+
+                    b.Navigation("VillageArea");
                 });
 
             modelBuilder.Entity("Charity.Domain.Entities.BeneficiaryFamilyMember", b =>
@@ -1434,6 +1559,28 @@ namespace Charity.Infrastructure.Data.Migrations
                     b.Navigation("Charity");
                 });
 
+            modelBuilder.Entity("Charity.Domain.Entities.Village", b =>
+                {
+                    b.HasOne("Charity.Domain.Entities.District", "District")
+                        .WithMany("Villages")
+                        .HasForeignKey("DistrictId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("District");
+                });
+
+            modelBuilder.Entity("Charity.Domain.Entities.VillageArea", b =>
+                {
+                    b.HasOne("Charity.Domain.Entities.Village", "Village")
+                        .WithMany("Areas")
+                        .HasForeignKey("VillageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Village");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -1512,6 +1659,8 @@ namespace Charity.Infrastructure.Data.Migrations
             modelBuilder.Entity("Charity.Domain.Entities.District", b =>
                 {
                     b.Navigation("AddressRecords");
+
+                    b.Navigation("Villages");
                 });
 
             modelBuilder.Entity("Charity.Domain.Entities.ExpenseCategory", b =>
@@ -1522,6 +1671,18 @@ namespace Charity.Infrastructure.Data.Migrations
             modelBuilder.Entity("Charity.Domain.Entities.Governorate", b =>
                 {
                     b.Navigation("Districts");
+                });
+
+            modelBuilder.Entity("Charity.Domain.Entities.Village", b =>
+                {
+                    b.Navigation("Areas");
+
+                    b.Navigation("Beneficiaries");
+                });
+
+            modelBuilder.Entity("Charity.Domain.Entities.VillageArea", b =>
+                {
+                    b.Navigation("Beneficiaries");
                 });
 #pragma warning restore 612, 618
         }

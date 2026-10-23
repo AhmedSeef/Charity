@@ -145,6 +145,10 @@ public static class EntityMappingExtensions
         GovernorateName = b.GovernorateName,
         DistrictId = b.DistrictId,
         DistrictName = b.DistrictName,
+        VillageId = b.VillageId,
+        VillageName = b.VillageName ?? b.Village?.Name,
+        VillageAreaId = b.VillageAreaId,
+        VillageAreaName = b.VillageAreaName ?? b.VillageArea?.Name,
         AddressId = b.AddressId,
         VillageOrDistrict = b.VillageOrDistrict,
         PriorityTier = b.PriorityTier,
@@ -170,7 +174,7 @@ public static class EntityMappingExtensions
         SuspendedByCharityName = b.SuspendedByCharityName,
         RegisteredByCharityId = b.RegisteredByCharityId,
         RegisteredByCharityName = b.RegisteredByCharityName,
-        IsEditableByCurrentCharity = string.IsNullOrEmpty(b.RegisteredByCharityId) || b.RegisteredByCharityId == currentCharityId,
+        IsEditableByCurrentCharity = !string.IsNullOrWhiteSpace(currentCharityId) && b.RegisteredByCharityId == currentCharityId,
         FamilyMembers = b.FamilyMembers?.Select(m => m.ToDto()).ToList() ?? new(),
         HeadHistories = b.HeadHistories?.Select(h => h.ToDto()).OrderByDescending(h => h.TransferredAt).ToList() ?? new()
     };
@@ -209,6 +213,10 @@ public static class EntityMappingExtensions
         GovernorateName = dto.GovernorateName,
         DistrictId = dto.DistrictId,
         DistrictName = dto.DistrictName,
+        VillageId = dto.VillageId,
+        VillageName = dto.VillageName,
+        VillageAreaId = dto.VillageAreaId,
+        VillageAreaName = dto.VillageAreaName,
         AddressId = dto.AddressId,
         VillageOrDistrict = dto.VillageOrDistrict ?? string.Empty,
         PriorityTier = string.IsNullOrEmpty(dto.PriorityTier) ? "أ - أولوية قصوى ومعدم" : dto.PriorityTier,
@@ -390,7 +398,42 @@ public static class EntityMappingExtensions
         GovernorateId = d.GovernorateId,
         GovernorateName = d.Governorate?.Name ?? string.Empty,
         Name = d.Name,
-        NameEn = d.NameEn
+        NameEn = d.NameEn,
+        VillagesCount = d.Villages?.Count ?? 0
+    };
+
+    public static VillageDto ToDto(this Village v) => new()
+    {
+        Id = v.Id,
+        DistrictId = v.DistrictId,
+        DistrictName = v.District?.Name ?? string.Empty,
+        GovernorateId = v.District?.GovernorateId ?? string.Empty,
+        GovernorateName = v.District?.Governorate?.Name ?? string.Empty,
+        Name = v.Name,
+        NameEn = v.NameEn,
+        IsActive = v.IsActive,
+        AreasCount = v.Areas?.Count ?? 0,
+        BeneficiariesCount = v.Beneficiaries?.Count ?? 0,
+        CharityId = v.CharityId,
+        CharityName = v.CharityName
+    };
+
+    public static VillageAreaDto ToDto(this VillageArea a) => new()
+    {
+        Id = a.Id,
+        VillageId = a.VillageId,
+        VillageName = a.Village?.Name ?? string.Empty,
+        DistrictId = a.Village?.DistrictId ?? string.Empty,
+        DistrictName = a.Village?.District?.Name ?? string.Empty,
+        GovernorateId = a.Village?.District?.GovernorateId ?? string.Empty,
+        GovernorateName = a.Village?.District?.Governorate?.Name ?? string.Empty,
+        Name = a.Name,
+        NameEn = a.NameEn,
+        Notes = a.Notes,
+        IsActive = a.IsActive,
+        BeneficiariesCount = a.Beneficiaries?.Count ?? 0,
+        CharityId = a.CharityId,
+        CharityName = a.CharityName
     };
 
     public static AddressRecordDto ToDto(this AddressRecord a) => new()
