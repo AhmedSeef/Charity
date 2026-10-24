@@ -30,7 +30,7 @@
         "Delete": 1
       },
       "missingRequiredFields": 0,
-      "unexpectedActors": 23
+      "unexpectedActors": 0
     },
     {
       "charityId": "8bf42c9f-960b-431b-9e09-287e18d1c9bd",
@@ -61,11 +61,8 @@
         "Delete": 1
       },
       "missingRequiredFields": 0,
-      "unexpectedActors": 23
+      "unexpectedActors": 0
     }
   ],
-  "issues": [
-    "qa_20261023194646_1_manager: 23 unexpected actors",
-    "qa_20261023194646_2_manager: 23 unexpected actors"
-  ]
+  "issues": []
 }

@@ -306,18 +306,27 @@
       </div>
     </div>
 
-    <!-- نموذج المنطقة التابعة للقرية -->
+    <!-- نموذج المنطقة التابعة للقرية أو المركز/الحي -->
     <div *ngIf="activeTab === 'areas'" class="form-card">
       <div class="form-header">
         <h3>{{ isEditingArea ? '✏️ تعديل بيانات منطقة / حي' : '➕ إضافة منطقة جديدة للقرية' }}</h3>
-        <p>أدخل اسم المنطقة التابعة للقرية (مثل: المنشر، السوق، الجسر، المضرب، الترب...)</p>
+        <p>أدخل اسم المنطقة التابعة لقرية أو مباشرة للمركز/الحي.</p>
       </div>
 
       <div class="form-body">
         <div class="form-group">
-          <label>القرية التابع لها هذا الحي / المنطقة: <span class="required">*</span></label>
-          <select [(ngModel)]="areaForm.villageId" class="form-control">
+          <label>القرية التابعة (اختياري إذا كانت المنطقة مباشرة للمركز/الحي):</label>
+          <select [(ngModel)]="areaForm.villageId" (ngModelChange)="onAreaVillageChange()" class="form-control">
+            <option value="">-- بدون قرية --</option>
             <option *ngFor="let v of villages" [value]="v.id">{{ v.name }}</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>المركز / الحي التابع مباشرة (اختياري):</label>
+          <select [(ngModel)]="areaForm.districtId" (ngModelChange)="onAreaDistrictChange()" class="form-control">
+            <option value="">-- تحت قرية --</option>
+            <option *ngFor="let d of districts" [value]="d.id">{{ d.name }}</option>
           </select>
         </div>
 

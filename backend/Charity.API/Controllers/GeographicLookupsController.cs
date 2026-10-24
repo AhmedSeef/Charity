@@ -75,9 +75,9 @@ public class GeographicLookupsController : ControllerBase
     // ==========================================
 
     [HttpGet("village-areas")]
-    public async Task<ActionResult<IReadOnlyList<VillageAreaDto>>> GetVillageAreas([FromQuery] string? villageId)
+    public async Task<ActionResult<IReadOnlyList<VillageAreaDto>>> GetVillageAreas([FromQuery] string? villageId, [FromQuery] string? districtId)
     {
-        var result = await _geographicService.GetVillageAreasAsync(villageId);
+        var result = await _geographicService.GetVillageAreasAsync(villageId, districtId);
         return Ok(result);
     }
 

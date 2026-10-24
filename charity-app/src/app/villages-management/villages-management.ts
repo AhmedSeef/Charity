@@ -51,6 +51,7 @@ export class VillagesManagementComponent implements OnInit {
   areaForm = {
     id: null as string | null,
     villageId: '',
+    districtId: '',
     name: '',
     nameEn: '',
     notes: '',
@@ -153,12 +154,8 @@ export class VillagesManagementComponent implements OnInit {
   }
 
   loadVillageAreas() {
-    if (!this.selectedVillageId && this.villages.length > 0) {
-      this.selectedVillageId = this.villages[0].id;
-    }
-
     this.isLoading = true;
-    this.api.getVillageAreas(this.selectedVillageId).subscribe({
+    this.api.getVillageAreas(this.selectedVillageId || undefined, this.selectedDistrictId || undefined).subscribe({
       next: (res) => {
         this.villageAreas = res || [];
         this.isLoading = false;
@@ -334,6 +331,7 @@ export class VillagesManagementComponent implements OnInit {
     this.areaForm = {
       id: null,
       villageId: this.selectedVillageId || (this.villages[0]?.id || ''),
+      districtId: '',
       name: '',
       nameEn: '',
       notes: '',
@@ -350,6 +348,7 @@ export class VillagesManagementComponent implements OnInit {
     this.areaForm = {
       id: area.id,
       villageId: area.villageId,
+      districtId: area.districtId || '',
       name: area.name,
       nameEn: area.nameEn || '',
       notes: area.notes || '',
@@ -361,14 +360,22 @@ export class VillagesManagementComponent implements OnInit {
     this.successMessage = '';
   }
 
+  onAreaVillageChange() {
+    if (this.areaForm.villageId) this.areaForm.districtId = '';
+  }
+
+  onAreaDistrictChange() {
+    if (this.areaForm.districtId) this.areaForm.villageId = '';
+  }
+
   saveArea() {
     if (!this.areaForm.name.trim()) {
       this.errorMessage = 'يرجى كتابة اسم المنطقة أو الحي (مثل: المنشر، السوق، الجسر، المضرب، الترب).';
       return;
     }
 
-    if (!this.areaForm.villageId) {
-      this.errorMessage = 'يرجى اختيار القرية التابعة لها هذه المنطقة.';
+    if ((!this.areaForm.villageId && !this.areaForm.districtId) || (this.areaForm.villageId && this.areaForm.districtId)) {
+      this.errorMessage = 'يرجى اختيار قرية أو مركز/حي واحد فقط لتكون المنطقة تابعة له.';
       return;
     }
 
@@ -398,7 +405,8 @@ export class VillagesManagementComponent implements OnInit {
       });
     } else {
       this.api.createVillageArea({
-        villageId: this.areaForm.villageId,
+        villageId: this.areaForm.villageId || null,
+        districtId: this.areaForm.districtId || null,
         name: this.areaForm.name.trim(),
         nameEn: this.areaForm.nameEn.trim(),
         notes: this.areaForm.notes.trim()

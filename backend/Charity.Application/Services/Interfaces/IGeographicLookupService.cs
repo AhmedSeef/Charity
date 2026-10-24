@@ -16,7 +16,7 @@ public interface IGeographicLookupService
     Task DeleteVillageAsync(string id);
 
     // Village Areas (المناطق والأحياء التابعة للقرى)
-    Task<IReadOnlyList<VillageAreaDto>> GetVillageAreasAsync(string? villageId = null);
+    Task<IReadOnlyList<VillageAreaDto>> GetVillageAreasAsync(string? villageId = null, string? districtId = null);
     Task<VillageAreaDto> GetVillageAreaByIdAsync(string id);
     Task<VillageAreaDto> CreateVillageAreaAsync(CreateVillageAreaDto dto);
     Task<VillageAreaDto> UpdateVillageAreaAsync(string id, UpdateVillageAreaDto dto);

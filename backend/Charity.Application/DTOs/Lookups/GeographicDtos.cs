@@ -54,7 +54,7 @@ public class VillageAreaDto : AuditedDto
     public string Id { get; set; } = string.Empty;
     public string VillageId { get; set; } = string.Empty;
     public string VillageName { get; set; } = string.Empty;
-    public string DistrictId { get; set; } = string.Empty;
+    public string? DistrictId { get; set; }
     public string DistrictName { get; set; } = string.Empty;
     public string GovernorateId { get; set; } = string.Empty;
     public string GovernorateName { get; set; } = string.Empty;
@@ -69,7 +69,8 @@ public class VillageAreaDto : AuditedDto
 
 public class CreateVillageAreaDto
 {
-    public string VillageId { get; set; } = string.Empty;
+    public string? VillageId { get; set; }
+    public string? DistrictId { get; set; }
     public string Name { get; set; } = string.Empty;
     public string NameEn { get; set; } = string.Empty;
     public string Notes { get; set; } = string.Empty;

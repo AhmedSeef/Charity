@@ -41,7 +41,7 @@ export class App implements OnInit {
       this.cdr.detectChanges();
     });
 
-    if (isAdmin) return;
+    if (user?.role !== 'CharityManager') return;
     this.api.getSettings().subscribe((data: any) => {
       if (data && data.charityName) {
         this.title.set(data.charityName);

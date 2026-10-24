@@ -144,7 +144,7 @@ public sealed class TenantIsolationTests(CharityApiFactory app)
     [Fact]
     public async Task Reasons_are_private_and_foreign_references_are_rejected_before_changing_the_file()
     {
-        using var owner = await app.Login("researcher", "Research@123");
+        using var owner = await app.Login();
         using var partner = await app.Login("amal", "Amal@123");
         var family = await Family(owner, true);
         var title = "QA reason " + Guid.NewGuid();

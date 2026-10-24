@@ -28,6 +28,7 @@ public class SuspensionReasonService : ISuspensionReasonService
 
     public async Task<IReadOnlyList<SuspensionReasonDto>> GetAllAsync()
     {
+        LookupAccess.DemandManager(_currentUserService);
         var list = (await _repository.GetAllAsync()).Where(r => TenantAccess.CanRead(r.CharityId, _currentUserService));
         var allBeneficiaries = await _beneficiaryRepository.GetAllAsync();
         var suspendedCases = allBeneficiaries.Where(b => b.IsSuspended && TenantAccess.CanRead(b.RegisteredByCharityId, _currentUserService)).ToList();
@@ -44,6 +45,7 @@ public class SuspensionReasonService : ISuspensionReasonService
 
     public async Task<SuspensionReasonDto> CreateAsync(CreateSuspensionReasonDto dto)
     {
+        LookupAccess.DemandManager(_currentUserService);
         if (string.IsNullOrWhiteSpace(dto.Title))
         {
             throw new ValidationDomainException("عنوان أو سبب الإيقاف مطلوب!");
@@ -71,6 +73,7 @@ public class SuspensionReasonService : ISuspensionReasonService
 
     public async Task DeleteAsync(string id)
     {
+        LookupAccess.DemandManager(_currentUserService);
         var existing = await _repository.GetByIdAsync(id)
             ?? throw new EntityNotFoundException(nameof(SuspensionReason), id);
         TenantAccess.DemandOwner(existing.CharityId, _currentUserService);

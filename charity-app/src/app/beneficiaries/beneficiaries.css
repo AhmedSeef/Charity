@@ -41,3 +41,9 @@
     box-shadow: none !important;
   }
 }
+.geo-area-field {
+  align-self: start;
+  /* عنوان الحقل يلتف لسطرين؛ نرفع الحقل حتى يصطف الـ select مع باقي المواقع */
+  margin-top: -14px;
+}
+

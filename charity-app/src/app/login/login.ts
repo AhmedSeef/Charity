@@ -50,7 +50,7 @@ export class LoginComponent {
     this.errorMsg = '';
     this.auth.login(this.username, this.password).subscribe((users: any) => {
       if (users && users.length > 0) {
-        const destination = this.auth.getCurrentUser()?.role === 'Admin' ? '/dashboard' : '/beneficiaries';
+        const destination = this.auth.getCurrentUser()?.role === 'Admin' ? '/dashboard' : (this.auth.hasPermission('beneficiaries.view') ? '/beneficiaries' : '/home');
         this.router.navigate([destination]).then(() => window.location.reload());
       } else {
         this.errorMsg = 'اسم المستخدم أو كلمة المرور غير صحيحة';

@@ -1076,37 +1076,70 @@ export class BeneficiariesComponent implements OnInit, OnDestroy {
   onGovernorateChange() {
     const g = this.governorates.find(x => x.id === this.currentBen.governorateId);
     this.currentBen.governorateName = g ? g.name : '';
-    this.filterDistrictsByGov();
-    this.currentBen.districtId = this.filteredDistricts.length > 0 ? this.filteredDistricts[0].id : '';
-    this.onDistrictChange();
+    this.currentBen.districtId = '';
+    this.currentBen.districtName = '';
+    this.currentBen.villageId = '';
+    this.currentBen.villageName = '';
+    this.currentBen.villageAreaId = '';
+    this.currentBen.villageAreaName = '';
+    this.filteredDistricts = [];
+    this.filteredVillages = [];
+    this.filteredVillageAreas = [];
+    if (!this.currentBen.governorateId) {
+      this.cdr.detectChanges();
+      return;
+    }
+    this.api.getDistricts(this.currentBen.governorateId).subscribe({
+      next: districts => {
+        this.allDistricts = districts || [];
+        this.filteredDistricts = [...this.allDistricts];
+        this.cdr.detectChanges();
+      },
+      error: () => { this.allDistricts = []; this.filteredDistricts = []; this.cdr.detectChanges(); }
+    });
   }
 
   onDistrictChange() {
     const d = this.allDistricts.find(x => x.id === this.currentBen.districtId);
     this.currentBen.districtName = d ? d.name : '';
-    this.filterVillagesByDistrict();
-    if (this.filteredVillages.length > 0) {
-      // تفضيل منية المرشد إن وجدت
-      const monyat = this.filteredVillages.find(v => v.id === 'vil_monyat_morshid' || v.name.includes('منية المرشد'));
-      this.currentBen.villageId = monyat ? monyat.id : this.filteredVillages[0].id;
-    } else {
-      this.currentBen.villageId = '';
+    this.currentBen.villageId = '';
+    this.currentBen.villageName = '';
+    this.currentBen.villageAreaId = '';
+    this.currentBen.villageAreaName = '';
+    this.filteredVillages = [];
+    this.filteredVillageAreas = [];
+    if (!this.currentBen.districtId) {
+      this.cdr.detectChanges();
+      return;
     }
-    this.onVillageChange();
+    this.api.getVillages(this.currentBen.districtId).subscribe({
+      next: villages => {
+        this.allVillages = villages || [];
+        this.filteredVillages = [...this.allVillages];
+        this.cdr.detectChanges();
+      },
+      error: () => { this.allVillages = []; this.filteredVillages = []; this.cdr.detectChanges(); }
+    });
   }
 
   onVillageChange() {
     const v = this.allVillages.find(x => x.id === this.currentBen.villageId);
     this.currentBen.villageName = v ? v.name : '';
-    this.filterAreasByVillage();
-    if (this.filteredVillageAreas.length > 0) {
-      // تفضيل المنشر إن وجد
-      const manshar = this.filteredVillageAreas.find(a => a.id === 'area_manshar' || a.name.includes('المنشر'));
-      this.currentBen.villageAreaId = manshar ? manshar.id : this.filteredVillageAreas[0].id;
-    } else {
-      this.currentBen.villageAreaId = '';
+    this.currentBen.villageAreaId = '';
+    this.currentBen.villageAreaName = '';
+    this.filteredVillageAreas = [];
+    if (!this.currentBen.villageId) {
+      this.onVillageAreaChange();
+      return;
     }
-    this.onVillageAreaChange();
+    this.api.getVillageAreas(this.currentBen.villageId).subscribe({
+      next: areas => {
+        this.allVillageAreas = areas || [];
+        this.filteredVillageAreas = [...this.allVillageAreas];
+        this.cdr.detectChanges();
+      },
+      error: () => { this.allVillageAreas = []; this.filteredVillageAreas = []; this.cdr.detectChanges(); }
+    });
   }
 
   onVillageAreaChange() {

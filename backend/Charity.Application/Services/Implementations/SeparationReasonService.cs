@@ -31,6 +31,7 @@ public class SeparationReasonService : ISeparationReasonService
 
     public async Task<IReadOnlyList<SeparationReasonDto>> GetAllAsync()
     {
+        LookupAccess.DemandManager(_currentUserService);
         var list = (await _repository.GetAllAsync()).Where(r => TenantAccess.CanRead(r.CharityId, _currentUserService));
         var allBeneficiaries = (await _beneficiaryRepository.GetAllIncludingDeletedAsync())
             .Where(b => TenantAccess.CanRead(b.RegisteredByCharityId, _currentUserService)).ToList();
@@ -57,6 +58,7 @@ public class SeparationReasonService : ISeparationReasonService
 
     public async Task<SeparationReasonDto> CreateAsync(CreateSeparationReasonDto dto)
     {
+        LookupAccess.DemandManager(_currentUserService);
         if (string.IsNullOrWhiteSpace(dto.Title))
         {
             throw new ValidationDomainException("عنوان أو مسمى سبب الانفصال مطلوب!");
@@ -84,6 +86,7 @@ public class SeparationReasonService : ISeparationReasonService
 
     public async Task DeleteAsync(string id)
     {
+        LookupAccess.DemandManager(_currentUserService);
         var existing = await _repository.GetByIdAsync(id)
             ?? throw new EntityNotFoundException(nameof(SeparationReason), id);
         TenantAccess.DemandOwner(existing.CharityId, _currentUserService);

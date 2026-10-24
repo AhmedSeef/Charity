@@ -19,7 +19,8 @@ describe('Beneficiaries screen', () => {
     expect(page.canEditBeneficiary({ registeredByCharityId: null })).toBe(false);
   });
   it('loads all charities aid only for the beneficiary profile being opened', () => {
-    const { page, api } = form();
+    const { page, api: rawApi } = form();
+    const api: any = rawApi;
     page.beneficiaries = [{ id: 'ahmed', registeredByCharityId: 'c2' }];
     (page as any).route = { queryParams: of({ mode: 'detail', id: 'ahmed' }) };
     api.getBeneficiarySharedHistory.mockReturnValue(of({ aidHistory: [
@@ -37,6 +38,30 @@ describe('Beneficiaries screen', () => {
     expect(page.viewMode).toBe('list');
     expect(page.currentBen.familyCount).toBe(1);
     expect(page.currentBen.familyMembers).toEqual([]);
+  });
+  it('cascades governorate to district, village, then area and clears stale children', () => {
+    const { page, api: rawApi } = form();
+    const api: any = rawApi;
+    api.getDistricts = vi.fn(() => of([{ id: 'd1', governorateId: 'g1', name: 'مركز أول' }]));
+    api.getVillages = vi.fn(() => of([{ id: 'v1', districtId: 'd1', name: 'قرية أولى' }]));
+    api.getVillageAreas = vi.fn(() => of([{ id: 'a1', villageId: 'v1', name: 'منطقة أولى' }]));
+    page.governorates = [{ id: 'g1', name: 'محافظة أولى' }];
+    page.currentBen.governorateId = 'g1';
+    page.currentBen.districtId = 'old';
+    page.currentBen.villageId = 'old-village';
+    page.currentBen.villageAreaId = 'old-area';
+    page.onGovernorateChange();
+    expect(api.getDistricts).toHaveBeenCalledWith('g1');
+    expect(page.filteredDistricts.map(x => x.id)).toEqual(['d1']);
+    expect(page.currentBen.districtId).toBe('');
+    page.currentBen.districtId = 'd1';
+    page.onDistrictChange();
+    expect(api.getVillages).toHaveBeenCalledWith('d1');
+    expect(page.filteredVillages.map(x => x.id)).toEqual(['v1']);
+    page.currentBen.villageId = 'v1';
+    page.onVillageChange();
+    expect(api.getVillageAreas).toHaveBeenCalledWith('v1');
+    expect(page.filteredVillageAreas.map(x => x.id)).toEqual(['a1']);
   });
 
   for (const edit of [false, true]) {
