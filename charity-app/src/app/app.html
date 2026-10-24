@@ -1,100 +1,29 @@
-<div dir="rtl" style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0;" class="app-container">
-  
-  <!-- Sidebar tied strictly to current charity -->
-  <nav class="sidebar" *ngIf="auth.isLoggedIn()" [style.background-color]="activeCharity()?.color || '#004d40'">
-    <div class="sidebar-header">
-      <img *ngIf="logo()" [src]="logo()" alt="شعار الجمعية">
-      <div *ngIf="!logo()" style="height: 70px; width: 70px; border-radius: 50%; background-color: rgba(255,255,255,0.2); margin-bottom: 12px; display:flex; align-items:center; justify-content:center; font-size: 32px; border: 2px solid rgba(255,255,255,0.4);">
-        {{ activeCharity()?.icon || '🏢' }}
-      </div>
-      <h2 style="margin: 0; font-size: 19px; line-height: 1.4; font-weight: bold; text-shadow: 0 1px 2px rgba(0,0,0,0.2);">{{ title() }}</h2>
-      <div style="font-size: 11px; background: rgba(0,0,0,0.25); padding: 3px 10px; border-radius: 12px; margin-top: 8px; color: #ffecb3;">
-        عضو شبكة الجمعيات الموحدة
-      </div>
-      <div style="font-size: 12px; color: #e0f2f1; margin-top: 6px;">
-        👤 {{ auth.getCurrentUser()?.username }} ({{ auth.getCurrentUser()?.role || 'مسؤول' }})
-      </div>
-    </div>
-
+<div class="app-container" [class.drawer-open]="mobileMenuOpen">
+  <a class="skip-link" href="#main-content">تخطي إلى المحتوى</a>
+  <header class="mobile-topbar" *ngIf="auth.isLoggedIn()"><button class="menu-toggle" type="button" (click)="toggleMobileMenu()" [attr.aria-expanded]="mobileMenuOpen" aria-controls="app-navigation" aria-label="فتح القائمة">☰</button><strong>{{ activeCharity()?.name || title() }}</strong></header>
+  <div class="drawer-backdrop" *ngIf="mobileMenuOpen" (click)="closeMobileMenu()"></div>
+  <nav id="app-navigation" class="sidebar" *ngIf="auth.isLoggedIn()" aria-label="التنقل الرئيسي" [style.background-color]="activeCharity()?.color || '#00695c'">
+    <div class="sidebar-header"><img *ngIf="logo()" [src]="logo()" alt="شعار الجمعية"><div *ngIf="!logo()" class="brand-mark" aria-hidden="true">✦</div><h2>{{ title() }}</h2><span class="network-badge">عضو شبكة الجمعيات الموحدة</span></div>
+    <div class="user-menu"><span class="avatar" aria-hidden="true">👤</span><span><strong>{{ auth.getCurrentUser()?.username }}</strong><small>{{ auth.getCurrentUser()?.role || 'مسؤول' }}</small></span><button type="button" (click)="auth.logout()" title="تسجيل الخروج" aria-label="تسجيل الخروج">↪</button></div>
     <div class="nav-links">
-      <a routerLink="/home" routerLinkActive="active-link">🏠 الرئيسية</a>
-      <!-- لوحات الإدارة والرقابة للأدمن العام فقط -->
-      <a *ngIf="auth.getCurrentUser()?.role === 'Admin'" routerLink="/dashboard" routerLinkActive="active-link">📊 لوحة التحكم</a>
-      <a *ngIf="auth.getCurrentUser()?.role === 'Admin'" routerLink="/bi-analytics" routerLinkActive="active-link" style="background: rgba(255, 235, 59, 0.12); border: 1px solid rgba(255, 235, 59, 0.35); font-weight: bold;">
-        📈 ذكاء الأعمال والتحليلات (BI)
-      </a>
-      <a *ngIf="auth.getCurrentUser()?.role === 'Admin'" routerLink="/charities-admin" routerLinkActive="active-link">🏢 إدارة الجمعيات</a>
-      
-      <!-- المستفيدين -->
-      <a *ngIf="auth.getCurrentUser()?.role === 'Admin' || auth.hasPermission('beneficiaries.view')" routerLink="/beneficiaries" routerLinkActive="active-link">
-        👨‍👩‍👧‍👦 {{ auth.getCurrentUser()?.role === 'Admin' ? 'سجل المستفيدين (عرض وبحث)' : 'إدارة المستفيدين (الشبكة المشتركة)' }}
-      </a>
-
-      <!-- الصرف والتوزيع -->
-      <a *ngIf="auth.getCurrentUser()?.role !== 'Admin' && auth.hasPermission('disbursement.execute')" routerLink="/disbursement" routerLinkActive="active-link" style="background: rgba(255, 112, 67, 0.22); border: 1px solid rgba(255, 112, 67, 0.45); font-weight: bold;">
-        📤 صرف مساعدة جديدة
-      </a>
-      <a *ngIf="auth.getCurrentUser()?.role !== 'Admin' && auth.hasPermission('disbursement.execute')" routerLink="/area-distribution" routerLinkActive="active-link" style="background: rgba(16, 185, 129, 0.22); border: 1px solid rgba(16, 185, 129, 0.45); font-weight: bold;">
-        🚚 التوزيع الميداني للمناطق (صرف جماعي)
-      </a>
-      <a *ngIf="auth.getCurrentUser()?.role === 'Admin' || auth.hasPermission('disbursement.view')" routerLink="/distributions" routerLinkActive="active-link">
-        🔄 {{ auth.getCurrentUser()?.role === 'Admin' ? 'سجل حركات الصرف (عرض فقط)' : 'سجل حركات الصرف والتقارير' }}
-      </a>
-      <a *ngIf="auth.hasPermission('beneficiaries.create') || auth.hasPermission('beneficiaries.edit')" routerLink="/villages-management" routerLinkActive="active-link" style="background: rgba(38, 166, 154, 0.22); border: 1px solid rgba(38, 166, 154, 0.45); font-weight: bold;">
-        🏘️ دليل القرى والمناطق
-      </a>
-      <a *ngIf="auth.getCurrentUser()?.role === 'Admin'" routerLink="/expense-categories" routerLinkActive="active-link">💳 بنود وأنواع المصروفات</a>
-      <a *ngIf="auth.getCurrentUser()?.role === 'Admin' || auth.getCurrentUser()?.role === 'CharityManager'" routerLink="/suspension-reasons" routerLinkActive="active-link">⛔ أسباب إيقاف الملفات</a>
-      <a *ngIf="auth.getCurrentUser()?.role === 'Admin' || auth.getCurrentUser()?.role === 'CharityManager'" routerLink="/separation-reasons" routerLinkActive="active-link">✂️ أسباب انفصال الأفراد</a>
-
-      <!-- حركات وتشغيل الجمعيات فقط (مخازن، تبرعات، مصروفات، موظفين، أصناف، إعدادات) -->
-      <ng-container *ngIf="auth.getCurrentUser()?.role !== 'Admin'">
-        <a *ngIf="auth.hasPermission('inventory.view') || auth.hasPermission('inventory.manage')" routerLink="/items-catalog" routerLinkActive="active-link">🏷️ أصناف وخدمات جمعيتنا</a>
-        <a *ngIf="auth.hasPermission('inventory.view') || auth.hasPermission('inventory.manage')" routerLink="/inventory" routerLinkActive="active-link">📦 مخازن الجمعية والأرصدة</a>
-        <a *ngIf="auth.hasPermission('donations.view') || auth.hasPermission('donations.create')" routerLink="/donations" routerLinkActive="active-link">💰 إدارة التبرعات</a>
-        <a *ngIf="auth.hasPermission('expenses.manage')" routerLink="/expense-categories" routerLinkActive="active-link" style="font-weight: 700;">💳 بنود ومصروفات الجمعية</a>
-        <a *ngIf="auth.hasPermission('staff.manage')" routerLink="/staff" routerLinkActive="active-link">👥 فريق العمل وتفويض الصلاحيات</a>
-        <a *ngIf="auth.getCurrentUser()?.role === 'CharityManager'" routerLink="/audit-logs" routerLinkActive="active-link">📋 سجل عمليات الجمعية</a>
-        <hr *ngIf="auth.getCurrentUser()?.role === 'CharityManager'" style="border: 0; border-top: 1px solid rgba(255,255,255,0.15); width: 100%; margin: 8px 0;">
-        <a *ngIf="auth.getCurrentUser()?.role === 'CharityManager'" routerLink="/settings" routerLinkActive="active-link">⚙️ إعدادات الجمعية</a>
-      </ng-container>
-      
-      <div style="flex-grow: 1;"></div>
-      <button (click)="auth.logout()" style="background-color: #d32f2f; color: white; border: none; padding: 10px 14px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 15px; margin-top: 15px; font-weight: bold;">
-        🚪 تسجيل الخروج
-      </button>
+      <div class="nav-section-title">الرئيسية</div>
+      <a routerLink="/home" routerLinkActive="active-link"><span aria-hidden="true">⌂</span> الرئيسية</a>
+      <a *ngIf="auth.getCurrentUser()?.role === 'Admin'" routerLink="/dashboard" routerLinkActive="active-link"><span aria-hidden="true">▦</span> لوحة التحكم</a>
+      <a *ngIf="auth.getCurrentUser()?.role === 'Admin'" routerLink="/bi-analytics" routerLinkActive="active-link" title="ذكاء الأعمال والتحليلات"><span aria-hidden="true">◒</span> ذكاء الأعمال</a>
+      <a *ngIf="auth.getCurrentUser()?.role === 'Admin'" routerLink="/charities-admin" routerLinkActive="active-link"><span aria-hidden="true">▣</span> إدارة الجمعيات</a>
+      <div class="nav-section-title">المستفيدون</div>
+      <a *ngIf="auth.getCurrentUser()?.role === 'Admin' || auth.hasPermission('beneficiaries.view')" routerLink="/beneficiaries" routerLinkActive="active-link" title="إدارة وسجل المستفيدين"><span aria-hidden="true">♧</span> المستفيدون</a>
+      <a *ngIf="auth.hasPermission('beneficiaries.create') || auth.hasPermission('beneficiaries.edit')" routerLink="/villages-management" routerLinkActive="active-link"><span aria-hidden="true">⌘</span> دليل القرى والمناطق</a>
+      <a *ngIf="auth.getCurrentUser()?.role === 'Admin' || auth.getCurrentUser()?.role === 'CharityManager'" routerLink="/suspension-reasons" routerLinkActive="active-link"><span aria-hidden="true">!</span> أسباب الإيقاف</a>
+      <a *ngIf="auth.getCurrentUser()?.role === 'Admin' || auth.getCurrentUser()?.role === 'CharityManager'" routerLink="/separation-reasons" routerLinkActive="active-link"><span aria-hidden="true">×</span> أسباب الانفصال</a>
+      <div class="nav-section-title">الصرف والتوزيع</div>
+      <a *ngIf="auth.getCurrentUser()?.role !== 'Admin' && auth.hasPermission('disbursement.execute')" routerLink="/disbursement" routerLinkActive="active-link"><span aria-hidden="true">↗</span> صرف مساعدة</a>
+      <a *ngIf="auth.getCurrentUser()?.role !== 'Admin' && auth.hasPermission('disbursement.execute')" routerLink="/area-distribution" routerLinkActive="active-link" title="التوزيع الميداني للمناطق"><span aria-hidden="true">⇄</span> التوزيع الميداني</a>
+      <a *ngIf="auth.getCurrentUser()?.role === 'Admin' || auth.hasPermission('disbursement.view')" routerLink="/distributions" routerLinkActive="active-link"><span aria-hidden="true">↻</span> سجل الصرف</a>
+      <div class="nav-section-title">المخازن والمالية</div>
+      <ng-container *ngIf="auth.getCurrentUser()?.role !== 'Admin'"><a *ngIf="auth.hasPermission('inventory.view') || auth.hasPermission('inventory.manage')" routerLink="/items-catalog" routerLinkActive="active-link"><span aria-hidden="true">▤</span> الأصناف والخدمات</a><a *ngIf="auth.hasPermission('inventory.view') || auth.hasPermission('inventory.manage')" routerLink="/inventory" routerLinkActive="active-link"><span aria-hidden="true">▥</span> المخازن والأرصدة</a><a *ngIf="auth.hasPermission('donations.view') || auth.hasPermission('donations.create')" routerLink="/donations" routerLinkActive="active-link"><span aria-hidden="true">◉</span> التبرعات</a><a *ngIf="auth.hasPermission('expenses.manage')" routerLink="/expense-categories" routerLinkActive="active-link"><span aria-hidden="true">▤</span> المصروفات</a><a *ngIf="auth.hasPermission('staff.manage')" routerLink="/staff" routerLinkActive="active-link"><span aria-hidden="true">♙</span> فريق العمل</a></ng-container>
+      <div class="nav-section-title">الإدارة</div><a *ngIf="auth.getCurrentUser()?.role === 'CharityManager'" routerLink="/audit-logs" routerLinkActive="active-link"><span aria-hidden="true">≡</span> سجل العمليات</a><a *ngIf="auth.getCurrentUser()?.role === 'CharityManager'" routerLink="/settings" routerLinkActive="active-link"><span aria-hidden="true">⚙</span> الإعدادات</a>
     </div>
   </nav>
-
-  <!-- Main Content -->
-  <main class="main-content" [ngStyle]="{'padding': auth.isLoggedIn() ? '30px' : '0'}">
-    <!-- Top Bar Notice in Main Area -->
-    <div *ngIf="auth.isLoggedIn()" style="background: white; border-radius: 8px; padding: 14px 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; border-right: 4px solid;"
-         [style.border-color]="activeCharity()?.color || '#004d40'">
-      <div style="display: flex; align-items: center; gap: 12px;">
-        <span style="font-size: 26px;">{{ activeCharity()?.icon || '🏢' }}</span>
-        <div>
-          <div style="font-weight: bold; color: #333; font-size: 16px;">
-            <ng-container *ngIf="auth.getCurrentUser()?.role === 'Admin'; else charityAccount">أنت مسجل الدخول كأدمن شبكة الجمعيات</ng-container>
-            <ng-template #charityAccount>أنت مسجل الدخول بحساب: <span [style.color]="activeCharity()?.color || '#004d40'">{{ activeCharity()?.name }}</span></ng-template>
-          </div>
-          <div style="font-size: 12px; color: #666; margin-top: 2px;">
-            <ng-container *ngIf="auth.getCurrentUser()?.role === 'Admin'; else charityNotice">لوحة التحكم وذكاء الأعمال يعرضان مؤشرات الشبكة، ويمكنك إضافة الجمعيات ومستخدميها الأساسيين.</ng-container>
-            <ng-template #charityNotice>{{ activeCharity()?.license }} — حركات الصرف والمخازن والتبرعات خاصة بجمعيتكم فقط، بينما قاعدة المستفيدين وسجل استحقاقهم مشتركة بالشبكة.</ng-template>
-          </div>
-        </div>
-      </div>
-
-      <div style="display: flex; align-items: center; gap: 12px;">
-        <span style="font-size: 13px; color: #555;">المستخدم: <strong>{{ auth.getCurrentUser()?.username }}</strong></span>
-        <button (click)="auth.logout()" 
-                style="background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold; display: flex; align-items: center; gap: 5px;">
-          🚪 خروج
-        </button>
-      </div>
-    </div>
-
-    <router-outlet></router-outlet>
-  </main>
-
+  <main id="main-content" class="main-content" [class.logged-in]="auth.isLoggedIn()"><div *ngIf="auth.isLoggedIn()" class="slim-topbar"><span aria-hidden="true">✦</span><strong>{{ activeCharity()?.name || title() }}</strong><span class="breadcrumb">/ {{ title() }}</span></div><router-outlet></router-outlet></main>
 </div>
