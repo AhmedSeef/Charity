@@ -12,11 +12,15 @@ import { AuthService } from './auth.service';
   styleUrls: ['./app.css']
 })
 export class App implements OnInit {
+  mobileMenuOpen = false;
   title = signal('إدارة شبكة الجمعيات');
   logo = signal('');
   activeCharity = signal<any>(null);
 
   constructor(public api: Api, public auth: AuthService, private cdr: ChangeDetectorRef) {}
+
+  toggleMobileMenu() { this.mobileMenuOpen = !this.mobileMenuOpen; }
+  closeMobileMenu() { this.mobileMenuOpen = false; }
 
   ngOnInit() {
     this.initUserCharity();
@@ -33,6 +37,11 @@ export class App implements OnInit {
       const activeId = this.api.getActiveCharityId();
       const current = list.find(c => c.id === activeId) || list[0];
       this.activeCharity.set(current);
+      if (current?.color) {
+        document.documentElement.style.setProperty('--brand', current.color);
+        document.documentElement.style.setProperty('--brand-600', `color-mix(in srgb, ${current.color} 82%, #000)`);
+        document.documentElement.style.setProperty('--brand-50', `color-mix(in srgb, ${current.color} 10%, #fff)`);
+      }
       if (current && !isAdmin) {
         this.title.set(current.name);
         this.logo.set(current.logo || '');
