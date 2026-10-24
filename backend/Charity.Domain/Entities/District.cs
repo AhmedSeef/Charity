@@ -11,4 +11,5 @@ public class District : BaseEntity
     public Governorate? Governorate { get; set; }
     public ICollection<AddressRecord> AddressRecords { get; set; } = new List<AddressRecord>();
     public ICollection<Village> Villages { get; set; } = new List<Village>();
+    public ICollection<VillageArea> Areas { get; set; } = new List<VillageArea>();
 }

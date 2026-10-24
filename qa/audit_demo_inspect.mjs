@@ -23,7 +23,10 @@ for (const charity of fixture.charities) {
     logs.push(...(await api(`/api/audit-logs?page=${page}&pageSize=100`, token)).items);
   }
   const missing = logs.filter(x => !x.userId || !x.username || !x.action || !x.entityType || !x.entityId || !x.occurredAt);
-  const wrongActor = logs.filter(x => ![charity.manager, ...Object.values(charity.staff)].includes(x.username));
+  // The platform administrator creates the charity, manager and tenant defaults.
+  const provisioningTypes = ['Charity', 'ApplicationUser', 'ExpenseCategory', 'SeparationReason', 'SuspensionReason'];
+  const wrongActor = logs.filter(x => ![charity.manager, ...Object.values(charity.staff)].includes(x.username)
+    && !(x.username === 'admin' && provisioningTypes.includes(x.entityType)));
   const actors = Object.fromEntries(Object.entries(Object.groupBy(logs, x => x.username)).map(([actor, events]) => [actor, events.length]));
   const entities = Object.fromEntries(Object.entries(Object.groupBy(logs, x => x.entityType)).map(([entity, events]) => [entity, events.length]));
   const actions = Object.fromEntries(Object.entries(Object.groupBy(logs, x => x.action)).map(([action, events]) => [action, events.length]));

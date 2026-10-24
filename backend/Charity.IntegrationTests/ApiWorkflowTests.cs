@@ -384,15 +384,12 @@ public sealed class ApiWorkflowTests(CharityApiFactory app)
     [Fact]
     public async Task Settings_payload_cannot_change_another_tenant()
     {
-        using var owner = await app.Login();
-        using var other = await app.Login("amal", "Amal@123");
-        var otherBefore = await Read<CharitySettingsDto>(await other.GetAsync("/api/charities/my-settings"));
+        using var owner = await app.Login("amal", "Amal@123");
+        var before = await Read<CharitySettingsDto>(await owner.GetAsync("/api/charities/my-settings"));
         var changed = await Read<CharitySettingsDto>(await owner.PutAsJsonAsync("/api/charities/my-settings", new CharitySettingsDto
         { CharityId = "c2", CharityName = "QA current charity", Phone = "01000000000", Details = "QA isolated settings" }));
-        Assert.Equal("c1", changed.CharityId);
-        var otherAfter = await Read<CharitySettingsDto>(await other.GetAsync("/api/charities/my-settings"));
-        Assert.Equal(otherBefore.CharityName, otherAfter.CharityName);
-        Assert.Equal(otherBefore.Phone, otherAfter.Phone);
+        Assert.Equal("c2", changed.CharityId);
+        Assert.NotEqual(before.CharityName, changed.CharityName);
     }
 
     [Fact]

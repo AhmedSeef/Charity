@@ -405,8 +405,11 @@ export class Api {
   }
 
   // Village Areas (المناطق والأحياء التابعة للقرى)
-  getVillageAreas(villageId?: string): Observable<any[]> {
-    const q = villageId ? `?villageId=${encodeURIComponent(villageId)}` : '';
+  getVillageAreas(villageId?: string, districtId?: string): Observable<any[]> {
+    const params: string[] = [];
+    if (villageId) params.push(`villageId=${encodeURIComponent(villageId)}`);
+    if (districtId) params.push(`districtId=${encodeURIComponent(districtId)}`);
+    const q = params.length ? `?${params.join('&')}` : '';
     return this.http.get<any[]>(`${this.apiUrl}/lookups/village-areas${q}`);
   }
 

@@ -445,12 +445,12 @@ public static class EntityMappingExtensions
     public static VillageAreaDto ToDto(this VillageArea a) => new VillageAreaDto()
     {
         Id = a.Id,
-        VillageId = a.VillageId,
-        VillageName = a.Village?.Name ?? string.Empty,
-        DistrictId = a.Village?.DistrictId ?? string.Empty,
-        DistrictName = a.Village?.District?.Name ?? string.Empty,
-        GovernorateId = a.Village?.District?.GovernorateId ?? string.Empty,
-        GovernorateName = a.Village?.District?.Governorate?.Name ?? string.Empty,
+          VillageId = a.VillageId ?? string.Empty,
+          VillageName = a.Village?.Name ?? string.Empty,
+          DistrictId = a.DistrictId ?? a.Village?.DistrictId ?? string.Empty,
+          DistrictName = a.District?.Name ?? a.Village?.District?.Name ?? string.Empty,
+          GovernorateId = a.District?.GovernorateId ?? a.Village?.District?.GovernorateId ?? string.Empty,
+          GovernorateName = a.District?.Governorate?.Name ?? a.Village?.District?.Governorate?.Name ?? string.Empty,
         Name = a.Name,
         NameEn = a.NameEn,
         Notes = a.Notes,

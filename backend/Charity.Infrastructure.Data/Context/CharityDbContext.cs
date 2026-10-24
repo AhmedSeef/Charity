@@ -304,6 +304,7 @@ public class CharityDbContext : IdentityDbContext<ApplicationUser, IdentityRole,
              .WithMany(g => g.Districts)
              .HasForeignKey(x => x.GovernorateId)
              .OnDelete(DeleteBehavior.Cascade);
+
         });
 
         // AddressRecord configuration (جدول العناوين المستقل)
@@ -469,6 +470,14 @@ public class CharityDbContext : IdentityDbContext<ApplicationUser, IdentityRole,
              .WithMany(v => v.Areas)
              .HasForeignKey(x => x.VillageId)
              .OnDelete(DeleteBehavior.Cascade);
+
+            b.Property(x => x.DistrictId).HasMaxLength(50).IsRequired(false);
+            b.HasOne(x => x.District)
+             .WithMany(d => d.Areas)
+             .HasForeignKey(x => x.DistrictId)
+             .OnDelete(DeleteBehavior.Restrict);
+            b.HasCheckConstraint("CK_VillageAreas_ExactlyOneParent",
+                "([VillageId] IS NOT NULL AND [DistrictId] IS NULL) OR ([VillageId] IS NULL AND [DistrictId] IS NOT NULL)");
         });
 
         // ==========================================

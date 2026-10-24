@@ -1648,6 +1648,10 @@ namespace Charity.Infrastructure.Data.Migrations
                     b.Property<string>("DeletedByName")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("DistrictId")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
@@ -1679,14 +1683,18 @@ namespace Charity.Infrastructure.Data.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("VillageId")
-                        .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
 
+                    b.HasIndex("DistrictId");
+
                     b.HasIndex("VillageId");
 
-                    b.ToTable("VillageAreas", (string)null);
+                    b.ToTable("VillageAreas", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_VillageAreas_ExactlyOneParent", "([VillageId] IS NOT NULL AND [DistrictId] IS NULL) OR ([VillageId] IS NULL AND [DistrictId] IS NOT NULL)");
+                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -2004,11 +2012,17 @@ namespace Charity.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("Charity.Domain.Entities.VillageArea", b =>
                 {
+                    b.HasOne("Charity.Domain.Entities.District", "District")
+                        .WithMany("Areas")
+                        .HasForeignKey("DistrictId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("Charity.Domain.Entities.Village", "Village")
                         .WithMany("Areas")
                         .HasForeignKey("VillageId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("District");
 
                     b.Navigation("Village");
                 });
@@ -2091,6 +2105,8 @@ namespace Charity.Infrastructure.Data.Migrations
             modelBuilder.Entity("Charity.Domain.Entities.District", b =>
                 {
                     b.Navigation("AddressRecords");
+
+                    b.Navigation("Areas");
 
                     b.Navigation("Villages");
                 });

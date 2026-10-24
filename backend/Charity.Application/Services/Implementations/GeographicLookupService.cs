@@ -40,6 +40,7 @@ public class GeographicLookupService : IGeographicLookupService
 
     public async Task<IReadOnlyList<GovernorateDto>> GetGovernoratesAsync()
     {
+        LookupAccess.DemandGeographyRead(_currentUserService);
         var govs = await _govRepo.GetAllAsync();
         var allDistricts = await _districtRepo.GetAllAsync();
 
@@ -57,6 +58,7 @@ public class GeographicLookupService : IGeographicLookupService
 
     public async Task<IReadOnlyList<DistrictDto>> GetDistrictsAsync(string? governorateId = null)
     {
+        LookupAccess.DemandGeographyRead(_currentUserService);
         var districts = string.IsNullOrWhiteSpace(governorateId)
             ? await _districtRepo.GetAllAsync()
             : await _districtRepo.FindAsync(d => d.GovernorateId == governorateId);
@@ -86,6 +88,7 @@ public class GeographicLookupService : IGeographicLookupService
 
     public async Task<IReadOnlyList<VillageDto>> GetVillagesAsync(string? districtId = null)
     {
+        LookupAccess.DemandGeographyRead(_currentUserService);
         var villages = string.IsNullOrWhiteSpace(districtId)
             ? await _villageRepo.GetAllAsync()
             : await _villageRepo.FindAsync(v => v.DistrictId == districtId);
@@ -119,6 +122,7 @@ public class GeographicLookupService : IGeographicLookupService
 
     public async Task<VillageDto> GetVillageByIdAsync(string id)
     {
+        LookupAccess.DemandGeographyRead(_currentUserService);
         var village = await _villageRepo.GetByIdAsync(id);
         if (village == null || !TenantAccess.CanRead(village.CharityId, _currentUserService))
             throw new EntityNotFoundException(nameof(Village), id);
@@ -143,6 +147,7 @@ public class GeographicLookupService : IGeographicLookupService
 
     public async Task<VillageDto> CreateVillageAsync(CreateVillageDto dto)
     {
+        LookupAccess.DemandGeographyWrite(_currentUserService);
         if (string.IsNullOrWhiteSpace(_currentUserService.CharityId) && _currentUserService.Role != "Admin")
             TenantAccess.RequireCharity(_currentUserService);
         if (string.IsNullOrWhiteSpace(dto.Name))
@@ -181,6 +186,7 @@ public class GeographicLookupService : IGeographicLookupService
 
     public async Task<VillageDto> UpdateVillageAsync(string id, UpdateVillageDto dto)
     {
+        LookupAccess.DemandGeographyWrite(_currentUserService);
         var village = await _villageRepo.GetByIdAsync(id);
         if (village == null)
             throw new EntityNotFoundException(nameof(Village), id);
@@ -211,6 +217,7 @@ public class GeographicLookupService : IGeographicLookupService
 
     public async Task DeleteVillageAsync(string id)
     {
+        LookupAccess.DemandGeographyWrite(_currentUserService);
         var village = await _villageRepo.GetByIdAsync(id);
         if (village == null)
             throw new EntityNotFoundException(nameof(Village), id);
@@ -232,11 +239,13 @@ public class GeographicLookupService : IGeographicLookupService
     // Village Areas (المناطق والأحياء التابعة للقرى)
     // ==========================================
 
-    public async Task<IReadOnlyList<VillageAreaDto>> GetVillageAreasAsync(string? villageId = null)
+    public async Task<IReadOnlyList<VillageAreaDto>> GetVillageAreasAsync(string? villageId = null, string? districtId = null)
     {
-        var areas = string.IsNullOrWhiteSpace(villageId)
+        LookupAccess.DemandGeographyRead(_currentUserService);
+        var areas = string.IsNullOrWhiteSpace(villageId) && string.IsNullOrWhiteSpace(districtId)
             ? await _villageAreaRepo.GetAllAsync()
-            : await _villageAreaRepo.FindAsync(a => a.VillageId == villageId);
+            : await _villageAreaRepo.FindAsync(a => (!string.IsNullOrWhiteSpace(villageId) && a.VillageId == villageId)
+                || (!string.IsNullOrWhiteSpace(districtId) && (a.DistrictId == districtId || (a.Village != null && a.Village.DistrictId == districtId))));
 
         var allVillages = (await _villageRepo.GetAllAsync()).ToDictionary(v => v.Id);
         var allDistricts = (await _districtRepo.GetAllAsync()).ToDictionary(d => d.Id);
@@ -259,7 +268,7 @@ public class GeographicLookupService : IGeographicLookupService
             .Select(a =>
             {
                 var dto = a.ToDto();
-                if (allVillages.TryGetValue(a.VillageId, out var vil))
+                if (!string.IsNullOrWhiteSpace(a.VillageId) && allVillages.TryGetValue(a.VillageId, out var vil))
                 {
                     dto.VillageName = vil.Name;
                     dto.DistrictId = vil.DistrictId;
@@ -281,6 +290,7 @@ public class GeographicLookupService : IGeographicLookupService
 
     public async Task<VillageAreaDto> GetVillageAreaByIdAsync(string id)
     {
+        LookupAccess.DemandGeographyRead(_currentUserService);
         var area = await _villageAreaRepo.GetByIdAsync(id);
         if (area == null || !TenantAccess.CanRead(area.CharityId, _currentUserService))
             throw new EntityNotFoundException(nameof(VillageArea), id);
@@ -310,20 +320,31 @@ public class GeographicLookupService : IGeographicLookupService
 
     public async Task<VillageAreaDto> CreateVillageAreaAsync(CreateVillageAreaDto dto)
     {
+        LookupAccess.DemandGeographyWrite(_currentUserService);
         if (string.IsNullOrWhiteSpace(dto.Name))
             throw new ValidationDomainException("اسم المنطقة أو الحي مطلوب.");
 
-        if (string.IsNullOrWhiteSpace(dto.VillageId))
-            throw new ValidationDomainException("يجب اختيار القرية التابعة لها المنطقة.");
+        if (string.IsNullOrWhiteSpace(dto.VillageId) == string.IsNullOrWhiteSpace(dto.DistrictId))
+            throw new ValidationDomainException("يجب اختيار قرية أو مركز/حي واحد فقط لتكون المنطقة تابعة له.");
 
-        var village = await _villageRepo.GetByIdAsync(dto.VillageId);
-        if (village == null)
-            throw new EntityNotFoundException(nameof(Village), dto.VillageId);
-        TenantAccess.DemandOwner(village.CharityId, _currentUserService);
+        Village? village = null;
+        District? district = null;
+        if (!string.IsNullOrWhiteSpace(dto.VillageId))
+        {
+            village = await _villageRepo.GetByIdAsync(dto.VillageId);
+            if (village == null) throw new EntityNotFoundException(nameof(Village), dto.VillageId);
+            TenantAccess.DemandOwner(village.CharityId, _currentUserService);
+        }
+        else
+        {
+            district = await _districtRepo.GetByIdAsync(dto.DistrictId!);
+            if (district == null) throw new EntityNotFoundException(nameof(District), dto.DistrictId!);
+            TenantAccess.RequireCharity(_currentUserService);
+        }
 
         var nameTrimmed = dto.Name.Trim();
         var duplicate = await _villageAreaRepo.FirstOrDefaultAsync(a =>
-            a.VillageId == dto.VillageId && a.CharityId == _currentUserService.CharityId && a.Name.ToLower() == nameTrimmed.ToLower());
+            a.VillageId == dto.VillageId && a.DistrictId == dto.DistrictId && a.CharityId == _currentUserService.CharityId && a.Name.ToLower() == nameTrimmed.ToLower());
 
         if (duplicate != null)
             throw new ValidationDomainException($"المنطقة '{nameTrimmed}' مسجلة بالفعل في هذه القرية.");
@@ -332,6 +353,7 @@ public class GeographicLookupService : IGeographicLookupService
         {
             Id = Guid.NewGuid().ToString(),
             VillageId = dto.VillageId,
+            DistrictId = dto.DistrictId,
             Name = nameTrimmed,
             NameEn = dto.NameEn?.Trim() ?? string.Empty,
             Notes = dto.Notes?.Trim() ?? string.Empty,
@@ -348,6 +370,7 @@ public class GeographicLookupService : IGeographicLookupService
 
     public async Task<VillageAreaDto> UpdateVillageAreaAsync(string id, UpdateVillageAreaDto dto)
     {
+        LookupAccess.DemandGeographyWrite(_currentUserService);
         var area = await _villageAreaRepo.GetByIdAsync(id);
         if (area == null)
             throw new EntityNotFoundException(nameof(VillageArea), id);
@@ -357,8 +380,8 @@ public class GeographicLookupService : IGeographicLookupService
             throw new ValidationDomainException("اسم المنطقة مطلوب.");
 
         var nameTrimmed = dto.Name.Trim();
-        var duplicate = await _villageAreaRepo.FirstOrDefaultAsync(a =>
-            a.VillageId == area.VillageId &&
+          var duplicate = await _villageAreaRepo.FirstOrDefaultAsync(a =>
+              a.VillageId == area.VillageId && a.DistrictId == area.DistrictId &&
             a.CharityId == _currentUserService.CharityId &&
             a.Id != id &&
             a.Name.ToLower() == nameTrimmed.ToLower());
@@ -379,6 +402,7 @@ public class GeographicLookupService : IGeographicLookupService
 
     public async Task DeleteVillageAreaAsync(string id)
     {
+        LookupAccess.DemandGeographyWrite(_currentUserService);
         var area = await _villageAreaRepo.GetByIdAsync(id);
         if (area == null)
             throw new EntityNotFoundException(nameof(VillageArea), id);
@@ -402,6 +426,7 @@ public class GeographicLookupService : IGeographicLookupService
         string? districtId = null,
         int limit = 10)
     {
+        LookupAccess.DemandGeographyRead(_currentUserService);
         var allAddresses = await _addressRepo.GetAllAsync();
         var allGovs = (await _govRepo.GetAllAsync()).ToDictionary(g => g.Id, g => g.Name);
         var allDistricts = (await _districtRepo.GetAllAsync()).ToDictionary(d => d.Id, d => d.Name);
@@ -479,6 +504,7 @@ public class GeographicLookupService : IGeographicLookupService
 
     public async Task<AddressRecordDto> RecordAddressUsageAsync(CreateAddressRecordDto dto)
     {
+        LookupAccess.DemandGeographyWrite(_currentUserService);
         if (string.IsNullOrWhiteSpace(_currentUserService.CharityId) && _currentUserService.Role != "Admin")
             TenantAccess.RequireCharity(_currentUserService);
         if (string.IsNullOrWhiteSpace(dto.AddressText))
@@ -518,6 +544,7 @@ public class GeographicLookupService : IGeographicLookupService
 
     public async Task<AddressRecordDto> CreateCustomAddressAsync(CreateAddressRecordDto dto)
     {
+        LookupAccess.DemandGeographyWrite(_currentUserService);
         return await RecordAddressUsageAsync(dto);
     }
 }

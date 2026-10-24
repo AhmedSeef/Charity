@@ -8,7 +8,7 @@ describe('App tenant shell', () => {
       getCharities: () => of([{ id: 'c1', name: 'الأولى' }, { id: 'c2', name: 'الثانية' }]),
       getSettings: () => of({ charityName: 'الاسم المعتمد', logo: 'logo.png' })
     };
-    const auth: any = { getCurrentUser: () => ({ charityId: 'c2' }) };
+    const auth: any = { getCurrentUser: () => ({ charityId: 'c2', role: 'CharityManager' }) };
     const app = new App(api, auth, { detectChanges: () => {} } as any);
     app.initUserCharity();
     expect(api.setActiveCharityId).toHaveBeenCalledWith('c2');
