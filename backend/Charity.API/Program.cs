@@ -18,29 +18,20 @@ using Microsoft.OpenApi;
 using Serilog;
 using Serilog.Events;
 
-var builder = WebApplication.CreateBuilder(args);
-
-// Keep daily diagnostic files beside the application, independent of the working directory.
-var logsDirectory = Path.Combine(builder.Environment.ContentRootPath, "logs");
+// This path remains beside the executable, even when launched from a shortcut or another directory.
+var logsDirectory = Path.Combine(AppContext.BaseDirectory, "logs");
 Directory.CreateDirectory(logsDirectory);
-builder.Services.AddSerilog((services, configuration) => configuration
+Serilog.Debugging.SelfLog.Enable(message => Console.Error.WriteLine("Serilog: " + message));
+Log.Logger = ApplicationLogging.Configure(new LoggerConfiguration(), logsDirectory).CreateBootstrapLogger();
+
+try
+{
+Log.Information("Starting Charity API. Daily log directory: {LogsDirectory}", logsDirectory);
+var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddSerilog((services, configuration) => ApplicationLogging.Configure(configuration, logsDirectory)
     .ReadFrom.Services(services)
-    .MinimumLevel.Information()
-    .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
-    .MinimumLevel.Override("Microsoft.EntityFrameworkCore.Database.Command", LogEventLevel.Warning)
-    .Enrich.FromLogContext()
     .Enrich.WithProperty("Application", builder.Environment.ApplicationName)
-    .Enrich.WithProperty("Environment", builder.Environment.EnvironmentName)
-    .Enrich.WithProperty("MachineName", Environment.MachineName)
-    .WriteTo.Console()
-    .WriteTo.File(
-        path: Path.Combine(logsDirectory, "log-.log"),
-        restrictedToMinimumLevel: LogEventLevel.Warning,
-        rollingInterval: RollingInterval.Day,
-        retainedFileCountLimit: 30,
-        fileSizeLimitBytes: null,
-        shared: true,
-        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {SourceContext} {Message:lj}{NewLine}Properties: {Properties:j}{NewLine}{Exception}{NewLine}"));
+    .Enrich.WithProperty("Environment", builder.Environment.EnvironmentName));
 
 // 1. Database Connection
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
@@ -219,6 +210,8 @@ using (var scope = app.Services.CreateScope())
     catch (Exception ex)
     {
         logger.LogError(ex, "An error occurred while migrating or seeding the database.");
+        if (app.Configuration.GetValue("DataInitialization:FailOnStartupError", false))
+            throw;
     }
 }
 
@@ -236,6 +229,17 @@ app.Use(async (context, next) =>
     {
         await next(context);
     }
+});
+app.UseSerilogRequestLogging(options =>
+{
+    options.GetLevel = (context, elapsed, exception) => exception != null || context.Response.StatusCode >= 500
+        ? LogEventLevel.Error
+        : context.Response.StatusCode >= 400 ? LogEventLevel.Warning : LogEventLevel.Information;
+    options.EnrichDiagnosticContext = (diagnostics, context) =>
+    {
+        diagnostics.Set("RequestId", context.TraceIdentifier);
+        diagnostics.Set("TraceId", System.Diagnostics.Activity.Current?.TraceId.ToString());
+    };
 });
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
@@ -258,9 +262,23 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapGet("/health/ready", async (CharityDbContext db, CancellationToken cancellationToken) =>
+    await db.Database.CanConnectAsync(cancellationToken)
+        ? Results.Ok(new { status = "ready" })
+        : Results.StatusCode(StatusCodes.Status503ServiceUnavailable));
 app.MapFallbackToFile("index.html");
 
 app.Run();
+}
+catch (Exception ex) when (ex is not Microsoft.Extensions.Hosting.HostAbortedException)
+{
+    Log.Fatal(ex, "Charity API terminated unexpectedly during startup or execution.");
+    throw;
+}
+finally
+{
+    await Log.CloseAndFlushAsync();
+}
 
 // Expose the API entry point to the integration test host.
 public partial class Program { }

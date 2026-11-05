@@ -20,6 +20,7 @@ namespace Charity.IntegrationTests;
 // Every run owns one randomly named database; the configured application DB is never used.
 public sealed class CharityApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
+    public const string AdminPassword = "IntegrationOnly@2026!";
     public string DatabaseName { get; } = $"CharityQA_Integration_{Guid.NewGuid():N}";
     private string TestConnectionString => new SqlConnectionStringBuilder
     {
@@ -51,7 +52,7 @@ public sealed class CharityApiFactory : WebApplicationFactory<Program>, IAsyncLi
             using var scope = Services.CreateScope();
             var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
             var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-            await DbInitializer.SeedAsync(db, userManager, roleManager);
+            await DbInitializer.SeedAsync(db, userManager, roleManager, initialAdminPassword: AdminPassword);
             await DbInitializer.SeedTestFixturesAsync(db);
 
             var adminUser = await userManager.FindByNameAsync("admin");
@@ -107,7 +108,7 @@ public sealed class CharityApiFactory : WebApplicationFactory<Program>, IAsyncLi
         });
     }
 
-    public async Task<HttpClient> Login(string username = "admin", string password = "admin")
+    public async Task<HttpClient> Login(string username = "admin", string password = AdminPassword)
     {
         var client = CreateClient();
         var response = await client.PostAsJsonAsync("/api/auth/login", new LoginRequestDto { Username = username, Password = password });

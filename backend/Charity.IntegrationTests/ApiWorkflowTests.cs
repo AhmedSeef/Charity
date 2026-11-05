@@ -82,13 +82,13 @@ public sealed class ApiWorkflowTests(CharityApiFactory app)
     }
 
     [Fact]
-    public async Task Demo_admin_password_is_stored_in_identity()
+    public async Task Configured_admin_password_is_stored_in_identity()
     {
         using var client = app.CreateClient();
-        var response = await client.PostAsJsonAsync("/api/auth/login", new { username = "admin", password = "admin" });
+        var response = await client.PostAsJsonAsync("/api/auth/login", new { username = "admin", password = CharityApiFactory.AdminPassword });
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var user = await app.WithDb(db => db.Users.SingleAsync(u => u.UserName == "admin"));
-        Assert.NotEqual("admin", user.PasswordHash);
+        Assert.NotEqual(CharityApiFactory.AdminPassword, user.PasswordHash);
     }
 
     [Fact]
