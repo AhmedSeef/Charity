@@ -31,4 +31,12 @@ public class AuthController : ControllerBase
         if (user == null) return NotFound("المستخدم غير موجود");
         return Ok(user);
     }
+
+    [Authorize]
+    [HttpPost("change-password")]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto request)
+    {
+        await _authService.ChangePasswordAsync(request);
+        return NoContent();
+    }
 }

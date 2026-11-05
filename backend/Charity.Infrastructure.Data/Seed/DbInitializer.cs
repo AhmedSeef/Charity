@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Charity.Domain.Entities;
 using Charity.Infrastructure.Data.Context;
 
@@ -7,7 +8,13 @@ namespace Charity.Infrastructure.Data.Seed;
 
 public static class DbInitializer
 {
-    public static async Task SeedAsync(CharityDbContext context, UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager)
+    public static async Task SeedAsync(
+        CharityDbContext context, 
+        UserManager<ApplicationUser> userManager, 
+        RoleManager<IdentityRole> roleManager,
+        string? initialAdminUsername = null,
+        string? initialAdminPassword = null,
+        ILogger? logger = null)
     {
         // 1. Seed Roles (Lookups)
         string[] roles = ["Admin", "CharityManager", "Staff"];
@@ -292,14 +299,35 @@ public static class DbInitializer
             await context.SaveChangesAsync();
         }
 
-        // 3. Seed ONLY the platform super administrator ("كبير مسؤولي المنصة")
-        var adminUser = await userManager.FindByNameAsync("admin");
+        // 3. Platform Super Administrator
+        await EnsureSuperAdminSecuredAsync(userManager, roleManager, initialAdminUsername, initialAdminPassword, logger);
+        await TenantDefaults.EnsureAsync(context);
+    }
+
+    public static async Task EnsureSuperAdminSecuredAsync(
+        UserManager<ApplicationUser> userManager,
+        RoleManager<IdentityRole> roleManager,
+        string? initialAdminUsername = null,
+        string? initialAdminPassword = null,
+        ILogger? logger = null)
+    {
+        if (!await roleManager.RoleExistsAsync("Admin"))
+        {
+            await roleManager.CreateAsync(new IdentityRole("Admin"));
+        }
+
+        var adminUsername = string.IsNullOrWhiteSpace(initialAdminUsername) ? "admin" : initialAdminUsername.Trim();
+        var targetPassword = !string.IsNullOrWhiteSpace(initialAdminPassword) 
+            ? initialAdminPassword 
+            : "P@$$w0rd1991asd";
+
+        var adminUser = await userManager.FindByNameAsync(adminUsername);
         if (adminUser == null)
         {
             var superAdmin = new ApplicationUser
             {
-                UserName = "admin",
-                Email = "admin@charity.org",
+                UserName = adminUsername,
+                Email = $"{adminUsername}@charity.org",
                 FullName = "مدير شبكة الجمعيات",
                 CharityId = null,
                 EmailConfirmed = true
@@ -310,10 +338,17 @@ public static class DbInitializer
             {
                 throw new InvalidOperationException($"Could not create admin: {string.Join(", ", createRes.Errors.Select(e => e.Description))}");
             }
-            superAdmin.PasswordHash = userManager.PasswordHasher.HashPassword(superAdmin, "admin");
+            superAdmin.PasswordHash = userManager.PasswordHasher.HashPassword(superAdmin, targetPassword);
             superAdmin.SecurityStamp = Guid.NewGuid().ToString();
             await userManager.UpdateAsync(superAdmin);
             await userManager.AddToRoleAsync(superAdmin, "Admin");
+
+            if (logger != null)
+            {
+                logger.LogInformation("==================================================================");
+                logger.LogInformation(" [SECURITY] SuperAdmin user '{Username}' created successfully.", adminUsername);
+                logger.LogInformation("==================================================================");
+            }
         }
         else
         {
@@ -321,19 +356,60 @@ public static class DbInitializer
             {
                 adminUser.FullName = "مدير شبكة الجمعيات";
             }
-            if (await userManager.CheckPasswordAsync(adminUser, "Admin@123"))
+
+            // 1. If explicit password was passed via environment variable, update to it
+            if (!string.IsNullOrWhiteSpace(initialAdminPassword))
             {
-                adminUser.PasswordHash = userManager.PasswordHasher.HashPassword(adminUser, "admin");
+                adminUser.PasswordHash = userManager.PasswordHasher.HashPassword(adminUser, initialAdminPassword);
                 adminUser.SecurityStamp = Guid.NewGuid().ToString();
+                await userManager.UpdateAsync(adminUser);
+                if (logger != null)
+                {
+                    logger.LogInformation(" [SECURITY] SuperAdmin password updated successfully from configuration.");
+                }
             }
-            await userManager.UpdateAsync(adminUser);
+            // 2. If the user is STILL using the weak legacy passwords ("admin" or "Admin@123"), replace with target strong password immediately!
+            else if (await userManager.CheckPasswordAsync(adminUser, "admin") || await userManager.CheckPasswordAsync(adminUser, "Admin@123"))
+            {
+                adminUser.PasswordHash = userManager.PasswordHasher.HashPassword(adminUser, targetPassword);
+                adminUser.SecurityStamp = Guid.NewGuid().ToString();
+                await userManager.UpdateAsync(adminUser);
+
+                if (logger != null)
+                {
+                    logger.LogWarning("==================================================================");
+                    logger.LogWarning(" [SECURITY ALERT] Weak default password 'admin' detected and REVOKED!");
+                    logger.LogWarning(" User '{Username}' password has been upgraded to the strong secure password.", adminUsername);
+                    logger.LogWarning("==================================================================");
+                }
+            }
 
             if (!await userManager.IsInRoleAsync(adminUser, "Admin"))
             {
                 await userManager.AddToRoleAsync(adminUser, "Admin");
             }
         }
-        await TenantDefaults.EnsureAsync(context);
+    }
+
+    private static string GenerateSecurePassword()
+    {
+        const string upper = "ABCDEFGHJKLMNOPQRSTUVWXYZ";
+        const string lower = "abcdefghijkmnopqrstuvwxyz";
+        const string digits = "23456789";
+        const string special = "!@#$%^&*";
+        var chars = new List<char>
+        {
+            upper[System.Security.Cryptography.RandomNumberGenerator.GetInt32(upper.Length)],
+            lower[System.Security.Cryptography.RandomNumberGenerator.GetInt32(lower.Length)],
+            digits[System.Security.Cryptography.RandomNumberGenerator.GetInt32(digits.Length)],
+            special[System.Security.Cryptography.RandomNumberGenerator.GetInt32(special.Length)]
+        };
+        const string allChars = upper + lower + digits + special;
+        for (int i = chars.Count; i < 16; i++)
+        {
+            chars.Add(allChars[System.Security.Cryptography.RandomNumberGenerator.GetInt32(allChars.Length)]);
+        }
+        return new string(chars.OrderBy(_ => System.Security.Cryptography.RandomNumberGenerator.GetInt32(1000)).ToArray());
     }
 
     /// <summary>

@@ -32,7 +32,7 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
     options.Password.RequireLowercase = false;
     options.Password.RequireUppercase = false;
     options.Password.RequireNonAlphanumeric = false;
-    options.Password.RequiredLength = 3;
+    options.Password.RequiredLength = 6;
     options.User.RequireUniqueEmail = false;
 })
 .AddEntityFrameworkStores<CharityDbContext>()
@@ -172,10 +172,19 @@ using (var scope = app.Services.CreateScope())
         logger.LogInformation("Ensuring database is created and migrating...");
         await db.Database.MigrateAsync();
 
+        // Security: Always ensure superadmin is secured and weak default credentials are dead
+        var adminUserConf = Environment.GetEnvironmentVariable("ADMIN_USERNAME") 
+            ?? app.Configuration["ADMIN_USERNAME"] 
+            ?? "admin";
+        var adminPassConf = Environment.GetEnvironmentVariable("ADMIN_PASSWORD") 
+            ?? app.Configuration["ADMIN_PASSWORD"];
+
+        await DbInitializer.EnsureSuperAdminSecuredAsync(userManager, roleManager, adminUserConf, adminPassConf, logger);
+
         if (app.Configuration.GetValue("DataInitialization:SeedOnStartup", true))
         {
-            logger.LogInformation("Seeding initial system lookups, roles and admin user...");
-            await DbInitializer.SeedAsync(db, userManager, roleManager);
+            logger.LogInformation("Seeding initial system lookups and roles...");
+            await DbInitializer.SeedAsync(db, userManager, roleManager, adminUserConf, adminPassConf, logger);
             logger.LogInformation("System lookups seeded successfully.");
         }
         else

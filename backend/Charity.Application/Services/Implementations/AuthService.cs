@@ -100,6 +100,26 @@ public class AuthService : IAuthService
         };
     }
 
+    public async Task ChangePasswordAsync(ChangePasswordDto request)
+    {
+        if (!_currentUserService.IsAuthenticated || string.IsNullOrEmpty(_currentUserService.UserId))
+            throw new UnauthorizedDomainException("يجب تسجيل الدخول أولاً.");
+
+        if (string.IsNullOrWhiteSpace(request.NewPassword) || request.NewPassword.Length < 6)
+            throw new ValidationDomainException("كلمة المرور الجديدة يجب ألا تقل عن 6 أحرف.");
+
+        var user = await _userManager.FindByIdAsync(_currentUserService.UserId);
+        if (user == null)
+            throw new EntityNotFoundException(nameof(ApplicationUser), _currentUserService.UserId);
+
+        var result = await _userManager.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
+        if (!result.Succeeded)
+        {
+            var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+            throw new ValidationDomainException($"فشل تغيير كلمة المرور: {errors}");
+        }
+    }
+
     private string GenerateJwtToken(ApplicationUser user, string charityName, string role, IEnumerable<string> permissions)
     {
         var jwtKey = _config["Jwt:Key"] ?? "CharitySuperSecretKeyForJwtAuthentication2026!#$";

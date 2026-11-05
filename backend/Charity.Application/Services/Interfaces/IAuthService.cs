@@ -6,4 +6,5 @@ public interface IAuthService
 {
     Task<AuthResponseDto> LoginAsync(LoginRequestDto request);
     Task<CurrentUserDto?> GetCurrentUserAsync();
+    Task ChangePasswordAsync(ChangePasswordDto request);
 }
