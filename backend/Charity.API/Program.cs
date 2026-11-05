@@ -15,8 +15,32 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
+using Serilog;
+using Serilog.Events;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Keep daily diagnostic files beside the application, independent of the working directory.
+var logsDirectory = Path.Combine(builder.Environment.ContentRootPath, "logs");
+Directory.CreateDirectory(logsDirectory);
+builder.Services.AddSerilog((services, configuration) => configuration
+    .ReadFrom.Services(services)
+    .MinimumLevel.Information()
+    .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
+    .MinimumLevel.Override("Microsoft.EntityFrameworkCore.Database.Command", LogEventLevel.Warning)
+    .Enrich.FromLogContext()
+    .Enrich.WithProperty("Application", builder.Environment.ApplicationName)
+    .Enrich.WithProperty("Environment", builder.Environment.EnvironmentName)
+    .Enrich.WithProperty("MachineName", Environment.MachineName)
+    .WriteTo.Console()
+    .WriteTo.File(
+        path: Path.Combine(logsDirectory, "log-.log"),
+        restrictedToMinimumLevel: LogEventLevel.Warning,
+        rollingInterval: RollingInterval.Day,
+        retainedFileCountLimit: 30,
+        fileSizeLimitBytes: null,
+        shared: true,
+        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {SourceContext} {Message:lj}{NewLine}Properties: {Properties:j}{NewLine}{Exception}{NewLine}"));
 
 // 1. Database Connection
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
@@ -199,6 +223,20 @@ using (var scope = app.Services.CreateScope())
 }
 
 // 9. Middleware Pipeline
+app.Use(async (context, next) =>
+{
+    var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+    using (logger.BeginScope(new Dictionary<string, object?>
+    {
+        ["RequestId"] = context.TraceIdentifier,
+        ["TraceId"] = System.Diagnostics.Activity.Current?.TraceId.ToString(),
+        ["RequestMethod"] = context.Request.Method,
+        ["RequestPath"] = context.Request.Path.Value
+    }))
+    {
+        await next(context);
+    }
+});
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 app.UseDefaultFiles();
